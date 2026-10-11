@@ -22,4 +22,4 @@
 - Все operational подробности и команды — [runbook](wiki/operations-recovery.md), [CLI](docs/cli.md). Начата фаза 7.1: [HTTPS/proxy/CIDR и host reset](wiki/production-ingress.md). Network/origin changes требуют restart API/worker и reconciliation/reopen; APP_ENV=production всё ещё отклоняется.
 - Limits/defaults — инженерные bounds, не SLA/RPO/RTO. Все requirement statuses проверять в generated matrix, не по историческому тексту.
 
-Фаза 6 опубликована как `02c53d9`, remote CI #38131827674 success. Текущий phase-7 срез и его evidence проверять в session; его локальная реализация не означает закрытие всей release фазы.
+Фаза 6 опубликована как `02c53d9`, remote CI #38131827674 success. Первый срез фазы 7 опубликован как `50de642`: HTTPS ingress/network policy, host reset, 32 PG tests и 3 Chromium scenarios, TLS harness. Его remote CI #38133772690 — success, включая make ingress; точное evidence — в session. Реализация среза не означает закрытие всей release фазы. Следующий шаг — controlled upgrade/downtime drill.

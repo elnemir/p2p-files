@@ -6,7 +6,7 @@
 ## Status
 **Фазы 1–6 закрыты по локальным development gates.** Фаза 6 реализована и проверена; документация, миграции, контракты и traceability обновлены. В матрице 27 verified/5 partial/0 planned, все 32 MUST сохранены. Оставшиеся partial относятся к release acceptance фазы 7. `APP_ENV=production` по-прежнему отклоняется.
 
-Фаза 6 опубликована коммитом `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` в origin/main; SHA подтверждён. [CI #38131827674](https://github.com/elnemir/p2p-files/actions/runs/38131827674) — success, включая build/PG/security/Chromium E2E. Первый срез фазы 7 (HTTPS ingress/network policy) реализован и прошёл локальные gates; готовится отдельный commit/push. Вся фаза 7 остаётся открытой. Предыдущие этапы 1–5 опубликованы как `3af2f0c` (`feat: implement FileX development phases 1-5`), publication evidence — `703c2ea`. Их [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) прошёл; это исторический CI, не проверка текущего diff. Production deployment не выполнялся.
+Фаза 6 опубликована коммитом `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` в origin/main; SHA подтверждён. [CI #38131827674](https://github.com/elnemir/p2p-files/actions/runs/38131827674) — success, включая build/PG/security/Chromium E2E. Первый срез фазы 7 (HTTPS ingress/network policy) реализован, прошёл локальные gates и опубликован отдельным коммитом `50de642f2bf9e2c58e5e3ae0e92f92903cfa634e`; SHA origin/main подтверждён после push. Его [CI #38133772690](https://github.com/elnemir/p2p-files/actions/runs/38133772690) — completed/success, включая новый TLS ingress gate. Этот результат относится к указанному implementation commit; последующая фиксация publication evidence меняет только документацию. Вся фаза 7 остаётся открытой. Предыдущие этапы 1–5 опубликованы как `3af2f0c` (`feat: implement FileX development phases 1-5`), publication evidence — `703c2ea`. Их [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) прошёл; это исторический CI, не проверка текущего diff. Production deployment не выполнялся.
 
 ## Completed steps
 - Восстановлены правила и контекст wiki/requirements, проведены architecture/crypto review, зафиксирован [ADR-006](adr/006-operations-recovery.md).
@@ -26,8 +26,8 @@
 - Security incident PDF и mobile restore/reopened screenshots 390px просмотрены; clipping/overflow не обнаружены. Scoped fixtures удалили свои контейнеры и volumes; secrets/caches/traces не добавлялись в Git.
 
 ## Next steps
-1. Фаза 6 опубликована и CI success. Опубликовать проверенный первый срез фазы 7 и подтвердить его remote CI отдельно.
-2. Продолжить фазу 7: controlled upgrade/downtime drill; actual ACME/DNS/host/provider/escrow/checkpoint/DR acceptance после согласованной инфраструктурной подготовки. HTTPS/proxy/CIDR и host reset реализованы локально.
+1. Продолжить фазу 7 с controlled upgrade/downtime drill. Фаза 6 и первый срез фазы 7 опубликованы, оба remote CI — success; HTTPS/proxy/CIDR и host reset реализованы и проверены локально и в CI.
+2. Actual ACME/DNS/host/provider/escrow/checkpoint/DR acceptance после согласованной инфраструктурной подготовки.
 3. Full Safari/Firefox/mobile browser matrix, manual WCAG, load/DR, SBOM/license/container/secret scans и independent security review; затем release review всех 32 MUST и residual risks с владельцем.
 4. Реальный deployment только по отдельной явной команде пользователя.
 
@@ -47,6 +47,7 @@
 
 ## Итог публикации фазы 6 и первого среза фазы 7
 - Фаза 6: commit `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` отправлен в origin/main; local/remote SHA подтверждены. CI #38131827674 — completed/success.
+- Фаза 7.1, первый срез: commit `50de642f2bf9e2c58e5e3ae0e92f92903cfa634e` отправлен в origin/main; local/remote SHA подтверждены после push. CI #38133772690 — completed/success: check/build, PostgreSQL integration, security, Chromium E2E и TLS ingress. Snapshot — `.cache/evidence/phase7-ci.json` (ignored); эта запись publication evidence меняет только документацию.
 - [ADR-007](adr/007-ingress-and-network-policy.md), [production ingress](production-ingress.md): typed PG networkPolicy, точные доверенные proxy /32, single-valued XFF/XFP, effective IP для allowlist/login bucket, requireProxy/HTTPS/Host и bounded CIDR validation.
 - Network policy/publicOrigin changes атомарно меняют active settings, закрывают gate, инвалидируют reconciliation и меняют generation. Проверена отмена privileged request; restart API/worker обязателен. Host network reset снимает только client allowlist, сохраняет transport trust, создаёт revision/audit и не открывает gate.
 - CLI settings show и config ingress-check read-only, без migrations; settings apply использует draft/validate/CAS. Production ingress-check не одобряет release. API contracts остаются 107 operations, новая networkPolicy совместима с прежними settings v1.

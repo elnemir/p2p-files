@@ -1,7 +1,7 @@
 # Разработка, воспроизведение и evidence
 
 ## Контекст
-FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: зависимости → базовые проверки и сборки → PostgreSQL integration → security → Chromium E2E. Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
+FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: зависимости → базовые проверки и сборки → PostgreSQL integration → security → Chromium E2E → TLS ingress. Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
 
 ## Воспроизведение
 
@@ -104,6 +104,7 @@ Unit/race archive checks включают wrong KEK, byte tamper, truncation, sw
 | `make e2e` | PASS: прежние 3 Chromium scenarios, 28.6 s; пользовательская передача/отчёты/QR/export и ADMIN restore/restart/reopen. Axe/overflow/response-contract errors на проверенных страницах — 0. `.cache/evidence/phase7-e2e.log`. |
 | `make ingress` | PASS: настоящий pinned Traefik, тестовая CA с полной проверкой; TLS 1.2 success, сервер отвергает TLS 1.1, неизвестная CA и чужой Host отвергаются, redirect/HSTS/Secure cookie, private routes, forwarded spoof rejection, CIDR deny, audited host reset и закрытый gate после restart. `.cache/evidence/phase7-ingress.log`. |
 | `make security` | PASS: npm production 0; govulncheck 0 affected symbols/imported packages, прежний module-only openpgp advisory сохраняется. `.cache/evidence/phase7-security.log`. |
+| Публикация и CI | Первый срез опубликован как `50de642`; [GitHub Actions #38133772690](https://github.com/elnemir/p2p-files/actions/runs/38133772690) completed/success: check/build, PG integration, security, Chromium E2E, TLS ingress. Snapshot — `.cache/evidence/phase7-ci.json`. Последующая фиксация этого evidence меняет только документацию. |
 
 Integration выявила необходимость `.yaml` extension для file provider и literal backend IP в proxy network: Docker DNS при общей egress мог выбрать другой интерфейс. Эти ошибки исправлены и повторный TLS drill прошёл. Test CA содержит явные X.509 extensions для строгой проверки современными TLS clients; проверки сертификата не отключались.
 
