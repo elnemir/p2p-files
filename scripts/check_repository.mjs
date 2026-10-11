@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as yaml from 'js-yaml';
+import {checkDependencies} from './check_dependencies.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
@@ -49,6 +50,6 @@ for (const name of ['bug_report.yml', 'feature_request.yml']) {
 }
 assert.equal(yaml.load(read('.github/ISSUE_TEMPLATE/config.yml')).blank_issues_enabled, false);
 assert.match(read('.github/CODEOWNERS'), /^\* @elnemir$/m);
-assert.equal(read('.nvmrc').trim(), '24');
+checkDependencies(root);
 for (const name of ['SECURITY.md', 'CONTRIBUTING.md', '.editorconfig', '.gitattributes', '.github/pull_request_template.md']) assert(read(name).trim(), `Empty ${name}`);
 console.log(`PASS: repository policy, ${jobs.size} workflow jobs, four dependency ecosystems and issue forms`);

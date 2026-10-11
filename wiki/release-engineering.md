@@ -43,7 +43,7 @@ Scanners Trivy 0.75.0 и Gitleaks 8.30.1 загружаются из офици�
 
 CI разделён на functional и supply-chain jobs, сохраняет evidence 14 дней. Compact CI load не удовлетворяет multi-GB release gate; нужна отдельная запись полного профиля. Evidence из разных jobs необходимо собрать в один review directory без перезаписи одноимённых gate records. SHA/checksums CLI verifier создаются для Linux amd64/arm64, macOS amd64/arm64, Windows amd64; review bundle имеет статус `unpublished_review_bundle`. Наличие bundle не создаёт release/tag и не снимает production guard.
 
-ESLint закреплён на 9.39.5 из-за текущих peer constraints JSX-a11y 6.10.2; npm помечает эту ветку unsupported. Audit findings не обнаружены, но это ограничение сопровождения dev tooling: переход на поддерживаемый major выполняется после совместимого accessibility plugin/config и полного lint/browser gate. Peer dependencies не игнорируются.
+ESLint обновлён до 10.12.0 совместно с @eslint/js 10.0.1 и JSX-a11y-x 0.2.0 от ESLint Community. Сохранены 31 прежнее a11y правило/явные параметры, добавлены behavioral fixtures и full installed peer-tree gate. Неподдерживаемый ESLint 9 и его peer blocker удалены из lockfile; обход peer/engine checks запрещён. Подробности и квалификация конкретного кандидата — [dependency remediation](dependency-remediation.md) и [session](session.md).
 
 ## Продолжение после локальных gates
 

@@ -1082,7 +1082,11 @@
       "scripts/check_repository.mjs",
       "scripts/github_repository.py",
       "scripts/fixtures/s3.py",
-      "scripts/e2e/contracts.ts"
+      "scripts/e2e/contracts.ts",
+      "scripts/check_dependencies.mjs",
+      ".github/dependency-policy.json",
+      ".npmrc",
+      "eslint.config.mjs"
     ],
     "tests": [
       {
@@ -1189,6 +1193,21 @@
         "id": "T-NFR-003-21",
         "path": "scripts/e2e-contracts.test.mjs",
         "name": "observer ignores non-API resources before asking the browser for their response"
+      },
+      {
+        "id": "T-NFR-003-22",
+        "path": "scripts/lint.test.mjs",
+        "name": "all 31 previously enabled accessibility rules retain severity and options"
+      },
+      {
+        "id": "T-NFR-003-23",
+        "path": "scripts/lint.test.mjs",
+        "name": "TypeScript and React Hooks checks survive the ESLint major upgrade"
+      },
+      {
+        "id": "T-NFR-003-24",
+        "path": "scripts/dependencies.test.mjs",
+        "name": "the reviewed dependency set is consistent"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."

@@ -12,6 +12,13 @@ updates:
     commit-message:
       prefix: 'chore(deps)'
     groups:
+      lint-toolchain:
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - '@typescript-eslint/*'
+          - 'typescript-eslint'
+          - 'eslint-plugin-*'
       npm-compatible:
         update-types: [minor, patch]
   - package-ecosystem: gomod
