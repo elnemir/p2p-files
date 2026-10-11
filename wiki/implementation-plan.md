@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | DOC-01 | P0 / completed локально | Инженер | Вся документация в wiki, актуальные связи с кодом, воспроизводимые инструкции и этот план | [Сессия переноса](sessions/2026-10-11-documentation-migration.md) |
 | DOC-02 | P1 / completed локально | Инженер | 44 PNG, видеотур 5:26 / 19 глав, озвучка/субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
-| REPO-01 | P1 / in progress | Владелец + инженер | GitHub/main/Actions/security, templates, dependency updates и воспроизводимый audit | [Настройки и приёмка](repository-governance.md); фактическое применение/CI в session |
+| REPO-01 | P1 / completed | Владелец + инженер | GitHub/main/Actions/security, templates, dependency updates и воспроизводимый audit | [Настройки и приёмка](repository-governance.md); фактическое применение/CI в session |
 | DEV-01 | P0 / ready для design | Backend + security reviewer + владелец | Reviewed механизм тестового/production допуска, затем реализация и негативные тесты | Сохранить существующий запрет; применение допуска зависит от EXT и REL |
 | DEV-02 | P1 / ready | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
 | DEV-03 | P0 / ready для пакета review | Release engineer + владелец/reviewer | Состав фактической поставки, license notices/решения, текст proprietary license после решения владельца | Точные image digests/SBOM; EXT-07 закрывает решение |

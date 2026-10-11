@@ -9,11 +9,14 @@
 ## Поток данных и проверки
 1. Один файл загружается кусками по 4 MiB через tus; HEAD подтверждает возможность resume, finalize вычисляет серверный SHA-256.
 2. Local → synthetic TLS S3 migration → payload key rotation сохраняют данные. TLS certificate проверяется тестовой CA; fixture проверяет envelope SigV4, но не криптографическую подпись AWS. Это wire compatibility, не acceptance реального провайдера.
+
 3. Redis останавливается. Восемь concurrent acquire одного файла дают ровно один 201; Range первого MiB сверяется с исходным хэшем.
 4. PostgreSQL содержит большой набор synthetic transfers. Snapshot запись блокируется отдельной транзакцией; после claim worker получает настоящий SIGKILL. Скрипт освобождает только свой blocker, искусственно истекает lease этой job и запускает worker. Gzip CSV проверяется по числу строк, VACUUM ANALYZE завершается без оставленного idle snapshot. Время этого шага не включает обычное трёхминутное ожидание lease и не является crash RTO.
 5. Сто `/status` запросов с concurrency 8 дают p50/p95/max.
 6. Encrypted backup/verify → поздняя запись → restore с обязательным pre-backup → restart → новая сессия → reconciliation → явный reopen. Поздняя запись отсутствует, прежняя сессия отозвана, до reopen data plane закрыт.
 7. ZIP читается потоком и сверяется по размеру/SHA-256; повторная выдача lease запрещена, audit проходит. OOMKilled завершает проверку ошибкой.
+
+Ключ объекта fixture — только канонический UUID: request key → `UUID` → каноническая строка → файл внутри `/data`. Неканонические записи, traversal, encoded separators и дополнительные segments получают 400 до обращения к object file. Ранее raw key проходил regex; явная типизированная граница добавлена после первого CodeQL main scan. `test_s3_fixture.py` проверяет отрицательные ключи без filesystem side effects и настоящий loopback PUT/duplicate/GET/HEAD/list/DELETE lifecycle; TLS по-прежнему проверяет полный performance harness. Import модуля больше не запускает сервер и не создаёт `/data`; Docker entrypoint вызывает main, сохраняя прежний TLS запуск.
 
 ## Evidence и ресурсы
 `.cache/evidence/performance/results-<MiB>mib-<rows>rows.json` содержит CPU/RAM/kernel/storage Docker VM, размеры, concurrency, время этапов и throughput, latency и timestamped `docker stats` CPU/RAM/IO samples. Sampled peaks не являются непрерывным измерением пика. `results.json` — последний прогон; частичный отчёт при ошибке не содержит полного набора assertions и не считается PASS. Gate record содержит exit code и hash исходников.

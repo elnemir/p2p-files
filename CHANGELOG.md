@@ -30,6 +30,8 @@
 - OpenAPI: 107 операций; traceability: 32 требования; unit/race, 36 PG integration tests, 25 browser E2E, TLS ingress и controlled upgrade drills, axe/visual и response contract validation.
 
 ### Fixed
+- Upgrade harness удерживает download connection до подтверждённого PG commit Range/completion, устраняя гонку client Content-Length против server transaction. Строгие 401 и single journal проверки сохранены; отсутствующий commit приводит к ошибке.
+- Галерея тура принимает только локальные PNG paths перед src/href; тестовый S3 fixture строит имя файла из канонического UUID. Добавлены негативные browser/wire проверки после сигналов первого CodeQL анализа, без исключения файлов из scan.
 - 20 страниц проектной документации перенесены в wiki; ссылки, AGENTS/entrypoints, CLI help, docs checker, matrix generator и release bundle используют канонический путь. Устаревшие статусы фаз/проверок исправлены без принятия внешних blockers.
 - Vulnerable npm tooling удалён из web runtime; PostgreSQL gosu заменён su-exec; исправлены zlib/nghttp2/OpenSSL и Go/x/net в инфраструктурных images. Generator требует пять проверенных immutable digests.
 - Skip link переводит keyboard focus в main; UI использует точные типы API и привязывает recovery acknowledgement к просмотренному report.

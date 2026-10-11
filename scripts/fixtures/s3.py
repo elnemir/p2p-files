@@ -5,12 +5,26 @@ not cryptographic SigV4 correctness; real provider acceptance remains separate.
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-import os,re,ssl,threading
+import ssl,threading
+from uuid import UUID
 from urllib.parse import urlsplit,parse_qs
 from xml.sax.saxutils import escape
 
-ROOT=Path('/data');ROOT.mkdir(exist_ok=True)
+ROOT=Path('/data')
 LOCK=threading.Lock()
+
+
+def object_path(key):
+    """Construct a fixture filename from a parsed identifier, never a request path."""
+    try:
+        identifier = UUID(key)
+    except (ValueError, TypeError, AttributeError):
+        return None
+    canonical = str(identifier)
+    if canonical != key:
+        return None
+    return ROOT / canonical
+
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
@@ -35,8 +49,9 @@ class Handler(BaseHTTPRequestHandler):
                 more=len(names)>limit
                 result='<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><IsTruncated>'+str(more).lower()+'</IsTruncated>'+records+('<NextContinuationToken>'+batch[-1]+'</NextContinuationToken>' if more else '')+'</ListBucketResult>'
                 return self.reply(200,result.encode(),'application/xml')
-            if len(parts)!=2 or not re.fullmatch('[a-f0-9-]{36}',parts[1]):return self.reply(400)
-            file=ROOT/parts[1]
+            if len(parts)!=2:return self.reply(400)
+            file=object_path(parts[1])
+            if file is None:return self.reply(400)
             if self.command=='PUT':
                 size=int(self.headers.get('Content-Length','-1'))
                 if size<0 or size>4194816:return self.reply(413)
@@ -52,9 +67,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(405)
     do_GET=do_HEAD=do_PUT=do_DELETE=dispatch
 
-server=ThreadingHTTPServer(('0.0.0.0',8443),Handler)
-context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.minimum_version=ssl.TLSVersion.TLSv1_2
-context.load_cert_chain('/fixtures/server.crt','/fixtures/server.key')
-server.socket=context.wrap_socket(server.socket,server_side=True)
-server.serve_forever()
+def main():
+    ROOT.mkdir(exist_ok=True)
+    server=ThreadingHTTPServer(('0.0.0.0',8443),Handler)
+    context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.minimum_version=ssl.TLSVersion.TLSv1_2
+    context.load_cert_chain('/fixtures/server.crt','/fixtures/server.key')
+    server.socket=context.wrap_socket(server.socket,server_side=True)
+    server.serve_forever()
+
+
+if __name__=='__main__':
+    main()

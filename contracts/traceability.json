@@ -1069,7 +1069,12 @@
       "scripts/security_tools.py",
       "scripts/test-fuzz.py",
       "scripts/test-performance.py",
-      "playwright.config.ts"
+      "playwright.config.ts",
+      ".github/workflows/security.yml",
+      ".github/repository.json",
+      "scripts/check_repository.mjs",
+      "scripts/github_repository.py",
+      "scripts/fixtures/s3.py"
     ],
     "tests": [
       {
@@ -1121,6 +1126,41 @@
         "id": "T-NFR-003-10",
         "path": "internal/httpapi/range_fuzz_test.go",
         "name": "FuzzByteRangeBounds"
+      },
+      {
+        "id": "T-NFR-003-11",
+        "path": "scripts/test_github_repository.py",
+        "name": "test_wrong_origin_rejected_before_github_request"
+      },
+      {
+        "id": "T-NFR-003-12",
+        "path": "scripts/test_github_repository.py",
+        "name": "test_policy_cannot_silently_widen_scope_or_weaken_main"
+      },
+      {
+        "id": "T-NFR-003-13",
+        "path": "scripts/test_s3_fixture.py",
+        "name": "test_request_values_cannot_select_paths_or_noncanonical_keys"
+      },
+      {
+        "id": "T-NFR-003-14",
+        "path": "scripts/test_s3_fixture.py",
+        "name": "test_wire_lifecycle_and_invalid_key_have_no_filesystem_side_effect"
+      },
+      {
+        "id": "T-NFR-003-15",
+        "path": "scripts/test_upgrade_harness.py",
+        "name": "test_lost_commit_fails_and_still_closes_connection"
+      },
+      {
+        "id": "T-NFR-003-16",
+        "path": "scripts/test_upgrade_harness.py",
+        "name": "test_database_barrier_waits_for_commit_and_fails_on_timeout"
+      },
+      {
+        "id": "T-NFR-003-17",
+        "path": "scripts/test_upgrade_harness.py",
+        "name": "test_unexpected_http_status_is_not_hidden_by_completion_wait"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."
