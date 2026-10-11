@@ -10,6 +10,6 @@ python3 scripts/init-dev.py
 make up
 ```
 
-Открыть http://localhost:8090. Создание первого ADMIN через CLI описано в [development](wiki/development.md). Для проверок: `make check`, `make integration-docker`, `make security`, `make e2e`, `make ingress`. Integration/E2E создают и удаляют только собственные тестовые containers; browser tests требуют Chromium и свободный loopback порт 8090.
+Открыть http://localhost:8090. Создание первого ADMIN через CLI описано в [development](wiki/development.md). Для проверок: `make check`, `make integration-docker`, `make security`, `make e2e`, `make ingress`, `make upgrade-drill`. [Controlled upgrade](wiki/controlled-upgrade.md) проверяет image replacement, startup faults и downtime. Fixtures создают и удаляют только собственные тестовые containers; browser tests требуют Chromium и свободный loopback порт 8090.
 
 Перед изменениями читать [AGENTS.md](AGENTS.md) и [wiki](wiki/index.md). [Требования](docs/requirements.md), [OpenAPI](contracts/openapi.json), [AsyncAPI](contracts/asyncapi.json), [матрица requirement→test](docs/test-matrix.md), [CLI](docs/cli.md). PostgreSQL — источник истины, Redis ephemeral. Код proprietary; production deployment требует отдельной явной команды владельца.

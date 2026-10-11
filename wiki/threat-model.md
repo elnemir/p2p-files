@@ -19,6 +19,7 @@
 | Resource exhaustion | 4 MiB chunks, 8 streams, 4 Argon2 ops, quotas/timeouts/row bounds | Negative tests; sustained load gate 7 |
 | Retained copies | Compensation rows before Put, idempotent cleanup, hold/write lease guards | Cleanup/migration/expiry tests; restore orphan inventory/quarantine tests |
 | Restore resurrection | Verified pre-backup, generation/session fencing, reconciliation/capability review, explicit reopen | Recovery/fresh DB/drain/rollback PG drills |
+| Incompatible binary / concurrent DDL | Strict migration prefix, closed gate, generation drain, exclusive migration lock, explicit reopen | Controlled upgrade tests по ADR-008; текущий результат в session |
 | Backup tamper / KEK budget rollback | Chunk AEAD, verified encrypted descriptor, exact schema, durable wrap reservation, fresh master on empty DB | Local/S3 wire tamper/truncate/key and fresh recovery tests |
 | Audit rewrite by host attacker | HMAC chain detects modification without key; external checkpoints required | Audit+ops tamper/recovery checkpoint/immutable report tests; independent host escrow/security acceptance phase 7 |
 

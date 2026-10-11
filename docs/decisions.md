@@ -29,3 +29,5 @@
 
 ## Начало фазы 7: ingress
 [ADR-007](../wiki/adr/007-ingress-and-network-policy.md) реализует один доверенный Traefik hop, versioned network policy, generation fencing при её смене, host allowlist reset и offline generation production config. Это не принятие residual risks и не разрешение deployment.
+
+[ADR-008](../wiki/adr/008-controlled-upgrade.md): controlled upgrade требует drain/полный stop, явный verified backup, schema-compatible candidate и reconciliation/reopen. Shared/exclusive startup deadlock исключается порядком migrations → shared key snapshot. Down migrations/автоматический rollback не вводятся; отказ оставляет доступ закрытым.

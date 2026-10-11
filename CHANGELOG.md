@@ -5,6 +5,7 @@
 ## Unreleased — этапы 1–6 и начало фазы 7
 
 ### Added
+- Фаза 7.1: audited host upgrade prepare, generation/drain, отдельный controlled image replacement/downtime drill с verified backup, startup faults и explicit reopen.
 - Фаза 7.1: trusted proxy/CIDR network policy в PG settings, effective IP для login rate limit, runtime fencing и host reset при ошибочной сетевой конфигурации.
 - Генератор HTTPS/ACME Compose с immutable images, non-root/private networks и isolated TLS acceptance harness; production startup guard сохранён.
 - Go API/worker/CLI/verifier, Next.js RU/EN owner/recipient UI, themes/mobile layouts, local Compose/Traefik, internal health/readiness/metrics и CI.
@@ -18,9 +19,11 @@
 - Audit/crypto/storage reconciliation, quarantine missing/tampered данных, orphan inventory и явный ADMIN reopen после проверки восстановленных links/API tokens.
 - KEK rewrap/recovery, восстановление в новую БД с новым master key, бессрочные encrypted incident reports PDF/JSON, exportable checkpoints обоих журналов.
 - Operational UI/CLI, distributed schedules, private alerts/aggregate metrics, read-only upgrade preflight, отдельный ADMIN доступ к чужим exports и управление TTL с reason/audit.
-- OpenAPI: 107 операций; traceability: 32 требования; unit/race, 32 PG integration tests, 3 Chromium E2E и отдельный TLS ingress drill, axe/visual и response contract validation.
+- OpenAPI: 107 операций; traceability: 32 требования; unit/race, 36 PG integration tests, 3 Chromium E2E, TLS ingress и controlled upgrade drills, axe/visual и response contract validation.
 
 ### Fixed
+- Startup и read-only preflight используют strict непрерывный migration prefix; unknown/checksum/hole отклоняются до SQL. Pending DDL требует closed gate/exclusive runtime lock и атомарно инвалидирует прежнюю generation/reconciliation; bootstrap не удерживает shared lock при ожидании exclusive.
+- Повторяющиеся test IDs OPS-005 устранены; docs gate проверяет уникальность всех traceability test IDs.
 - Restore ждёт завершения старых writers, не откатывает KEK usage reservations и отклоняет параллельный import; устаревшая reconciliation не разрешает reopen.
 - Критическая crypto ошибка закрывает доступ до попытки записи encrypted incident report; повреждённая историческая audit prefix остаётся проверяемой после recovery checkpoint.
 - Кириллица в operational reason проверяется по символам; mobile restore/reconciliation notices помещаются на 390px.

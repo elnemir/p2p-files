@@ -23,6 +23,10 @@ func Open(ctx context.Context) (config.Bootstrap, *pgxpool.Pool, error) {
 	if err != nil {
 		return c, nil, err
 	}
+	if err = database.Migrate(ctx, p); err != nil {
+		p.Close()
+		return c, nil, errors.New("database migration failed")
+	}
 	unlock, err := maintenance.StartupShared(ctx, p)
 	if err != nil {
 		p.Close()
@@ -35,9 +39,6 @@ func Open(ctx context.Context) (config.Bootstrap, *pgxpool.Pool, error) {
 			p.Close()
 		}
 	}()
-	if err = database.Migrate(ctx, p); err != nil {
-		return c, nil, errors.New("database migration failed")
-	}
 	if err = database.CheckKEK(ctx, p, c.MasterKEK); err != nil {
 		return c, nil, errors.New("critical key check failed")
 	}

@@ -23,6 +23,8 @@ for directory, dirs, files in os.walk(root):
 ids = re.findall(r'\*\*((?:FR|SEC|OPS|NFR)-\d{3})\*\*', (root/'docs/requirements.md').read_text())
 rows = json.loads((root/'contracts/traceability.json').read_text())
 if len(ids) != len(set(ids)) or sorted(ids) != sorted(r['id'] for r in rows): errors.append('Requirement IDs and traceability do not match exactly')
+test_ids = [test['id'] for row in rows for test in row['tests']]
+if len(test_ids) != len(set(test_ids)): errors.append('Traceability test IDs must be unique')
 for row in rows:
     if row['status'] not in {'planned','partial','verified'}: errors.append('Unknown status '+row['id'])
     for name in row['implementation']:

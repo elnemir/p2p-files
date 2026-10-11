@@ -59,7 +59,7 @@ TTL можно изменить только у completed, ready, ещё не и
 
 ## Ограничения и продолжение
 - Archive ≤1 GiB, record ≤64 MiB, inventory ≤1 000 000 объектов, findings ≤10 000; превышение прерывает операцию с закрытым gate. Worker execution ≤5 минут, CLI ≤15 минут; это bounds, не RPO/RTO/SLA.
-- Schema fingerprint должен совпадать; сначала восстановить matching binary/schema, затем отдельно выполнять upgrade. Прямые DDL/operator writes вне FileX — доверенная граница и не должны конкурировать с backup/restore.
+- Schema fingerprint должен совпадать; сначала восстановить matching binary/schema, затем отдельно выполнять [controlled upgrade](controlled-upgrade.md). Прямые DDL/operator writes вне FileX — доверенная граница и не должны конкурировать с backup/restore.
 - Local inventory использует bounded memory и повторный directory scan на страницу. Большие каталоги требуют отдельного load/DR измерения в фазе 7. Для purposes следует использовать разные root/bucket; общий backend может дать повторные inventory warnings.
 - Списки UI ограничены последними 100 элементами. Старые backup/report ID доступны через CLI/конкретный endpoint. Metadata и security history растут бессрочно; capacity планируется оператором.
 - PostgreSQL backup без payload — осознанный контракт. Отдельная durability/storage snapshot стратегия, реальные S3 credentials/endpoints, disaster recovery на production topology и release security acceptance проверяются фазой 7.

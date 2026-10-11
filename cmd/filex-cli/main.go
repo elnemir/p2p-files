@@ -30,6 +30,9 @@ func run() error {
 	jsonOutput = slices.Contains(os.Args, "--json")
 	// Operational commands return JSON by default; accept the explicit flag too.
 	os.Args = slices.DeleteFunc(os.Args, func(v string) bool { return v == "--json" })
+	if handled, e := upgradeCLI(os.Args[1:]); handled {
+		return e
+	}
 	if handled, e := settingsCLI(os.Args[1:]); handled {
 		return e
 	}
@@ -45,24 +48,6 @@ func run() error {
 			return emitLegacy(map[string]bool{"valid": true}, "Bootstrap configuration valid.")
 		}
 		return err
-	}
-	if len(os.Args) == 3 && os.Args[1] == "upgrade" && os.Args[2] == "check" {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		c, e := config.Load(os.Getenv)
-		if e != nil {
-			return e
-		}
-		db, e := database.Connect(ctx, c.DatabaseURL)
-		if e != nil {
-			return e
-		}
-		defer db.Close()
-		plan, e := database.CheckUpgrade(ctx, db)
-		if e != nil {
-			return fmt.Errorf("upgrade compatibility check failed")
-		}
-		return json.NewEncoder(os.Stdout).Encode(plan)
 	}
 	if len(os.Args) == 3 && os.Args[1] == "storage" && os.Args[2] == "s3" {
 		var in struct {
@@ -165,7 +150,7 @@ func run() error {
 		p.Close()
 		return emitLegacy(map[string]string{"status": "verified"}, "Migrations, key check and settings verified.")
 	}
-	return fmt.Errorf("supported commands: --version, config validate|ingress-check, settings show|apply, network reset, upgrade check, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see docs/cli.md")
+	return fmt.Errorf("supported commands: --version, config validate|ingress-check, settings show|apply, network reset, upgrade check|prepare, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see docs/cli.md")
 }
 func main() {
 	if err := run(); err != nil {

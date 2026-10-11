@@ -3,7 +3,7 @@ export GOMODCACHE := $(CURDIR)/.cache/gomod
 export GOCACHE := $(CURDIR)/.cache/go-build
 export NEXT_TELEMETRY_DISABLED := 1
 
-.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress
+.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress upgrade-drill
 check: lint test-race docs-check contracts build
 lint:
 	@test -z "$$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
@@ -56,3 +56,6 @@ e2e:
 
 ingress:
 	python3 scripts/test-ingress.py
+
+upgrade-drill:
+	python3 scripts/test-upgrade.py

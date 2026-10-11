@@ -21,7 +21,7 @@
 Итог текущего прогона: [session](session.md). Доказательства и ограничения: [development](development.md), устройство восстановления: [runbook](operations-recovery.md). В [матрице](../docs/test-matrix.md) 27 `verified` по локальным тестам и 5 `partial` с оставшимся scope фазы 7. Ни одно требование не исключено.
 
 ## Порядок продолжения
-Следующая работа: (7.1) production TLS/ACME/trusted-proxy/CIDR configuration и controlled upgrade, (7.2) load/DR/security/SBOM/container/license/secret/browser/a11y evidence, (7.3) release review и явное рассмотрение residual risks владельцем. Начат 7.1: [HTTPS/proxy/CIDR и host reset](production-ingress.md); результат локальных проверок — в session. Реальный deployment требует отдельной команды пользователя.
+Фаза 7.1 включает [HTTPS/proxy/CIDR и host reset](production-ingress.md) и [controlled upgrade/downtime](controlled-upgrade.md); результаты локальных проверок/CI — в session. Реальная ACME/DNS/host приёмка остаётся открытой. Следующий локальный срез 7.2 — static analysis, SBOM/license/container/secret evidence, затем browser/a11y/load/DR. Фаза 7.3 — release review и явное рассмотрение residual risks владельцем. Реальный deployment требует отдельной команды пользователя.
 
 ## Принцип закрытия
 Фаза закрывается при реализации вертикального сценария, зелёных относящихся к нему проверках и синхронных wiki/contracts/changelog. Наличие файлов, успешная компиляция или пропущенные integration tests не являются доказательством. Ни ограничения env, ни открытые release risks нельзя скрывать отметкой «готово».

@@ -1,7 +1,7 @@
 # Разработка, воспроизведение и evidence
 
 ## Контекст
-FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: зависимости → базовые проверки и сборки → PostgreSQL integration → security → Chromium E2E → TLS ingress. Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
+FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: зависимости → базовые проверки и сборки → PostgreSQL integration → security → Chromium E2E → TLS ingress → controlled upgrade. Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
 
 ## Воспроизведение
 
@@ -13,11 +13,14 @@ make security
 PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/browsers" npx playwright install chromium
 make e2e
 make ingress
+make upgrade-drill
 ```
 
 `make check`: gofmt/vet, TypeScript strict, Go race tests, contract tests, Markdown/traceability, OpenAPI/AsyncAPI validation, Go и Next.js build. Без `FILEX_TEST_DATABASE_URL` обычный Go suite пропускает PG tests; отдельный `make test-integration` требует этот URL. `integration-docker` создаёт disposable PostgreSQL с random credentials, запускает все `TestIntegration*` с race и удаляет только свой container. Каждому test соответствует отдельная schema.
 
 `make e2e` создаёт отдельный Compose project, random KEK/password и USER/ADMIN accounts, проверяет приложение через Traefik на loopback 8090, перезапускает только свои API/worker в restore drill, удаляет только свой project/volumes. Порт должен быть свободен. Скриншоты/скачанные synthetic artifacts — `.cache/evidence`. Failure traces могут содержать тестовую сессию и не публикуются. Docker images/build cache остаются локально. `scripts/smoke-platform.py` отдельно проверяет PG outage → generic 503.
+
+`make upgrade-drill`: закреплённый baseline Git commit → отдельный image; текущие файлы → другой candidate image. Изолированный Compose/random loopback port проверяет prepare/drain, stop, verified backup, deliberate startup failures, image replacement, reconciliation/reopen и сохранность payload/одноразовой выдачи. Timing/границы: [runbook](controlled-upgrade.md). Требуется Git history с baseline; CI fetch-depth=0. Production инфраструктура не используется.
 
 ## Локальный запуск
 
@@ -49,7 +52,7 @@ curl --fail http://localhost:8090/api/v1/status
 ## Набор доказательств
 
 - Go unit/race: passwords, settings, paths/fuzz seeds, AEAD vectors/tamper, ZIP64/ranges, trusted signatures, SMTP TLS/STARTTLS downgrade rejection, S3 TLS/conditional Put/Get/Delete.
-- 32 PG integration/race cases: identity/settings; atomic publish/owner isolation/outbox rollback; leases/concurrent acquire/revoke; freeze/expiry/integrity; migration/rotation; tus/forensic; webhook dedup/retry/DLQ; tree/admin guards; report privacy/hashes/trash; export snapshot/retry/bulk/authorization; QR invalidation and key budgets; WS origin/revocation; backup/restore/pre-backup failure/drain/rollback, KEK rewrap/fresh DB, crypto containment, audit/ops checkpoint evidence, schedules/privacy, ADMIN exports/TTL, read-only upgrade check; trusted proxy/allowlist/effective IP, privileged request generation fencing и audited host reset.
+- 36 PG integration/race cases: identity/settings; atomic publish/owner isolation/outbox rollback; leases/concurrent acquire/revoke; freeze/expiry/integrity; migration/rotation; tus/forensic; webhook dedup/retry/DLQ; tree/admin guards; report privacy/hashes/trash; export snapshot/retry/bulk/authorization; QR invalidation and key budgets; WS origin/revocation; backup/restore/pre-backup failure/drain/rollback, KEK rewrap/fresh DB, crypto containment, audit/ops checkpoint evidence, schedules/privacy, ADMIN exports/TTL, read-only upgrade check; trusted proxy/allowlist/effective IP, privileged request generation fencing и audited host reset; strict migration prefix/concurrent startup/DDL rollback и upgrade prepare drain/timeout/reopen.
 - Playwright Chromium через proxy: interrupted PATCH→HEAD resume, publish, mobile recipient ZIP, report PDF/JSON verification, CSV export, settings dark theme, public help RU/EN/status/internal isolation; ADMIN backup→restore с pre-backup→restart→reauth→reconcile→reopen, checkpoint download, schedules, чужой export/TTL. JSON responses сравниваются с OpenAPI. Axe WCAG tags и screenshots: desktop, 390px и 360px.
 - Contracts: 107 runtime operations, OpenAPI 3.1.1/AsyncAPI 3.0, versioned schemas, four contract/privacy/coverage tests. Generated files проверяются `--check`.
 - Earlier bounded path fuzz: 284267 executions, 2 workers, около 6 s. Это smoke fuzz, не исчерпывающий security proof.
@@ -59,6 +62,22 @@ curl --fail http://localhost:8090/api/v1/status
 
 ## Неподтверждённое и дальнейшая работа
 Настоящая доставка во внешний mailbox и совместимость конкретного S3 provider проверяются при его подключении. Full Safari/Firefox/mobile browser matrix, ручная WCAG 2.2 AA приёмка, production load/DR, отдельный frontend lint policy, SBOM/license/container/secret scans и independent security review — фаза 7. Backup/restore/reconciliation реализованы фазой 6, [runbook](operations-recovery.md); local fixture evidence не заменяет production DR. `APP_ENV=production` сохраняет запрет запуска. Зелёный development CI не закрывает эти release gates.
+
+## Controlled upgrade: результат 2026-10-11
+
+[ADR-008](adr/008-controlled-upgrade.md), [runbook](controlled-upgrade.md). Общий strict migration plan исправляет acceptance неизвестного ledger при startup; host prepare закрывает gate и дожидается старого поколения. Новых env/migrations/HTTP операций нет.
+
+| Gate | Фактический результат |
+|---|---|
+| `make check` | PASS: gofmt/vet, Go unit/race, TS strict, 4 contracts, 3 generator tests, 46 Markdown/32 requirements, Go/Next builds. `.cache/evidence/phase7-upgrade-check.log`. |
+| `make integration-docker` | PASS: 36 top-level tests (2 database + 29 HTTP + 5 repository), с race; database 5.700 s, HTTP 104.576 s, repository 4.247 s. Реальный SQL prefix 15→16, concurrent startup, unknown/checksum/hole, active runtime/DDL timeout, failed multi-DDL rollback, prepare drain/reopen и timeout/retry. `.cache/evidence/phase7-upgrade-all-pg.log`. |
+| `make upgrade-drill` | PASS: baseline `50de642` → candidate modified sources на HEAD `31876b8`, реальные разные image IDs сохранены. Schema 16 остаётся неизменной. Verified backup, prepare/drain, unknown migration/wrong KEK startup failures, replacement, closed restart, reconciliation/reopen, retained sessions/payload SHA и ровно одно завершение. `.cache/evidence/phase7-upgrade-drill.log`, `.cache/evidence/phase7-upgrade.json`. |
+| Измерение | Window 6.489 s, sampled unavailable 5.878 s, 29 неуспешных samples с интервалом 200 ms. Время включает backup и injected failures на маленьком локальном fixture; не production SLA/RTO. |
+| `make e2e` | PASS: 3 Chromium scenarios, 28.6 s; transfer/report/export и operational restore/restart/reconcile/reopen. На проверенных страницах axe/overflow/response contract errors — 0. `.cache/evidence/phase7-upgrade-e2e.log`. |
+| `make ingress` | PASS: strict CA, TLS versions/redirect/HSTS, proxy spoof/CIDR, Secure cookies и host reset/fencing. `.cache/evidence/phase7-upgrade-ingress.log`. |
+| `make security` | PASS: npm production 0, govulncheck affected symbols/imported packages 0; прежний module-only openpgp advisory сохраняется. `.cache/evidence/phase7-upgrade-security.log`. |
+
+Fixtures завершили scoped cleanup; `docker ps -a --filter name=filex-` не показал оставшихся контейнеров. Логи содержат synthetic fixture evidence и остаются ignored. В CI добавлен `make upgrade-drill` и fetch Git history для pinned baseline; remote результат нового commit подтверждается отдельно в session. Фаза 7 в целом не закрыта.
 
 ## Исторический итог фаз 1–5 (2026-10-11)
 
@@ -108,4 +127,4 @@ Unit/race archive checks включают wrong KEK, byte tamper, truncation, sw
 
 Integration выявила необходимость `.yaml` extension для file provider и literal backend IP в proxy network: Docker DNS при общей egress мог выбрать другой интерфейс. Эти ошибки исправлены и повторный TLS drill прошёл. Test CA содержит явные X.509 extensions для строгой проверки современными TLS clients; проверки сертификата не отключались.
 
-Локальные fixtures используют random secrets и собственные projects, удаляют только свои containers/volumes, не контактируют с public ACME/production/provider accounts. GitHub CI теперь включает `make ingress`; результат публикации текущего среза хранится в session. Вся фаза 7 не закрыта: controlled upgrade, full browser/manual WCAG, load/DR, independent security и SBOM/container/secret/license gates остаются следующими шагами.
+Локальные fixtures используют random secrets и собственные projects, удаляют только свои containers/volumes, не контактируют с public ACME/production/provider accounts. Этот ingress срез добавил `make ingress` в CI; его publication evidence хранится в session. Controlled upgrade выполнен следующим срезом ниже. Full browser/manual WCAG, load/DR, independent security и SBOM/container/secret/license gates остаются открытыми.

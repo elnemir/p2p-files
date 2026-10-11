@@ -4,6 +4,7 @@ package maintenance
 import (
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"sync"
 	"time"
@@ -151,4 +152,11 @@ func Exclusive(ctx context.Context, db *pgxpool.Pool) (func(), error) {
 		}
 		c.Release()
 	}, nil
+}
+
+// ExclusiveTransaction fences pending DDL through commit or rollback. Callers
+// must not hold a shared runtime lock while upgrading to this exclusive lock.
+func ExclusiveTransaction(ctx context.Context, tx pgx.Tx) error {
+	_, e := tx.Exec(ctx, "SELECT pg_advisory_xact_lock("+lockSQL+")")
+	return e
 }

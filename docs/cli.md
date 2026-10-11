@@ -15,7 +15,8 @@
 | `settings show` | read-only active `{revision,active,validated,value}` |
 | `settings apply` | `{expectedRevision,value}` → draft/validate/CAS apply полного settings v1; network/origin change закрывает gate и меняет generation |
 | `network reset` | `{reason}` → новая revision без client allowlist; proxy/HTTPS/origin сохранены, требуется restart/reconcile/reopen |
-| `upgrade check` | env/DB read-only → `{applied,pending,compatible}`; unknown/checksum mismatch отклоняется, SQL не применяется |
+| `upgrade check` | env/DB read-only → `{applied,pending,compatible}`; unknown/checksum mismatch/пропуск внутри migration prefix отклоняются, SQL не применяется |
+| `upgrade prepare` | `{reason}` → close gate/new generation/drain/audit → `{generation,mode,drained,requiresRestart}`; matching schema без pending SQL, без migrations; timeout сохраняет closed gate |
 | `migrate` | locked/checksummed migrations → KEK sentinel → settings |
 | `user create` | `{email,password,role}` → user UUID; role=user/admin |
 | `storage local /absolute/root` | probe/register payload Local → provider UUID |
@@ -56,7 +57,7 @@
 ## Recovery на чистой БД и ограничения
 Matching schema/binary + новый MASTER_KEK → provision backup root/bucket → import с historical recoveryKek → restore → restart → reconcile → read report → reopen. Старый KEK на новой instance ID не допускается из-за неизвестного usage budget. Смена env без rewrap существующей БД блокируется sentinel. [Runbook](../wiki/operations-recovery.md), [ключи](key-management.md).
 
-Network reset реализован для application CIDR allowlist: [ingress runbook](../wiki/production-ingress.md). Он не меняет host firewall, proxy trust или TLS. Для восстановления неправильного trusted proxy/origin используется host settings apply. Upgrade check проверяет только schema compatibility текущего binary и не загружает новые версии. Production deployment и автоматические обновления не выполняются.
+Network reset реализован для application CIDR allowlist: [ingress runbook](../wiki/production-ingress.md). Он не меняет host firewall, proxy trust или TLS. Для восстановления неправильного trusted proxy/origin используется host settings apply. Upgrade check проверяет только schema compatibility binary. Upgrade prepare использует operations runner/runtime locks, требует отсутствия queued/running operations и не удерживает постоянный deployment lock; затем необходим полный stop старых instances, verified backup и [controlled upgrade runbook](../wiki/controlled-upgrade.md). Production deployment и автоматическое скачивание/обновление images не выполняются.
 
 ## Offline verifier
 

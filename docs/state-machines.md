@@ -21,6 +21,7 @@
 | Migration/rotation | paused ↔ running → completed/cancelled; active key при cancel не откатывается. Внешняя ошибка не даёт pointer swap, следующая попытка повторяет безопасно. |
 | Recovery gate | open → maintenance при restore queue/явном close → restoring после verified pre-backup → reconcile после atomic import/new generation → open только matching fresh report/hash/generation + ADMIN review. Critical failure → blocked. Restart не открывает gate. |
 | Operations job | queued → running под единственным schema-scoped advisory runner lock → completed/failed. Обнаруженный после crash running становится failed/interrupted; destructive replay не автоматический. |
+| Controlled upgrade | prepare: closed gate + новая generation + audit → exclusive drain → полный stop/verified backup → locked atomic migrations/new generation при DDL → restart с closed gate → fresh reconciliation → explicit reopen. Timeout/failed startup не открывают доступ. |
 | Security incident | open → acknowledged → resolved; каждая ревизия encrypted report сохраняется. Audit/crypto resolution требует успешной проверки. Critical unresolved блокирует reopen. |
 | Bulk | paused (dry-run selection) → queued → running → completed; cancel → cancelled. Items pending → done/conflict; выполненные элементы не откатываются. |
 

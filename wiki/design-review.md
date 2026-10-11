@@ -30,3 +30,6 @@ SMTP/S3 проверены локальными TLS wire fixtures, реальн�
 
 ## Review первого среза фазы 7
 Network settings используют прежние draft/validate/CAS/audit вместо отдельного config store. При изменении policy/origin generation fencing отменяет также ADMIN streams, а reset не открывает gate. Exact proxy /32 и single-valued XFF/XFP исключают доверие arbitrary chains; allowlist и login bucket используют один effective IP. Generation и policy применяются одной transaction. HTTPS generator не развёртывает сервисы; standalone profile не публикует DB/Redis/API ports и не монтирует Docker socket. Production startup guard сохраняется до полной release приёмки; [ADR-007](adr/007-ingress-and-network-policy.md).
+
+## Review controlled upgrade
+[ADR-008](adr/008-controlled-upgrade.md) сохраняет existing gate, runtime/runner locks и audit. Startup и preflight должны одинаково отвергать неизвестную/повреждённую/неполную историю migrations. Pending DDL требует closed gate и exclusive runtime lock; bootstrap не удерживает shared lock при ожидании exclusive. Drain меняет generation и не открывает сервис при timeout. Backup остаётся явным operator step до миграций; ciphertext/key formats и обязательный pre-restore backup не меняются. Downgrade после DDL не предполагается безопасным. Реализация и evidence текущего шага проверяются отдельно в session.

@@ -882,7 +882,10 @@
       "deploy/compose.yaml",
       "internal/database/upgrade.go",
       "scripts/production_config.py",
-      "cmd/filex-cli/settings.go"
+      "cmd/filex-cli/settings.go",
+      "internal/operations/upgrade.go",
+      "cmd/filex-cli/upgrade.go",
+      "scripts/test-upgrade.py"
     ],
     "tests": [
       {
@@ -906,17 +909,42 @@
         "name": "TestIntegrationUpgradePreflightIsReadOnly"
       },
       {
-        "id": "T-OPS-005-3",
+        "id": "T-OPS-005-5",
         "path": "scripts/test_production_config.py",
         "name": "test_private_backend_and_immutable_nonroot_services"
       },
       {
-        "id": "T-OPS-005-4",
+        "id": "T-OPS-005-6",
         "path": "scripts/test_production_config.py",
         "name": "test_rejects_unsafe_configuration"
+      },
+      {
+        "id": "T-OPS-005-7",
+        "path": "internal/database/upgrade_integration_test.go",
+        "name": "TestIntegrationMigrationPrefixAndStartupRejection"
+      },
+      {
+        "id": "T-OPS-005-8",
+        "path": "internal/database/upgrade_integration_test.go",
+        "name": "TestIntegrationMigrationDrainAndAtomicFailure"
+      },
+      {
+        "id": "T-OPS-005-9",
+        "path": "internal/httpapi/upgrade_integration_test.go",
+        "name": "TestIntegrationUpgradePrepareDrainAndReopen"
+      },
+      {
+        "id": "T-OPS-005-10",
+        "path": "internal/httpapi/upgrade_integration_test.go",
+        "name": "TestIntegrationUpgradePrepareTimeoutStaysClosed"
+      },
+      {
+        "id": "T-OPS-005-11",
+        "path": "scripts/test-upgrade.py",
+        "name": "test_controlled_image_upgrade"
       }
     ],
-    "gap": "Local non-root Compose/migrations/safety и generator isolated HTTPS profile реализованы. APP_ENV=production пока отклоняется. Controlled upgrade/release deployment acceptance остаются фазой 7."
+    "gap": "Strict migration prefix/startup rejection, controlled drain/upgrade/closed restart и isolated image replacement/downtime drill реализованы. Real prefix SQL upgrade/fault/concurrency подтверждены PG tests; Compose drill same-schema. APP_ENV=production отклоняется до release/host/deployment acceptance."
   },
   {
     "id": "NFR-001",
@@ -998,7 +1026,8 @@
       "scripts/check_docs.py",
       "scripts/e2e/flow.spec.ts",
       "scripts/test-ingress.py",
-      "scripts/test_production_config.py"
+      "scripts/test_production_config.py",
+      "scripts/test-upgrade.py"
     ],
     "tests": [
       {
@@ -1015,9 +1044,14 @@
         "id": "T-NFR-003-3",
         "path": "scripts/e2e/operations.spec.ts",
         "name": "admin backup restore restart reconciliation and explicit reopening"
+      },
+      {
+        "id": "T-NFR-003-4",
+        "path": "scripts/test-upgrade.py",
+        "name": "test_controlled_image_upgrade"
       }
     ],
-    "gap": "Unit/integration/race/fault/fuzz smoke/Chromium/axe/visual/contracts и local TLS harness есть; full security/container/secret/license/SBOM/browser/load/DR — фаза 7. CI фаз 1–6 подтверждён; новые phase-7 изменения проверяются отдельно."
+    "gap": "Unit/integration/race/fault/fuzz smoke/Chromium/axe/visual/contracts, TLS и controlled upgrade/downtime harness реализованы; full security/container/secret/license/SBOM/browser/load/DR остаются. CI опубликованных срезов и текущие local gates проверять отдельно в session."
   },
   {
     "id": "NFR-004",
