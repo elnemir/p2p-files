@@ -49,6 +49,16 @@ python3 scripts/github_repository.py apply
 python3 scripts/github_repository.py audit
 ```
 
+В текущем checkout установлены локальные Git defaults; глобальная конфигурация пользователя не менялась. Для нового клона повторить:
+
+```sh
+git config --local pull.ff only
+git config --local fetch.prune true
+git config --local push.default simple
+```
+
+Pull отклоняет неожиданную развилку вместо автоматического merge; fetch удаляет только устаревшие remote-tracking refs; push по умолчанию требует согласованной upstream branch. Исходные значения этого checkout сохранены в `.cache/repository-setup/git-local-before.json`.
+
 Apply сохраняет before snapshot, меняет только перечисленные поля и выполняет API-readback. GitHub API не предоставляет общей транзакции: если один запрос отклонён, предыдущие изменения могут быть применены. Сначала прочитать ошибку и audit; исправить причину и повторить idempotent apply. Скрипт не удаляет чужие labels/rulesets, не меняет visibility/default branch/collaborators/секреты, не создаёт deploy. Дубликат ruleset с управляемым именем требует разбора, а не случайного выбора.
 
 ## Примеры и ограничения
