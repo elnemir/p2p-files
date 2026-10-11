@@ -19,4 +19,23 @@ test('authenticated upload resumes, publishes, issues ZIP, renders reports and e
  await page.goto('/');await page.getByRole('button',{name:'Задачи',exact:true}).click();await page.getByRole('button',{name:'+ CSV',exact:true}).click();await expect(page.locator('.list-row').filter({hasText:'CSV'})).toContainText('Завершено',{timeout:30000});const csvPromise=page.waitForEvent('download');await page.locator('.list-row').filter({hasText:'CSV'}).getByRole('button',{name:'Скачать',exact:true}).click();await (await csvPromise).saveAs(evidencePath('export.csv'));await page.setViewportSize({width:390,height:844});await a11y(page);await page.screenshot({path:evidencePath('jobs-mobile.png'),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
  await page.getByRole('button',{name:'Настройки',exact:true}).click();await page.getByLabel('Тема',{exact:true}).selectOption('dark');await a11y(page);await page.screenshot({path:evidencePath('settings-mobile-dark.png'),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);expect(errors).toEqual([]);const result=await contract.finish();expect(result.count).toBeGreaterThan(20);expect(result.failures).toEqual([]);
 });
-test('public pages, locale and internal route isolation',async({page,request})=>{await page.goto('/help');await a11y(page);await page.getByLabel('Язык',{exact:true}).selectOption('en');await expect(page.getByRole('heading',{name:'Help',exact:true})).toBeVisible();await page.setViewportSize({width:360,height:780});await a11y(page);await page.screenshot({path:evidencePath('help-mobile-en.png'),fullPage:true});await page.goto('/status');await expect(page.getByText('Operational',{exact:true})).toBeVisible();for(const path of ['/health','/ready','/metrics'])expect((await request.get(path)).status()).toBe(404);expect((await request.get('/api/v1/transfers')).status()).toBe(401);});
+test('public pages, locale and internal route isolation',async({page,request})=>{
+ // Hold hydration to exercise the real SSR state instead of relying on a fast browser.
+ const reportId='00000000-0000-4000-8000-000000000001';
+ let releaseScripts!:()=>void;const scriptsReady=new Promise<void>(resolve=>{releaseScripts=resolve;});
+ const scriptRoute='**/_next/static/**/*.js';
+ await page.route(scriptRoute,async route=>{await scriptsReady;await route.continue();});
+ try{
+  await page.goto(`/verify#report=${reportId}`,{waitUntil:'commit'});
+  await expect(page.getByLabel('Идентификатор отчёта',{exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Проверить',exact:true})).toBeDisabled();
+ }finally{releaseScripts();}
+ await expect(page.getByLabel('Идентификатор отчёта',{exact:true})).toHaveValue(reportId);
+ await expect(page.getByRole('button',{name:'Проверить',exact:true})).toBeEnabled();
+ await page.unroute(scriptRoute);
+ const verified=page.waitForResponse(response=>response.url().endsWith(`/api/v1/verify/reports/${reportId}`));
+ await page.getByRole('button',{name:'Проверить',exact:true}).click();
+ expect((await verified).status()).toBe(404);
+ await page.getByLabel('Идентификатор отчёта',{exact:true}).fill('');
+ await expect(page.getByRole('button',{name:'Проверить',exact:true})).toBeDisabled();
+ await page.goto('/help');await a11y(page);await page.getByLabel('Язык',{exact:true}).selectOption('en');await expect(page.getByRole('heading',{name:'Help',exact:true})).toBeVisible();await page.setViewportSize({width:360,height:780});await a11y(page);await page.screenshot({path:evidencePath('help-mobile-en.png'),fullPage:true});await page.goto('/status');await expect(page.getByText('Operational',{exact:true})).toBeVisible();for(const path of ['/health','/ready','/metrics'])expect((await request.get(path)).status()).toBe(404);expect((await request.get('/api/v1/transfers')).status()).toBe(401);});

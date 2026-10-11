@@ -56,3 +56,9 @@ Production deployment и принятие 14 внешних решений не 
 Исходный #3 пытался установить libcrypto3/libssl3 3.3.7-r2 поверх base, которому нужен 3.5.8-r0. В отдельном ignored `.cache/consolidation/redis8-review/Dockerfile` сохранены base digest `sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0`, zlib 1.3.2-r1 и оба OpenSSL pins 3.5.8-r0. Образ `sha256:2d6b62c16a496ca9cd93da252efd0735a8f5d28ade047b8cc592e2a208d69459` успешно собран; `redis-server --version` сообщает 8.10.2, Trivy — 0 findings. JSON scan, CycloneDX SBOM и result.json находятся рядом.
 
 Это локальная техническая подготовка к решению, а не включение Redis 8 в FileX. Проверен build/scan/version; полная функциональная/DR приёмка Redis 8 не выполнялась. Владелец/reviewer ещё должен оценить RSALv2/SSPLv1/AGPLv3 и выбранные обязательства. В основном PR/main сохранён Redis 7.2.
+
+## Исправление после проверки main
+
+Main development run 38167045971 завершился failure: ранний клик в публичной проверке отчёта до client initialization, затем отсутствие чужого CSV в recovery test. Прежний PR PASS не исключил гонку. Повторный PR run 38167905201 обнаружил listener, остававшийся активным после завершения contract observer. [PR #17](https://github.com/elnemir/p2p-files/pull/17) включает исправление готовности формы, собственный recovery export fixture и корректное завершение observer, а также итоговые записи объединения. Причина, data flow, регрессии и ограничения описаны в [testing](testing.md); актуальная квалификация нового source — в [session](session.md). Gates/retries/timeouts не ослабляются.
+
+Квалификация исправления локально завершена: source `8390f72c6ac08927e609dc9eccfb78d93ebc7fbbdae8363c47e449cf50feb210`, 13 gates PASS, 25 browser cases, пять images без HIGH/CRITICAL. PR/main результаты этого кода публикуются отдельно, исторические результаты #16 не переименованы.

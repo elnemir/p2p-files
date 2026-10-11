@@ -348,6 +348,11 @@
         "id": "T-FR-012-3",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-FR-012-4",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1074,7 +1079,8 @@
       ".github/repository.json",
       "scripts/check_repository.mjs",
       "scripts/github_repository.py",
-      "scripts/fixtures/s3.py"
+      "scripts/fixtures/s3.py",
+      "scripts/e2e/contracts.ts"
     ],
     "tests": [
       {
@@ -1161,6 +1167,26 @@
         "id": "T-NFR-003-17",
         "path": "scripts/test_upgrade_harness.py",
         "name": "test_unexpected_http_status_is_not_hidden_by_completion_wait"
+      },
+      {
+        "id": "T-NFR-003-18",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "observer detaches before waiting for in-flight responses"
+      },
+      {
+        "id": "T-NFR-003-19",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "observer retains asynchronous capture failures without unhandled rejections"
+      },
+      {
+        "id": "T-NFR-003-20",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "observer still rejects invalid JSON and contract bodies"
+      },
+      {
+        "id": "T-NFR-003-21",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "observer ignores non-API resources before asking the browser for their response"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."
