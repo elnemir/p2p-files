@@ -7,7 +7,7 @@
 ## Необходимые инструменты
 
 - Git с историей: compatibility использует `f68fc08`, upgrade drill — `50de642`. Shallow clone без этих commits не подходит для полных gates.
-- Go toolchain 1.26.9 из [go.mod](../go.mod), Node.js 24 как в CI/Dockerfiles, npm с `npm ci`, Python 3.12+ (upgrade harness использует `tarfile.extractall(filter='data')`).
+- Go toolchain 1.27.2 из [go.mod](../go.mod), Node.js 24 как в CI/Dockerfiles, npm с `npm ci`, Python 3.12+ (upgrade harness использует `tarfile.extractall(filter='data')`).
 - Для nvm выполнить `nvm install && nvm use` из корня: [.nvmrc](../.nvmrc) содержит major 24. Editor/Git defaults и GitHub workflow — [repository governance](repository-governance.md).
 - Docker daemon и Compose v2 с `--wait`, Linux containers; macOS использует Docker Desktop. OpenSSL CLI нужен TLS fixtures. `curl` нужен ручной проверке; `jq` — только приведённым API примерам.
 - Свободный loopback порт 8090 и место для images, нескольких копий encrypted payload, ZIP и evidence. Full load profile существенно тяжелее compact. Конкретная ёмкость production не определена.

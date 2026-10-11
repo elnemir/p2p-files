@@ -61,6 +61,31 @@ Pull отклоняет неожиданную развилку вместо а�
 
 Apply сохраняет before snapshot, меняет только перечисленные поля и выполняет API-readback. GitHub API не предоставляет общей транзакции: если один запрос отклонён, предыдущие изменения могут быть применены. Сначала прочитать ошибку и audit; исправить причину и повторить idempotent apply. Скрипт не удаляет чужие labels/rulesets, не меняет visibility/default branch/collaborators/секреты, не создаёт deploy. Дубликат ruleset с управляемым именем требует разбора, а не случайного выбора.
 
+## Code scanning: режим, результаты и проверка
+
+CodeQL настроен в **Advanced setup**: источником конфигурации служит [security.yml](../.github/workflows/security.yml). Ответ `state: not-configured` от REST endpoint `code-scanning/default-setup` описывает только **Default setup** и не означает, что Code scanning выключен. Не включать Default setup поверх текущего workflow: [GitHub указывает](https://docs.github.com/en/code-security/reference/code-scanning/troubleshoot-analysis-errors/two-codeql-workflows), что это отключит существующие CodeQL workflows и заблокирует их загрузку результатов. Выбранный Advanced setup сохраняет явную сборку Go и матрицу языков в reviewable Git-конфигурации.
+
+Поток: PR, push в `main`, ручной запуск или расписание → четыре CodeQL jobs → анализ и загрузка результатов с категориями `/language:go`, `/language:javascript-typescript`, `/language:python`, `/language:actions` → [Security → Code scanning](https://github.com/elnemir/p2p-files/security/code-scanning). Для Go перед анализом выполняется `go build ./cmd/...`; остальные категории используют `build-mode: none`. Плановый запуск — понедельник, 04:23 UTC / 07:23 Москва; время фактического старта зависит от очереди GitHub Actions. Используется стандартный набор запросов CodeQL.
+
+Проверка выполнения и проверка findings решают разные задачи. [Workflow security-analysis](https://github.com/elnemir/p2p-files/actions/workflows/security.yml) подтверждает выполнение jobs; страница Code scanning и API подтверждают обработку результатов для нужной ветки и commit. Успешный job сам по себе не означает отсутствие уязвимостей. Обязательный `security-checks` проверяет выполнение анализа, а ruleset `FileX main code scanning` блокирует merge при security HIGH/CRITICAL и alert errors. На ручном запуске `dependency-review` пропускается штатно: он проверяет изменения зависимостей только в PR.
+
+Для повторной проверки инженер с доступом к репозиторию использует существующую авторизацию `gh`:
+
+```sh
+gh workflow run security.yml --repo elnemir/p2p-files --ref main
+gh run list --repo elnemir/p2p-files --workflow security.yml --branch main --event workflow_dispatch --limit 5
+# Подставить ID только что созданного запуска из вывода команды выше.
+gh run view RUN_ID --repo elnemir/p2p-files --json headSha,event,status,conclusion,jobs,url
+gh api repos/elnemir/p2p-files/commits/main --jq .sha
+gh api 'repos/elnemir/p2p-files/code-scanning/analyses?ref=refs/heads/main&per_page=20'
+gh api 'repos/elnemir/p2p-files/code-scanning/alerts?state=open&ref=refs/heads/main&per_page=100' --paginate
+python3 scripts/github_repository.py audit
+```
+
+Критерий успешной проверки: завершившийся `security-analysis` на ожидаемом SHA; четыре анализа этого запуска с тем же SHA, без `error`/`warning`; проверенные открытые alerts; активный ruleset и audit без drift. Если `main` изменился во время проверки, результаты предыдущего SHA не доказывают проверку нового. Пустые alerts без подтверждённых свежих анализов тоже не доказывают работающий scanner. Эти проверки относятся к статическому анализу исходников; эксплуатационная и внешняя приёмка остаются отдельными gates.
+
+Проверено 2026-10-11: [ручной запуск 38161371347](https://github.com/elnemir/p2p-files/actions/runs/38161371347) завершился SUCCESS на `main` / `e70af757c7d501a8e2972c0f906d3e16e2500839`. Все четыре анализа CodeQL 2.27.2 загружены после начала запуска, `results_count=0`, `error` и `warning` пусты; открытых alerts на main нет. Ruleset `24884645` active, bypass actors отсутствуют. Audit `20261011T175300.163216Z` вернул `matchesPolicy=true`, `differences=[]`. Локальный снимок: `.cache/code-scanning/2026-10-11-run-38161371347.json`; повторная проверка нового commit обязательна независимо от этого исторического результата.
+
 ## Примеры и ограничения
 
 - Ошибка имени required job блокирует merge. `check_repository.mjs` проверяет соответствие policy и workflow; переименование должно быть согласовано в обоих файлах и GitHub settings.

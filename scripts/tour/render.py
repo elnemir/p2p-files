@@ -9,6 +9,8 @@ import re
 import shutil
 import subprocess
 
+from narrate import load_audio
+
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / '.cache/tour/raw'
 OUT = ROOT / 'wiki/tour'
@@ -76,7 +78,7 @@ def markdown(data):
              f'Съёмка: {data["recordedAt"][:10]}. Исходные скриншоты: {len(data["screens"])}; главы видео: {len(data["chapters"])}. '
              'Это настоящий интерфейс FileX в отдельном локальном Compose: вымышленные пользователи, документы и ссылки. '
              'Цель — дать новому пользователю и инженеру полный маршрут по основным разделам без запуска приложения.', '',
-             'Видеоряд записан во время действий браузера; ожидания сокращены, темп отдельных фрагментов подстроен под русскую синтезированную озвучку Milena. '
+             f'Видеоряд записан во время действий браузера; ожидания сокращены, темп отдельных фрагментов подстроен под озвучку: {data.get("narration", "macOS Milena, synthesized Russian")}. '
              'Подписи добавлены за пределами интерфейса. PNG сохранены без ретуши. Мобильные кадры — эмуляция viewport Chromium, не физические устройства.', '',
              'ZIP, QR, PDF, JSON, CSV, backup/restore, сверка и открытие доступа выполнены на стенде. '
              'S3/SMTP/webhook/миграция провайдеров/ротация/forensic показаны как формы, без внешней операции. '
@@ -114,6 +116,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ffmpeg', default=shutil.which('ffmpeg'))
     parser.add_argument('--voice', default='Milena')
+    parser.add_argument('--narration-dir', type=Path, help='Verified audio/character timings from narrate.py; rendering stays offline')
     parser.add_argument('--font', default='/System/Library/Fonts/Supplemental/Arial.ttf')
     parser.add_argument('--gallery-only', action='store_true')
     args = parser.parse_args()
@@ -123,11 +126,21 @@ def main():
         markdown(data)
         checksums()
         return
-    if not args.ffmpeg or not Path(args.ffmpeg).is_file() or not shutil.which('say'):
-        raise SystemExit('Rendering requires ffmpeg with libx264/libass and macOS say (Milena), or reuse the shipped media with --gallery-only')
+    if not args.ffmpeg or not Path(args.ffmpeg).is_file():
+        raise SystemExit('Rendering requires ffmpeg with libx264/libass')
+    if not args.narration_dir and not shutil.which('say'):
+        raise SystemExit('Provide --narration-dir or install macOS say; --gallery-only reuses shipped media')
     source = json.loads((RAW / 'capture.json').read_text())
     if not source.get('passed') or len(source['chapters']) != 19 or len(source['screens']) != 44:
         raise SystemExit('Capture is incomplete; fix the scenario before rendering')
+    external = None
+    audio_sources = {}
+    if args.narration_dir:
+        external = json.loads((args.narration_dir / 'manifest.json').read_text())
+        if external.get('schemaVersion') != 1 or external.get('provider') != 'ElevenLabs':
+            raise ValueError('Unsupported narration manifest')
+        for ch in source['chapters']:
+            audio_sources[ch['number']] = load_audio(args.narration_dir, ch, external)
     BUILD.mkdir(parents=True, exist_ok=True)
     subtitles = ['WEBVTT', '']
     metadata = [';FFMETADATA1', 'title=FileX — экскурсия по системе', 'comment=Local synthetic demo; Russian synthesized narration; edited pacing']
@@ -142,7 +155,10 @@ def main():
         if not text.exists() or text.read_text() != ch['narration']:
             text.write_text(ch['narration'])
         title.write_text(f'FileX   /   {number:02}   {ch["title"]}')
-        if not audio.exists() or audio.stat().st_mtime < text.stat().st_mtime:
+        alignment = None
+        if external:
+            audio, alignment = audio_sources[number]
+        elif not audio.exists() or audio.stat().st_mtime < text.stat().st_mtime:
             run(['say', '-v', args.voice, '-r', '176', '-f', text, '-o', audio])
         probe = subprocess.run([args.ffmpeg, '-hide_banner', '-i', str(audio)], capture_output=True, text=True)
         match = re.search(r'Duration: (\d+):(\d+):(\d+\.\d+)', probe.stderr)
@@ -155,12 +171,21 @@ def main():
         captions = chunks(ch['narration'])
         weight = sum(len(x) for x in captions)
         cursor = 0.2
+        text_cursor = 0
         ass_lines = ['[Script Info]', 'ScriptType: v4.00+', 'PlayResX: 1440', 'PlayResY: 1080',
                      '[V4+ Styles]', 'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
                      'Style: Default,Arial,22,&H00FFFFFF,&H00FFFFFF,&H00312F13,&H00312F13,0,0,0,0,100,100,0,0,1,0,0,2,32,32,9,1',
                      '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text']
         for caption in captions:
-            end = cursor + speech * len(caption) / weight
+            if alignment:
+                start_index = ch['narration'].index(caption, text_cursor)
+                text_cursor = start_index + len(caption)
+                cursor = alignment['character_start_times_seconds'][start_index]
+                end = alignment['character_end_times_seconds'][text_cursor - 1]
+                if not 0 <= cursor < end <= speech + 0.15:
+                    raise ValueError(f'Caption timing exceeds chapter {number} audio')
+            else:
+                end = cursor + speech * len(caption) / weight
             ass_lines.append(f'Dialogue: 0,{timestamp(cursor, False)},{timestamp(end, False)},Default,,0,0,0,,{caption_lines(caption)}')
             subtitles += [f'{timestamp(offset + cursor)} --> {timestamp(offset + end)}', caption, '']
             cursor = end
@@ -171,7 +196,7 @@ def main():
                    f'ass={ass},tpad=stop_mode=clone:stop_duration=2')
         run([args.ffmpeg, '-hide_banner', '-loglevel', 'error', '-y', '-ss', f'{ch["start"]:.3f}',
              '-t', f'{original:.3f}', '-i', RAW / ch['video'], '-i', audio,
-             '-vf', filters, '-af', 'apad', '-t', f'{duration:.3f}', '-c:v', 'libx264',
+             '-vf', filters, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,apad' if external else 'apad', '-t', f'{duration:.3f}', '-c:v', 'libx264',
              '-preset', 'fast', '-crf', '24', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k',
              '-ar', '48000', '-ac', '1', '-movflags', '+faststart', clip])
         clips.append(clip)
@@ -190,8 +215,12 @@ def main():
          '-c', 'copy', '-movflags', '+faststart', OUT / 'filex-tour.mp4'])
     (OUT / 'captions.ru.vtt').write_text('\n'.join(subtitles))
     public = {k: v for k, v in source.items() if k != 'chapters'}
-    public.update(chapters=chapters, duration=round(offset, 2), narration='macOS Milena, synthesized Russian',
+    narration = f'ElevenLabs {external["voiceName"].strip()}, synthesized Russian' if external else f'macOS {args.voice}, synthesized Russian'
+    public.update(chapters=chapters, duration=round(offset, 2), narration=narration,
                   recording='Real Chromium interactions, edited pace; no screenshot retouching', video='filex-tour.mp4')
+    if external:
+        public['narrationSource'] = {k: external[k] for k in ('provider', 'voiceId', 'voiceName', 'modelId', 'voiceSettings', 'planSha256', 'characters')}
+        public['captionTiming'] = 'Provider character alignment, validated against original narration and decoded audio duration'
     (OUT / 'manifest.json').write_text(json.dumps(public, ensure_ascii=False, indent=2) + '\n')
     gallery(public)
     markdown(public)
