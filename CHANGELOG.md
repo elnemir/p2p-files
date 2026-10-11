@@ -31,6 +31,7 @@
 - OpenAPI: 107 операций; traceability: 32 требования; unit/race, 36 PG integration tests, 25 browser E2E, TLS ingress и controlled upgrade drills, axe/visual и response contract validation.
 
 ### Fixed
+- ESLint 10.12.0 и @eslint/js 10.0.1 работают с JSX-a11y-x 0.2.0 без peer bypass; 31 прежнее accessibility-правило проверено behavioral fixtures. Node types обновлены до 24.19.2. CI проверяет installed peer tree, версии runtime/types/config и сроки поддержки Node 24/Redis 7.2; lint updates объединены в Dependabot group.
 - Browser fixtures подтверждают название draft в DOM, PATCH и отдельном GET до backup/publish; recovery сравнивает точные ID сохранённой и поздней передачи. Сбой ввода больше не маскируется как ошибка восстановления.
 - Публичная проверка отчёта разрешает ввод/submit после инициализации fragment ID; delayed-hydration регрессия подтверждает один рабочий клик. Recovery E2E готовит собственный CSV, а observer контрактов завершает обработку до закрытия browser context и явно фиксирует capture failures.
 - В main через PR #16 объединены восемь Dependabot обновлений: пять Actions по SHA, Alpine 3.24, Go 1.27.2 и React types 19.3.0; пять несовместимых/лицензионно не принятых обновлений учтены отдельно в wiki. Статус merge и проверок — в session.

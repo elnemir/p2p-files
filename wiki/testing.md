@@ -96,3 +96,7 @@ Traceability: FR-012 связан с delayed-hydration public-page case; OPS-003
 Клавиатурный ввод заменяет одноразовую вставку `fill` только в этом fixture. Произвольные sleeps, повторные заполнения, retries и увеличение timeout не добавлены. Любая потеря ввода останавливает сценарий до backup/publish с точной стадией ошибки. Контракты API, env, миграции и runtime UI не изменены; ограничения внешней приёмки прежние. Проверки fixture входят в существующие 25 случаев на пяти browser profiles. Исторический PASS source `8390f72c` не переносится на изменённые тесты; новая квалификация записывается в [session](session.md).
 
 Локальная квалификация fixture завершена: source `2a8380c6a3d34503a7117e842c46a0c2bb049108ff2bb8369e449146f852b8ab`, все 13 gates PASS; browser reports каждого из пяти профилей имеют expected=5, unexpected/flaky/skipped=0. Smoke performance 32 MiB / 2000 rows, не release-size. CI проверяется отдельно на точном head/merge ref PR #18.
+
+## Проверки совместимости зависимостей
+
+`repository-policy` CI и `make check` запускают `npm run check:dependencies` через repository checker и `npm run test:toolchain`. Это full installed peer tree + согласованность engine/config/types/образов + 45 behavioral/negative tests. Подробные причины, PR #9 с `npm ci` exit 0 / `npm ls` exit 1, границы API/CLI TypeScript и миграция 31 a11y правила — в [dependency remediation](dependency-remediation.md). Clean install на Node 24 обязателен; green lint на системном Node другого major не считается эквивалентной квалификацией.

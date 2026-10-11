@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-10-12",
+  "node": {
+    "major": 24,
+    "channel": "LTS",
+    "securityUntil": "2028-04-30",
+    "source": "https://github.com/nodejs/Release/blob/main/schedule.json"
+  },
+  "redis": {
+    "series": "7.2",
+    "channel": "Extended",
+    "license": "BSD-3-Clause",
+    "securityUntil": "2029-12-01",
+    "source": "https://redis.io/docs/latest/operate/oss_and_stack/install/version-mgmt/"
+  }
+}

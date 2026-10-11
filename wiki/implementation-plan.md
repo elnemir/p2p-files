@@ -12,7 +12,7 @@
 | DOC-02 | P1 / completed локально | Инженер | 44 PNG, видеотур 5:26 / 19 глав, озвучка/субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
 | REPO-01 | P1 / completed | Владелец + инженер | GitHub/main/Actions/security, templates, dependency updates и воспроизводимый audit | [Настройки и приёмка](repository-governance.md); фактическое применение/CI в session |
 | DEV-01 | P0 / ready для design | Backend + security reviewer + владелец | Reviewed механизм тестового/production допуска, затем реализация и негативные тесты | Сохранить существующий запрет; применение допуска зависит от EXT и REL |
-| DEV-02 | P1 / ready | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
+| DEV-02 | P1 / qualification | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
 | DEV-03 | P0 / ready для пакета review | Release engineer + владелец/reviewer | Состав фактической поставки, license notices/решения, текст proprietary license после решения владельца | Точные image digests/SBOM; EXT-07 закрывает решение |
 | DEV-04 | P0 / ready для design и tooling | Release engineer + оператор | Долговременное сохранение и восстановление evidence для exact candidate | Хранилище выбирает оператор; независимость от 14-дневных CI artifacts |
 | DEV-05 | P1 / ready | Frontend + QA | Явное терминальное состояние страницы получателя после завершения всей передачи | Наблюдение при скрин-туре; сохранить общий privacy-safe отказ и server completion |
@@ -35,7 +35,7 @@
 
 ## DEV-02: сопровождение toolchain и образов
 
-**Проблема:** lockfile помечает ESLint 9.39.5 unsupported; JSX-a11y 6.10.2 ограничивает peer compatibility. Actions обновляются с сохранением SHA pins; runtime образов и scanners требует повторных scans при advisories. В объединении [PR #16](https://github.com/elnemir/p2p-files/pull/16) 2026-10-11 включены пять Actions updates, Alpine 3.24, Go 1.27.2 и React types 19.3.0; [таблица PR, blockers и статус](branch-consolidation.md). Node 25 EOL, types Node 26 и ESLint 10 не включены; Redis 8 требует отдельного лицензионного решения. DEV-02 не закрывается переносом восьми patches.
+**Исходная проблема:** ESLint 9.39.5 был unsupported; JSX-a11y 6.10.2 ограничивал peer compatibility. Actions обновляются с сохранением SHA pins; runtime образов и scanners требует повторных scans при advisories. В объединении [PR #16](https://github.com/elnemir/p2p-files/pull/16) 2026-10-11 включены пять Actions updates, Alpine 3.24, Go 1.27.2 и React types 19.3.0; [таблица PR, blockers и статус](branch-consolidation.md). В PR #16 Node 25 EOL, types Node 26 и ESLint 10 не включались; Redis 8 требует отдельного лицензионного решения. DEV-02 не закрывается переносом восьми patches. Продолжение 2026-10-12: [совместимый ESLint 10, a11y migration, Node types и dependency guards](dependency-remediation.md) реализованы; кандидат проходит полную квалификацию.
 
 **Работа:** проверить совместимую комбинацию по первичным release/peer данным на момент исполнения; обновлять небольшими срезами, не использовать force/legacy-peer-deps. Для Actions проверить permissions, full Git history, runtime и artifact retention. Для пяти images сохранить pins, non-root/read-only/network policy и scanner fail-closed.
 

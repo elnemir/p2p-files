@@ -23,6 +23,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: node scripts/check_repository.mjs
+      - run: npm run test:toolchain
       - run: python3 scripts/security_tools.py actionlint -color
       - run: python3 -m unittest discover -s scripts -p test_github_repository.py
   checks:

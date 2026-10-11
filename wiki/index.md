@@ -12,7 +12,7 @@ FileX — приватная передача файлов: владелец п�
 4. [Локальный запуск](development.md), [карта репозитория](repository-map.md), [правила выполнения задачи](development-workflow.md).
 5. [Конфигурация и ограничения](configuration.md), [проверки](testing.md), [генерируемая матрица](test-matrix.md).
 6. [Скрин-тур и видеотур по системе](screen-tour.md), [интерактивная галерея](tour/index.html), [как обновлять запись](tour-maintenance.md).
-7. [Настройки GitHub, защита main, CI/security и шаблоны](repository-governance.md), [учёт объединения веток и блокеров](branch-consolidation.md).
+7. [Настройки GitHub, защита main, CI/security и шаблоны](repository-governance.md), [учёт объединения веток и блокеров](branch-consolidation.md), [устранение причин Dependabot PR](dependency-remediation.md).
 
 Фазы 1–6 реализованы; технический набор проверок фазы 7 выполнен для кандидата `7dce226`. Выпуск ещё не принят: 27 из 32 MUST имеют локальный статус verified, 5 partial; 14 внешних решений pending. Окружение не подготовлено по подтверждению владельца. `APP_ENV=production` отклоняется кодом; зелёный CI не снимает эту блокировку.
 

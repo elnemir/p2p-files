@@ -10,6 +10,7 @@ check: lint test-race docs-check repository-check contracts build
 .PHONY: repository-check
 repository-check:
 	node scripts/check_repository.mjs
+	npm run test:toolchain
 	python3 -m unittest discover -s scripts -p test_github_repository.py
 lint:
 	@test -z "$$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)

@@ -8,6 +8,10 @@
 
 Наблюдение тура DEV-05: после полного ZIP сервер переводит передачу в completed и отклоняет recipient API, но refresh уже открытой страницы может оставить устаревший ready-список рядом с общим сообщением об отказе. Исправление клиентского терминального состояния описано в [плане](implementation-plan.md); серверная защита повторной выдачи действует.
 
+## Дополнение 2026-10-12: Dependabot
+
+Подготовлен поддерживаемый ESLint 10 / JSX-a11y-x с сохранением 31 a11y правила, Node types 24.19.2, strict install и проверки peer tree/runtime support. Реальные runtime — Node 24.21.0 LTS, Redis 7.2.16 Extended BSD. Обоснование решений по пяти PR, сроки поддержки и текущая квалификация — [dependency remediation](dependency-remediation.md), [session](session.md). Измерения 2026-10-11 ниже остаются историческими; их счётчики не переносятся автоматически на новый lockfile.
+
 ## Реализовано
 
 - Платформа, identity/USER/ADMIN/scopes, настройки, audit, tus/дерево/publish, Local/S3, одноразовая Range/ZIP выдача, freeze/forensic, crypto/rotation.
@@ -49,7 +53,7 @@ ID задач раскрыты в [implementation plan](implementation-plan.md);
 
 **Добавлено:** карта компонентов, конфигурационный справочник, developer workflow, план задач с зависимостями, внешняя acceptance matrix и шаблоны записи результатов. Продуктовые требования и runtime поведение не расширялись.
 
-**Требует доработки:** reviewed механизм production допуска, сопровождение ESLint/CI/image pins, решение лицензирования и сохранение release evidence вне 14-дневных CI artifacts. Это backlog, не скрытая реализация.
+**Требует доработки:** reviewed механизм production допуска, последующее сопровождение CI/image pins, решение лицензирования и сохранение release evidence вне 14-дневных CI artifacts. Это backlog, не скрытая реализация.
 
 ## Блокеры и ограничения
 
