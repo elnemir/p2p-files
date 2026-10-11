@@ -1,2 +1,4 @@
 import FileX from "../../components/FileX";
-export default function Page(){return <FileX mode="verify"/>;}
+export default function Page() {
+  return <FileX mode="verify" />;
+}

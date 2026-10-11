@@ -33,3 +33,10 @@ Network settings используют прежние draft/validate/CAS/audit в
 
 ## Review controlled upgrade
 [ADR-008](adr/008-controlled-upgrade.md) сохраняет existing gate, runtime/runner locks и audit. Startup и preflight должны одинаково отвергать неизвестную/повреждённую/неполную историю migrations. Pending DDL требует closed gate и exclusive runtime lock; bootstrap не удерживает shared lock при ожидании exclusive. Drain меняет generation и не открывает сервис при timeout. Backup остаётся явным operator step до миграций; ciphertext/key formats и обязательный pre-restore backup не меняются. Downgrade после DDL не предполагается безопасным. Реализация и evidence текущего шага проверяются отдельно в session.
+
+## Review технического завершения фазы 7
+[ADR-009](adr/009-release-evidence.md) описывает source-bound gates и отдельные решения владельца. Staticcheck/ESLint/strict types не меняют HTTP schemas; типы UI генерируются из существующего OpenAPI. Reconciliation acknowledgement связан с ID просмотренного report. Skip link получает фокусируемый main. Контрактный comparator отклоняет изменения существующих schema/operation относительно baseline f68fc08.
+
+Container review проверяет фактический image ID, а не название upstream tag. Web runtime не содержит npm/yarn; PostgreSQL entrypoints используют su-exec вместо старого gosu; Redis OS libraries и Traefik Go/x/net обновлены. В scanner allowlist разрешён лишь точный публичный crypto test vector. Сканирование не отключает unfixed findings. Собственные TLS S3 и fault/load fixtures не попадают в runtime images; они не являются production implementations.
+
+Release readiness закрыт при отсутствующем/устаревшем/failed evidence, неполной browser matrix, отсутствии multi-GB/large-export профиля, неполной traceability или отсутствующих human decisions. Скрипт не подтверждает подлинность решения аудитора, не заменяет независимый review и не выполняет publish/deploy. Production startup guard сохранён. Решение владельца от 2026-10-11: внешнее окружение не подготовлено, соответствующие блокеры остаются открытыми.

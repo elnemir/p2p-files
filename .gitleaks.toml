@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Published deterministic FXP1 test vector; never a runtime credential"
+condition = "AND"
+paths = ['''(^|/)internal/cryptobox/testdata/payload-v1\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"fileKey": "f477562198cdd503e8d8b0c1f537c1c0b2cec2e9d0444d30f2507846f916b5f3",?$''']

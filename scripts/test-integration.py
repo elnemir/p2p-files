@@ -16,7 +16,8 @@ def docker(*args, **kwargs):
     return subprocess.run(['docker', *args], check=True, text=True, **kwargs)
 started = False
 try:
-    docker('run','--detach','--rm','--name',name,'--label','com.filex.purpose=integration','--publish','127.0.0.1::5432','--env','POSTGRES_PASSWORD','--env','POSTGRES_DB=filex_test','postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873',env=env,stdout=subprocess.DEVNULL)
+    docker('build','--file',str(root/'deploy/Dockerfile.postgres'),'--tag',name,str(root),stdout=subprocess.DEVNULL)
+    docker('run','--detach','--rm','--name',name,'--label','com.filex.purpose=integration','--publish','127.0.0.1::5432','--env','POSTGRES_PASSWORD','--env','POSTGRES_DB=filex_test',name,env=env,stdout=subprocess.DEVNULL)
     started = True
     for attempt in range(60):
         ready = subprocess.run(['docker','exec',name,'pg_isready','-U','postgres','-d','filex_test'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)

@@ -2,43 +2,71 @@ name: development-checks
 on:
   push:
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   checks:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
-        env:
-          POSTGRES_PASSWORD: local-ci-only
-          POSTGRES_DB: filex_test
-        ports: [5432:5432]
-        options: >-
-          --health-cmd "pg_isready -U postgres -d filex_test"
-          --health-interval 3s --health-timeout 3s --health-retries 20
+    timeout-minutes: 45
     env:
-      FILEX_TEST_DATABASE_URL: postgres://postgres:local-ci-only@localhost:5432/filex_test?sslmode=disable
       NEXT_TELEMETRY_DISABLED: '1'
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/browsers
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
           cache: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: make check
-      - run: make test-integration
-      - run: make security
-      - run: npx playwright install --with-deps chromium
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/browsers
-      - run: make e2e
-      - run: make ingress
-      - run: make upgrade-drill
+      - run: python3 scripts/acceptance.py run check
+      - run: python3 scripts/acceptance.py run compatibility
+      - run: python3 scripts/acceptance.py run integration
+      - run: python3 scripts/acceptance.py run dependencies
+      - run: python3 scripts/acceptance.py run fuzz
+      - run: python3 scripts/acceptance.py run browser
+      - run: python3 scripts/acceptance.py run ingress
+      - run: python3 scripts/acceptance.py run upgrade
+      - run: python3 scripts/acceptance.py run performance
+      - run: python3 scripts/acceptance.py run verifier
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: functional-evidence-${{ github.sha }}
+          path: .cache/evidence/
+          include-hidden-files: true
+          retention-days: 14
+  supply-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: python3 scripts/acceptance.py run source
+      - run: python3 scripts/acceptance.py run licenses
+      - run: python3 scripts/acceptance.py run images
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: supply-chain-evidence-${{ github.sha }}
+          path: .cache/evidence/
+          include-hidden-files: true
+          retention-days: 14

@@ -1,0 +1,2 @@
+FROM redis:7.2-alpine@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0
+RUN apk add --no-cache libcrypto3=3.3.7-r2 libssl3=3.3.7-r2 zlib=1.3.2-r1

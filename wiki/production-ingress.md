@@ -33,7 +33,7 @@
 `settings show` и `config ingress-check` только читают БД, не применяют migrations. Последняя команда проверяет requireProxy/requireHttps/HTTPS origin и возвращает `ingressConfigured=true` вместе с `productionReleaseApproved=false`; DNS, сертификат, доступность provider и разрешение запуска она не подтверждает. Для исправления неверного trustedProxy/origin используется полный settings apply с host, а не ослабляющий reset.
 
 ## Генерация конфигурации
-`scripts/production_config.py` использует стандартную библиотеку Python. Команда создаёт новый каталог и отказывается перезаписывать существующий. Images API/web должны иметь `@sha256:…`; базовые PG/Redis/Traefik pins берутся из существующего development Compose.
+`scripts/production_config.py` использует стандартную библиотеку Python. Команда создаёт новый каталог и отказывается перезаписывать существующий. Все пять images должны иметь `@sha256:…` и происходить из просканированных Dockerfiles этого repository. Upstream PostgreSQL/Redis/Traefik содержали HIGH/CRITICAL findings; автоматически подставлять их вместо исправленных сборок нельзя. См. [release engineering](release-engineering.md).
 
 ```sh
 python3 scripts/production_config.py \
@@ -41,6 +41,9 @@ python3 scripts/production_config.py \
   --subnet 172.30.90.0/29 \
   --api-image registry.example.com/filex-api@sha256:<64-hex-digest> \
   --web-image registry.example.com/filex-web@sha256:<64-hex-digest> \
+  --postgres-image registry.example.test/filex-postgres@sha256:<verified-digest> \
+  --redis-image registry.example.test/filex-redis@sha256:<verified-digest> \
+  --traefik-image registry.example.test/filex-traefik@sha256:<verified-digest> \
   --output .cache/production-config
 ```
 

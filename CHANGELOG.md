@@ -2,9 +2,14 @@
 
 Опубликованных releases пока нет. Формат Keep a Changelog.
 
-## Unreleased — этапы 1–6 и начало фазы 7
+## Unreleased — этапы 1–6 и техническая реализация фазы 7
 
 ### Added
+- Staticcheck, ESLint/hooks/JSX-a11y, Prettier и generated OpenAPI UI types; conservative breaking diff для OpenAPI/AsyncAPI/JSON Schemas.
+- Pinned Trivy/Gitleaks, source/history/worktree/container scans, CycloneDX SBOM и third-party license inventory с отдельным owner review.
+- Пять browser/device profiles в pinned Linux container, 25 E2E scenarios, reviewed visual baselines, keyboard/error/320px/theme checks и bounded fuzz campaigns.
+- Multi-GB tus/Local→TLS S3/rotation/Redis-loss concurrency, large-export SIGKILL/retry/VACUUM, backup/restore/reconcile/reopen/ZIP hash performance harness.
+- Source-bound release evidence, fail-closed readiness, пять cross-built verifier targets/checksums и unpublished release review bundle.
 - Фаза 7.1: audited host upgrade prepare, generation/drain, отдельный controlled image replacement/downtime drill с verified backup, startup faults и explicit reopen.
 - Фаза 7.1: trusted proxy/CIDR network policy в PG settings, effective IP для login rate limit, runtime fencing и host reset при ошибочной сетевой конфигурации.
 - Генератор HTTPS/ACME Compose с immutable images, non-root/private networks и isolated TLS acceptance harness; production startup guard сохранён.
@@ -22,6 +27,8 @@
 - OpenAPI: 107 операций; traceability: 32 требования; unit/race, 36 PG integration tests, 3 Chromium E2E, TLS ingress и controlled upgrade drills, axe/visual и response contract validation.
 
 ### Fixed
+- Vulnerable npm tooling удалён из web runtime; PostgreSQL gosu заменён su-exec; исправлены zlib/nghttp2/OpenSSL и Go/x/net в инфраструктурных images. Generator требует пять проверенных immutable digests.
+- Skip link переводит keyboard focus в main; UI использует точные типы API и привязывает recovery acknowledgement к просмотренному report.
 - Startup и read-only preflight используют strict непрерывный migration prefix; unknown/checksum/hole отклоняются до SQL. Pending DDL требует closed gate/exclusive runtime lock и атомарно инвалидирует прежнюю generation/reconciliation; bootstrap не удерживает shared lock при ожидании exclusive.
 - Повторяющиеся test IDs OPS-005 устранены; docs gate проверяет уникальность всех traceability test IDs.
 - Restore ждёт завершения старых writers, не откатывает KEK usage reservations и отклоняет параллельный import; устаревшая reconciliation не разрешает reopen.
@@ -35,5 +42,5 @@
 - Documentation inconsistencies in requirement mapping, restore override, initial scaffold status and implemented contracts.
 
 ### Remaining
-- Фаза 7: production TLS/ACME/trusted proxy/CIDR, DR/load/security/SBOM/license/container/secret и полная browser/WCAG приёмка. Production bootstrap по-прежнему отклоняется.
+- Внешнее окружение не подготовлено (решение владельца 2026-10-11): real host/DNS/ACME/SMTP/S3/backups/KEK/checkpoints и target load/DR acceptance заблокированы. Реальные browser/device/assistive-technology, независимый review, лицензии и R-01–06 остаются открытыми. Production bootstrap отклоняется.
 - Local fixtures не доказывают совместимость реальных SMTP/S3 accounts. CI этапов 1–6 подтверждён; отдельный статус текущих изменений фазы 7 — в session. Production deployment не выполнялся, residual risks не приняты. См. [development](wiki/development.md) и [session](wiki/session.md).

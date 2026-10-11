@@ -9,14 +9,25 @@
     "contracts": "node scripts/check_contracts.mjs",
     "test:contracts": "node --test scripts/contracts.test.mjs",
     "typecheck": "npm run typecheck --workspace @filex/web",
-    "build": "npm run build --workspace @filex/web"
+    "build": "npm run build --workspace @filex/web",
+    "lint": "eslint apps/web --max-warnings 0",
+    "format:check": "prettier --check \"apps/web/**/*.{ts,tsx,css}\"",
+    "generate:types": "node scripts/check_generated_types.mjs --write",
+    "check:types": "node scripts/check_generated_types.mjs"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",
     "@asyncapi/parser": "3.6.3",
     "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "9.39.5",
     "@playwright/test": "^1.64.0",
     "ajv": "8.20.0",
-    "ajv-formats": "3.0.1"
+    "ajv-formats": "3.0.1",
+    "eslint": "9.39.5",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "openapi-typescript": "7.13.0",
+    "prettier": "3.9.10",
+    "typescript-eslint": "8.71.1"
   }
 }

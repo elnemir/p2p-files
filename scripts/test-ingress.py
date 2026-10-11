@@ -65,14 +65,15 @@ def test_generated_tls_ingress():
                 break
         if subnet is None:
             raise RuntimeError('no non-overlapping test subnet found')
-        config = configuration(DOMAIN, 'operator@example.test', subnet, 'example.test/api@sha256:' + 'a' * 64, 'example.test/web@sha256:' + 'b' * 64)
+        config = configuration(DOMAIN, 'operator@example.test', subnet, 'example.test/api@sha256:' + 'a' * 64, 'example.test/web@sha256:' + 'b' * 64, *['example.test/'+name+'@sha256:'+'c'*64 for name in ['postgres','redis','traefik']])
         compose = config['compose.json']
         compose['name'] = PROJECT
-        for name in ['api', 'worker', 'web']:
+        for name in ['api', 'worker', 'web', 'postgres', 'redis', 'traefik']:
             service = compose['services'][name]
-            service['image'] = PROJECT + ('-web' if name == 'web' else '-api')
-            service['build'] = {'context': str(ROOT), 'dockerfile': 'deploy/Dockerfile.web' if name == 'web' else 'deploy/Dockerfile.api'}
-            if name != 'web':
+            image_name = 'api' if name == 'worker' else name
+            service['image'] = PROJECT + '-' + image_name
+            service['build'] = {'context': str(ROOT), 'dockerfile': 'deploy/Dockerfile.'+image_name}
+            if name in ['api','worker']:
                 service['environment']['APP_ENV'] = 'development'
         compose['services']['api']['environment'].update({'DEV_PAYLOAD_ROOT': '/data/payload', 'DEV_ARTIFACT_ROOT': '/data/artifacts', 'DEV_BACKUP_ROOT': '/data/backups'})
         for service in compose['services'].values():

@@ -7,7 +7,7 @@ from production_config import configuration, write_configuration
 
 class ProductionConfigurationTest(unittest.TestCase):
     def args(self):
-        return dict(domain='files.example.test', email='operator@example.test', subnet='172.30.90.0/29', api_image='registry.example.test/filex-api@sha256:' + 'a' * 64, web_image='registry.example.test/filex-web@sha256:' + 'b' * 64)
+        return dict(domain='files.example.test', email='operator@example.test', subnet='172.30.90.0/29', api_image='registry.example.test/filex-api@sha256:' + 'a' * 64, web_image='registry.example.test/filex-web@sha256:' + 'b' * 64, **{name+'_image':'registry.example.test/filex-'+name+'@sha256:'+'c'*64 for name in ['postgres','redis','traefik']})
 
     def test_rejects_unsafe_configuration(self):
         for key, value in [('domain', 'files.example.test` || PathPrefix(`/`)'), ('domain', '127.0.0.1'), ('email', 'bad'), ('subnet', '0.0.0.0/0'), ('subnet', '203.0.113.0/24'), ('subnet', '172.30.90.1/29'), ('api_image', 'filex:latest')]:

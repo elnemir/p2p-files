@@ -6,12 +6,17 @@ const config: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: [
-      { key: "Referrer-Policy", value: "no-referrer" },
-      { key: "X-Content-Type-Options", value: "nosniff" },
-      { key: "X-Frame-Options", value: "DENY" },
-      { key: "Cache-Control", value: "no-store" },
-    ] }];
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+    ];
   },
 };
 export default config;

@@ -2,23 +2,31 @@ SHELL := /bin/sh
 export GOMODCACHE := $(CURDIR)/.cache/gomod
 export GOCACHE := $(CURDIR)/.cache/go-build
 export NEXT_TELEMETRY_DISABLED := 1
+export STATICCHECK_CACHE := $(CURDIR)/.cache/staticcheck
 
-.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress upgrade-drill
+.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress upgrade-drill fuzz performance supply-chain release-check
 check: lint test-race docs-check contracts build
 lint:
 	@test -z "$$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
 	go vet ./...
+	go tool staticcheck ./...
 	npm run typecheck
+	npm run lint
+	npm run format:check
 
 test:
 	go test ./...
 	npm run test:contracts
 	python3 scripts/test_production_config.py
+	python3 scripts/test_contract_compatibility.py
+	python3 scripts/test_acceptance.py
 
 test-race:
 	go test -race ./...
 	npm run test:contracts
 	python3 scripts/test_production_config.py
+	python3 scripts/test_contract_compatibility.py
+	python3 scripts/test_acceptance.py
 
 test-integration:
 	@test -n "$$FILEX_TEST_DATABASE_URL" || (echo 'FILEX_TEST_DATABASE_URL is required; use make integration-docker for an isolated database'; exit 1)
@@ -30,6 +38,7 @@ integration-docker:
 contracts:
 	python3 scripts/build_contracts.py --check
 	npm run contracts
+	npm run check:types
 
 docs-check:
 	python3 scripts/check_docs.py
@@ -48,7 +57,7 @@ migrate:
 	go run ./cmd/filex-cli migrate
 
 security:
-	npm audit --omit=dev --audit-level=high
+	npm audit --audit-level=high
 	go tool govulncheck ./...
 
 e2e:
@@ -59,3 +68,17 @@ ingress:
 
 upgrade-drill:
 	python3 scripts/test-upgrade.py
+
+fuzz:
+	python3 scripts/test-fuzz.py
+
+performance:
+	python3 scripts/test-performance.py
+
+supply-chain:
+	python3 scripts/supply_chain.py source
+	python3 scripts/supply_chain.py licenses
+	python3 scripts/supply_chain.py images
+
+release-check:
+	python3 scripts/acceptance.py readiness

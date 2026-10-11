@@ -8,7 +8,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   await headers();
-  return <html lang="ru"><body><a className="skip-link" href="#main">К содержимому</a>{children}</body></html>;
+  return (
+    <html lang="ru">
+      <body>
+        <a className="skip-link" href="#main">
+          К содержимому
+        </a>
+        {children}
+      </body>
+    </html>
+  );
 }

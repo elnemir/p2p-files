@@ -261,7 +261,6 @@ func (a *App) publish(w http.ResponseWriter, r *http.Request, p auth.Principal, 
 	}
 	type prepared struct {
 		id, email, hash, token string
-		envelope               []byte
 	}
 	preparedLinks := []prepared{}
 	seen := map[string]bool{}

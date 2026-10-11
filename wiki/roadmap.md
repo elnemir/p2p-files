@@ -16,12 +16,16 @@
 | 4. Коммуникации | SMTP TLS/templates/outbox, HMAC webhooks, retry/DLQ, WS+poll, preferences/digest/quiet hours | TLS fixture delivery and certificate rejection, SSRF/replay transaction, delivery faults, session revocation/privacy. |
 | 5. Отчёты | Immutable PDF/CSV/JSON snapshots, three hashes, public verify/trash, export jobs, credentials, saved views/bulk, encrypted QR | Snapshot/retry/privacy/Range/authorization/invalidation tests, browser PDF/JSON/CSV, visual inspection. |
 | 6. Эксплуатация | BackupProvider, encrypted backup, mandatory pre-restore backup, reconciliation, reopen gate, KEK recovery/rewrap, incidents/checkpoints, schedules/metrics, expanded CLI и ADMIN exports | **Закрыта локально:** 8 новых PG/race drills, archive tamper/Local/S3 unit tests, Chromium backup→restore→restart→reauth→reconcile→reopen, PDF/mobile visual, contracts/build/security. |
-| 7. Приёмка | Production TLS/ACME, performance/DR/security, browser matrix, accessibility acceptance, SBOM/license/container/secret scans | Все MUST с release evidence, residual risks приняты владельцем, нет critical/high. **В работе: начат 7.1, HTTPS/proxy/CIDR и локальная приёмка. Не закрыта.** |
+| 7. Приёмка | Production TLS/ACME, performance/DR/security, browser matrix, accessibility acceptance, SBOM/license/container/secret scans | Все MUST с release evidence, residual risks приняты владельцем, нет critical/high. **Техническая реализация завершена; 13 local gates PASS, evidence — в session. Внешняя приёмка заблокирована отсутствием окружения и независимых решений.** |
 
 Итог текущего прогона: [session](session.md). Доказательства и ограничения: [development](development.md), устройство восстановления: [runbook](operations-recovery.md). В [матрице](../docs/test-matrix.md) 27 `verified` по локальным тестам и 5 `partial` с оставшимся scope фазы 7. Ни одно требование не исключено.
 
-## Порядок продолжения
-Фаза 7.1 включает [HTTPS/proxy/CIDR и host reset](production-ingress.md) и [controlled upgrade/downtime](controlled-upgrade.md); результаты локальных проверок/CI — в session. Реальная ACME/DNS/host приёмка остаётся открытой. Следующий локальный срез 7.2 — static analysis, SBOM/license/container/secret evidence, затем browser/a11y/load/DR. Фаза 7.3 — release review и явное рассмотрение residual risks владельцем. Реальный deployment требует отдельной команды пользователя.
+## Фаза 7: выполненная разработка и продолжение
+- **7.1:** [HTTPS/proxy/CIDR/host reset](production-ingress.md) и [controlled upgrade/downtime](controlled-upgrade.md) реализованы и локально проверены.
+- **7.2:** [release engineering](release-engineering.md): static analysis/generated types, source/container/secret/license/SBOM, browser matrix/visual/axe, fuzz, bounded multi-GB/export/fault/DR, compatibility и CLI verifier review bundle реализованы. Все 13 local gates PASS; измерения и source hash указаны в session.
+- **7.3:** fail-closed `make release-check`, review inventory, [release notes](../docs/release-notes.md) и 14 внешних decision records подготовлены. Независимая приёмка остаётся открытой.
+
+Владелец подтвердил 2026-10-11: окружение не подготовлено. Следующее внешнее действие — подготовить VPS/домен, SMTP/S3, backup storage, независимое хранение KEK/checkpoints. Затем выполнить target load/DR/ACME/host/device/assistive-technology acceptance, независимый security review и owner review лицензий/R-01–06. Production deployment требует отдельной команды. Отсутствие окружения не превращает требования в исключения.
 
 ## Принцип закрытия
 Фаза закрывается при реализации вертикального сценария, зелёных относящихся к нему проверках и синхронных wiki/contracts/changelog. Наличие файлов, успешная компиляция или пропущенные integration tests не являются доказательством. Ни ограничения env, ни открытые release risks нельзя скрывать отметкой «готово».

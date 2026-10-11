@@ -1,65 +1,63 @@
 # Session State
 
 ## Task
-Продолжить фазу 7.1: реализовать controlled upgrade/downtime drill после опубликованного HTTPS/network-policy среза. Проверить migration compatibility на startup, drain старого поколения, сохранность данных и явное reopening. Production deployment не запрошен.
+Полностью реализовать технический объём фазы 7 FileX: static analysis, source/container/secret/license/SBOM, browser/mobile/visual/a11y, fuzz/load/DR, contract compatibility и release evidence. Сохранить обязательную независимую и инфраструктурную приёмку.
 
 ## Status
-Срез controlled upgrade завершён локально: [ADR-008](adr/008-controlled-upgrade.md), [runbook](controlled-upgrade.md). Реализованы общий strict migration plan, startup rejection unknown/checksum/hole, exclusive pending DDL и host upgrade prepare с generation/drain. PASS: make check/security, 36 PG/race tests, 3 Chromium scenarios, TLS и upgrade drills. Реальный SQL prefix 15→16 и rollback проверены отдельно от same-schema Compose replacement. Fixture window 6.489 s, sampled unavailable 5.878 s (29 samples), не SLA/RTO. Commit `dda45876817cf9e91383b1e531ca915b7f0d5426` отправлен в origin/main, SHA подтверждён. [CI #38135958275](https://github.com/elnemir/p2p-files/actions/runs/38135958275) — completed/success: check/build, PG, security, Chromium, TLS и controlled upgrade. Remote fixture проверил exact clean candidate dda4587; window 6.251 s, sampled unavailable 5.542 s (28 samples). Это evidence implementation commit; последующая публикация этого журнала меняет только документацию. Исторические результаты ниже относятся к опубликованным commits.
+2026-10-11: техническая реализация фазы 7 завершена, все 13 local source-bound gates PASS. Внешняя release приёмка остаётся заблокированной. Исходная точка — clean main `f68fc08bb795ae1903333336efe4620ce76cb4ec`. Текущие изменения ещё не опубликованы. Production deployment не выполнялся; `APP_ENV=production` отклоняется.
 
-**Фазы 1–6 закрыты по локальным development gates.** Фаза 6 реализована и проверена; документация, миграции, контракты и traceability обновлены. В матрице 27 verified/5 partial/0 planned, все 32 MUST сохранены. Оставшиеся partial относятся к release acceptance фазы 7. `APP_ENV=production` по-прежнему отклоняется.
-
-Фаза 6 опубликована коммитом `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` в origin/main; SHA подтверждён. [CI #38131827674](https://github.com/elnemir/p2p-files/actions/runs/38131827674) — success, включая build/PG/security/Chromium E2E. Первый срез фазы 7 (HTTPS ingress/network policy) реализован, прошёл локальные gates и опубликован отдельным коммитом `50de642f2bf9e2c58e5e3ae0e92f92903cfa634e`; SHA origin/main подтверждён после push. Его [CI #38133772690](https://github.com/elnemir/p2p-files/actions/runs/38133772690) — completed/success, включая новый TLS ingress gate. Этот результат относится к указанному implementation commit; последующая фиксация publication evidence меняет только документацию. Вся фаза 7 остаётся открытой. Предыдущие этапы 1–5 опубликованы как `3af2f0c` (`feat: implement FileX development phases 1-5`), publication evidence — `703c2ea`. Их [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) прошёл; это исторический CI, не проверка текущего diff. Production deployment не выполнялся.
+Владелец подтвердил: **«Окружение ещё не подготовлено; зафиксировать внешние блокеры»**. VPS/домен, SMTP/S3, внешние backups/KEK/checkpoints и target load/DR заблокированы подготовкой окружения. Это не waiver требований. R-01–06 и third-party licenses не приняты.
 
 ## Completed steps
-- Controlled upgrade: host prepare без migrations; reason/queued-job/stale-runtime guards, audited generation/drain и timeout fail closed. Startup требует strict prefix; pending DDL выполняется под exclusive lock и атомарно меняет generation/reconciliation. CLI/ADR/runbook/state machine/traceability синхронизированы. Duplicate test IDs OPS-005 исправлены; docs gate проверяет уникальность.
-- Полная регрессия upgrade среза: 36 PG/race (2 database/29 HTTP/5 repository, 5.700/104.576/4.247 s), 3 Chromium (28.6 s), make check (46 Markdown/32 MUST/107 API operations), security, TLS и image upgrade PASS. Все disposable projects удалены. Evidence `.cache/evidence/phase7-upgrade-*`, точные границы — [development](development.md).
-- Восстановлены правила и контекст wiki/requirements, проведены architecture/crypto review, зафиксирован [ADR-006](adr/006-operations-recovery.md).
-- Реализованы отдельный encrypted BackupProvider Local/S3, bounded logical PostgreSQL archive, descriptor-last/readback verification и импорт backup catalog для новой БД.
-- Restore закрывает durable gate, дожидается старых writers, создаёт обязательный проверенный pre-backup, атомарно импортирует application rows и сохраняет неоткатываемый `ops_*` control plane. Ошибка import откатывает данные, но не KEK usage reservations.
-- Session/credential/lease invalidation, новая runtime generation, отмена незавершённых upload/export/delivery и pause maintenance jobs запрещают старому процессу продолжить выдачу после restore.
-- Reconciliation проверяет audit/crypto, SHA/AEAD файлов и artifacts, inventory/orphans и resurrected capabilities. Reopen привязан к текущему report/hash/generation/возрасту и явному подтверждению ADMIN; revoke capabilities инвалидирует предыдущий отчёт.
-- KEK rewrap сохраняет plaintext audit identity; fresh-instance recovery требует новый master KEK и historical recoveryKEK через stdin. Восстановленные non-signing class DEKs получают exhausted budget, новые записи используют свежие ключи.
-- Incidents имеют immutable encrypted JSON revisions/PDF, HMAC checkpoints обоих журналов сохраняют historical evidence. Critical containment коммитится до попытки report encryption.
-- Добавлены private ADMIN operations UI, schedules/alerts, aggregate internal metrics, host CLI recovery/backup/keys/incidents/checkpoints/completion и read-only upgrade check.
-- Отдельные ADMIN export credentials/TTL требуют reason/audit и current role/reauth при каждом Range guard, не уведомляют USER и не воскрешают истёкший artifact.
-- Migrations 0014–0016, 107 OpenAPI operations, request/response schemas и traceability синхронизированы. Operational reason принимает 5…2000 Unicode-символов; расписание — 0 либо 60…2592000 секунд.
-- `make check` PASS: gofmt/vet, TS strict, unit/race, 4 contract tests, 42 Markdown/32 requirements, contracts validation, Go и Next.js build. Последний лог `.cache/evidence/phase6-check.log`.
-- Полный PG/race suite PASS: 26 HTTP + 5 repository tests (89.4/3.4 s). После crypto-health изменения повторены все 8 phase-6 tests (38.0 s); последний targeted run recovery/ADMIN exports PASS (12.6 s), `.cache/evidence/phase6-final-pg.log`.
-- Chromium E2E PASS: 3 scenarios (29.1 s), включая backup→restore/pre-backup→restart→reauth→reconciliation→explicit reopen→checkpoint→schedule→ADMIN export/TTL. На проверенных страницах 0 axe violations/overflow/response contract failures.
-- Security PASS: npm production vulnerabilities 0; govulncheck affected packages/symbols 0. Есть module-only GO-2026-5932 в неимпортируемом x/crypto/openpgp; это не reachable finding и не повод заявлять отсутствие всех advisories.
-- Security incident PDF и mobile restore/reopened screenshots 390px просмотрены; clipping/overflow не обнаружены. Scoped fixtures удалили свои контейнеры и volumes; secrets/caches/traces не добавлялись в Git.
+- Прочитаны AGENTS/wiki/MEMORY/requirements/architecture/decisions/implementation plan; сохранены PostgreSQL authoritative, Redis ephemeral, immutable publish, one-time/ZIP atomicity, privacy, crypto и restore fencing. HTTP v1, 16 migrations и crypto/backup formats сохранены.
+- Добавлены staticcheck, ESLint/hooks/JSX-a11y, Prettier и генерируемые OpenAPI UI types. Убраны общие `any` модели UI, подтверждение reconciliation привязано к report ID, skip link переводит focus в main.
+- Trivy/Gitleaks pinned по archive SHA-256. Source/history/worktree scans, пять runtime image scans, CycloneDX и license inventory реализованы. Первоначальные HIGH/CRITICAL исправлены: web npm tooling, PG gosu, Redis OpenSSL, Traefik Go/x/net; также zlib/nghttp2. Последний image scan: 0 HIGH/CRITICAL во всех пяти images. Module-only UNKNOWN openpgp advisory остаётся видимым; reachability приложения проверяется отдельно.
+- Production generator требует пять immutable digests проверенных images. Самостоятельный production запуск по-прежнему запрещён.
+- License inventory: 443 npm entries, 24 runtime Go libraries, bundled font SHA; 16 entries требуют owner review. Конкретные позиции и ограничения — [third-party review](../docs/third-party-review.md).
+- Все 25 E2E scenarios прошли в pinned Linux Chromium/Firefox/WebKit/mobile Chromium/mobile WebKit. Просмотрены light/dark/desktop/mobile/long filename/recovery screenshots, сохранены 10 visual baselines. Финальный gate без baseline updates PASS: 25 passed, 0 skipped/failed/flaky; 59.3/100.8/78.5/59.8/123.3 s по пяти профилям. Native macOS Firefox не стартовал из-за profile error; локальная и CI matrix унифицирована Linux browser container без Docker socket.
+- Реальные fuzz campaigns PathKey/FXP1 authentication/Range завершались успешно; финальный проход PASS на текущем source hash (три кампании по 15 s плюс время компиляции). Compatibility tests отклоняют schema/operation/file removal и literal/property изменения, включая поля с названием description/examples.
+- Compact load 32 MiB/2000 rows PASS: tus resume → TLS S3 migration → rotation → Redis loss/8 concurrent acquire → worker SIGKILL/expired-lease injection → CSV rows/VACUUM → backup/restore/restart/reconcile/reopen → ZIP SHA-256/one-time/audit/no OOM. Полный 2050 MiB/20000 rows также PASS: 15 assertions, 20001 CSV rows, полный ZIP SHA-256, 0 OOM. Upload/finalize 38.441 s, migration 50.557 s, rotation 65.664 s, restore/reconcile/reopen 29.458 s, ZIP verification 116.739 s; детали и ресурсы — development.
+- Fail-closed release readiness, 14 pending внешних решений, negative tests устаревшего/неполного evidence и five-platform unpublished verifier bundle/checksums реализованы. CI разделён на functional/supply-chain, сохраняет evidence 14 дней, deployment отсутствует.
 
 ## Next steps
-1. Локальная фаза 7.2: static analysis/SBOM/license/container/secret scans. Controlled upgrade срез `dda4587` опубликован, его remote CI — success. Следующие проверки расширяются согласно roadmap; вся release фаза 7 пока открыта.
-2. Actual ACME/DNS/host/provider/escrow/checkpoint/DR acceptance после согласованной инфраструктурной подготовки.
-3. Full Safari/Firefox/mobile browser matrix, manual WCAG, load/DR, SBOM/license/container/secret scans и independent security review; затем release review всех 32 MUST и residual risks с владельцем.
-4. Реальный deployment только по отдельной явной команде пользователя.
+1. Локальные gates и документация завершены; выполнить разрешённые commit/push и проверить exact remote CI; сборка bundle не является публикацией релиза.
+2. Внешняя подготовка и acceptance согласно [release engineering](release-engineering.md), независимый security/license review и решение владельца по R-01–06. Deployment только по отдельной команде.
 
 ## Decisions
-- Controlled upgrade использует existing recovery gate/generation/runner locks. Prepare не применяет SQL и не заменяет полный stop старых instances. Backup/verify выполняются явно до startup migrations; автоматический downgrade/reopen отсутствует. DDL и ledger/fencing атомарны; crypto primitives/backup format сохранены.
-- Stack и доменные инварианты сохранены: PostgreSQL authoritative, Redis ephemeral, immutable publish, one-time delivery, USER/ADMIN privacy. Никакие требования или residual risks не исключены/не приняты автоматически.
-- FileX backup — logical encrypted archive, не pg_dump; payload/artifacts/roles/extensions/Redis/KEK не входят. Exact schema fingerprint и mandatory verified pre-backup без override обязательны.
-- Runtime shared/exclusive locks и persisted generation охватывают HTTP/worker side effects; CLI берёт runner lock до queue, чтобы worker не перехватил transient recoveryKEK.
-- `ops_*` history/gate не откатывается. Application audit key хранится encrypted и сохраняется при rewrap. Исторические backup descriptors требуют исторических KEK.
-- Orphans не публикуются и не удаляются автоматически; missing/tampered bytes карантинируются. Capability resurrection проверяется явно перед reopen, administrative mutations требуют новой сверки.
-- HMAC checkpoint сам по себе не доказывает отсутствие полного host+DB+key rollback; внешние anchors/escrow остаются операторской и release границей. Ed25519 подписывает только ZIP checksum manifest.
+- Все 32 MUST сохранены; partial release criteria не закрываются локальной эмуляцией. Machine-readable release decisions требуют фактического reviewer/owner evidence.
+- Source SHA-256 связывает код/config/contracts/CI/visual baselines с gate exit code, временем и профилем. Wiki/docs/README/CHANGELOG/MEMORY исключены из hash для публикации измерений; docs-check выполняется отдельно.
+- `make release-check` требует 13 свежих совпадающих gates, полную matrix, ≥2048 MiB/≥20000 rows, все verified MUST, clean Git и 14 принятых внешних решений. Скрипт ничего не публикует.
+- S3 load fixture проверяет TLS и signing envelope, но не криптографическую корректность SigV4; реальный S3 acceptance отдельно. SIGKILL реальный, истечение export lease искусственное и не включено в измеренный crash RTO.
+- Docker compiler cache очищался только по точным ID собственных FileX слоёв; чужие volumes/containers не затрагивались. Heavy Traefik build ограничен compiler parallelism/memory; версии и источник закреплены.
 
 ## Context
-[Controlled upgrade](controlled-upgrade.md): изменены cmd/filex-cli, internal/database/bootstrap/maintenance/operations, Go PG tests, scripts/test-upgrade.py, Makefile/CI, contracts/traceability и связанные docs/wiki. Application schema остаётся 16 migrations, OpenAPI 107 operations. Изменений UI/crypto primitives нет. Рабочее дерево при начале шага было чистым на `31876b8`; все текущие изменения относятся к этому срезу.
+Основные новые компоненты: scripts/acceptance.py, supply_chain.py/security_tools.py, test-performance.py/fixtures, test-fuzz.py, contract_compatibility.py, release_bundle.py; UI generated types/lint; hardened Dockerfiles/Compose/generator; Playwright config/visual tests/baselines; CI/Makefile; contracts/traceability/release-acceptance. Знания: [ADR-009](adr/009-release-evidence.md), [release engineering](release-engineering.md), [performance](../docs/performance-testing.md), [design review](design-review.md), [roadmap](roadmap.md), [release notes](../docs/release-notes.md).
 
-[Вход](index.md), [roadmap](roadmap.md), [эксплуатация](operations-recovery.md), [development/evidence](development.md), [design review](design-review.md), [матрица](../docs/test-matrix.md), [CLI](../docs/cli.md), [incident runbook](../docs/incident-response.md). Изменены Go cmd/internal/SQL, Next.js components, contracts/scripts, Compose/Dockerfile API и документация. Новые основные пакеты: operations, maintenance; migrations 0014–0016. Чужие изменения не сбрасывались; working tree перед фазой 6 был чистым.
+Предыдущие опубликованные срезы: фазы 1–5 `3af2f0c` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38125813423)); фаза 6 `02c53d9` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38131827674)); ingress `50de642` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38133772690)); controlled upgrade `dda4587` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38135958275)). Это исторические результаты, не проверка текущего diff.
 
 ## Risks / blockers
-Блокировок для завершённого локального controlled upgrade среза нет. Production topology, real SMTP/S3 accounts, full DR/load/a11y/browser/security и внешнее хранение KEK/checkpoints не подтверждены. Архив ≤1 GiB, record ≤64 MiB, inventory ≤1 млн объектов, findings ≤10 тыс.; worker/CLI execution bounds 5/15 минут — не SLA/RPO/RTO. Backup без payload не восстанавливает физически удалённые bytes; потерянный historical KEK не восстанавливается кодом. Исходное интервью отсутствует. R-01–06 не приняты.
+- Окружение не подготовлено по подтверждению владельца: нет внешних ACME/DNS/host/provider/escrow/backup/DR evidence.
+- Реальные Safari/mobile devices, assistive technology и независимый security review не подтверждены.
+- LGPL optional libvips/MPL dev-only axe и container/font license obligations требуют owner review; R-01–06 не accepted.
+- Production guard и release readiness остаются закрытыми; версия закреплённых scanners/images требует сопровождения и повторного scan перед фактическим release.
 
-## Итог публикации фазы 6 и первого среза фазы 7
-- Фаза 6: commit `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` отправлен в origin/main; local/remote SHA подтверждены. CI #38131827674 — completed/success.
-- Фаза 7.1, первый срез: commit `50de642f2bf9e2c58e5e3ae0e92f92903cfa634e` отправлен в origin/main; local/remote SHA подтверждены после push. CI #38133772690 — completed/success: check/build, PostgreSQL integration, security, Chromium E2E и TLS ingress. Snapshot — `.cache/evidence/phase7-ci.json` (ignored); эта запись publication evidence меняет только документацию.
-- [ADR-007](adr/007-ingress-and-network-policy.md), [production ingress](production-ingress.md): typed PG networkPolicy, точные доверенные proxy /32, single-valued XFF/XFP, effective IP для allowlist/login bucket, requireProxy/HTTPS/Host и bounded CIDR validation.
-- Network policy/publicOrigin changes атомарно меняют active settings, закрывают gate, инвалидируют reconciliation и меняют generation. Проверена отмена privileged request; restart API/worker обязателен. Host network reset снимает только client allowlist, сохраняет transport trust, создаёт revision/audit и не открывает gate.
-- CLI settings show и config ingress-check read-only, без migrations; settings apply использует draft/validate/CAS. Production ingress-check не одобряет release. API contracts остаются 107 operations, новая networkPolicy совместима с прежними settings v1.
-- Standalone production config generator использует pinned base images и требует immutable API/web digests, private networks, non-root/read-only containers, TLS/ACME, strict SNI, HSTS и только 80/443 снаружи. Не выполняет deployment. Runtime APP_ENV=production остаётся запрещён.
-- Проверки: make check PASS (44 Markdown, 32 requirements, Go/Next builds, unit/race, 4 contracts, 3 generator tests); полный PG/race PASS 32 tests (97.4 s HTTP/6.2 s repository); Chromium PASS 3 tests (28.6 s); make ingress PASS; make security PASS (npm 0, reachable govulncheck 0, прежний module-only advisory не скрыт).
-- TLS fixture подтвердил TLS 1.2, отказ сервера TLS 1.1, strict CA, HTTP redirect/HSTS/Secure cookie, неизвестный Host/private routes, spoofed header rejection, CIDR deny, host reset и закрытый gate. Исправлены file-provider extension и неоднозначный service DNS: Traefik обращается по literal proxy-network IP.
-- Evidence logs — ignored `.cache/evidence/phase7-*.log`. Тестовые projects/volumes удалены scoped scripts. Настоящие ACME/DNS/host/production mutations не выполнялись. Новые исходники: config/network, networkpolicy, httpapi/network, settings/CLI, production generator/TLS harness; новая SQL migration не потребовалась.
-- Release phase 7 ещё не закрыта. Остаточные risks не приняты, все 32 MUST сохранены. Следующие gates перечислены выше.
+## Final local evidence
+Source SHA-256: `dbcbbf3b774c888d388781933cc3e7e502796eee499a474c6213cdec94566705`. Все 13 gate records: passed=true/sourceUnchanged=true/exitCode=0. Local evidence относится к этому содержимому uncommitted candidate; candidateCommit в upgrade/bundle до публикации — baseline HEAD, candidateDirty=true. Commit-bound remote evidence проверяется после push.
+
+| Gate | Duration, s |
+|---|---|
+| browser | 502.3 |
+| check | 128.0 |
+| compatibility | 0.1 |
+| dependencies | 6.8 |
+| fuzz | 71.1 |
+| images | 7.5 |
+| ingress | 36.8 |
+| integration | 106.3 |
+| licenses | 4.1 |
+| performance | 346.0 |
+| source | 3.6 |
+| upgrade | 68.3 |
+| verifier | 18.0 |
+
+Технические результаты: make check (50 Markdown/32 MUST/107 API operations), 36 PG/race, 25 browser, 3 fuzz, 0 HIGH/CRITICAL source + five images. Upgrade fixture maintenance window 39.576 s / sampled unavailable 36.653 s при одновременной нагрузке общего dev host; schema unchanged, baseline 50de642. Это не production downtime guarantee. `make release-check` ожидаемо BLOCKED по 14 внешним решениям и пяти partial MUST (до commit также dirty tree), локальные gates это не скрывают.

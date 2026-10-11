@@ -18,9 +18,19 @@
         "id": "T-FR-001-2",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "public pages, locale and internal route isolation"
+      },
+      {
+        "id": "T-FR-001-3",
+        "path": "scripts/e2e/visual.spec.ts",
+        "name": "keyboard navigation, error recovery, themes and 320px reflow"
+      },
+      {
+        "id": "T-FR-001-4",
+        "path": "scripts/e2e/visual.spec.ts",
+        "name": "reviewed public page visual regression"
       }
     ],
-    "gap": "RU/EN/theme/responsive/DnD и Chromium axe/visual проверены; full browser/manual WCAG acceptance — фаза 7."
+    "gap": "Автоматизированы Chromium/Firefox/WebKit и две mobile emulation, RU/EN/themes/keyboard/error/320px/axe/visual. Фактические результаты — session; реальные Safari/mobile и manual assistive-technology WCAG остаются внешней приёмкой."
   },
   {
     "id": "FR-002",
@@ -733,6 +743,11 @@
         "id": "T-OPS-001-3",
         "path": "internal/httpapi/files_integration_test.go",
         "name": "TestIntegrationConcurrentAcquireAndRevoke"
+      },
+      {
+        "id": "T-OPS-001-4",
+        "path": "scripts/test-performance.py",
+        "name": "test_load_and_recovery"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -781,6 +796,11 @@
         "id": "T-OPS-002-6",
         "path": "internal/storage/inventory_test.go",
         "name": "TestLocalInventoryStablePagination"
+      },
+      {
+        "id": "T-OPS-002-7",
+        "path": "scripts/test-performance.py",
+        "name": "test_load_and_recovery"
       }
     ],
     "gap": "Payload/Artifact/Backup Local/S3 реализованы; tests используют Local и TLS S3 wire fixture, реальный S3 account не подключался."
@@ -829,6 +849,11 @@
         "id": "T-OPS-003-6",
         "path": "internal/operations/snapshot_test.go",
         "name": "TestSnapshotRejectsMalformedAndOutOfOrderRecords"
+      },
+      {
+        "id": "T-OPS-003-7",
+        "path": "scripts/test-performance.py",
+        "name": "test_load_and_recovery"
       }
     ],
     "gap": "Локальные restore/fault/crypto drills и Chromium backup→restore→restart→reauth→reconcile→reopen пройдены. Production DR/RPO/RTO acceptance — фаза 7."
@@ -885,7 +910,10 @@
       "cmd/filex-cli/settings.go",
       "internal/operations/upgrade.go",
       "cmd/filex-cli/upgrade.go",
-      "scripts/test-upgrade.py"
+      "scripts/test-upgrade.py",
+      "deploy/Dockerfile.postgres",
+      "deploy/Dockerfile.redis",
+      "deploy/Dockerfile.traefik"
     ],
     "tests": [
       {
@@ -955,7 +983,10 @@
       "scripts/build_contracts.py",
       "contracts/openapi.json",
       "contracts/asyncapi.json",
-      "scripts/e2e/contracts.ts"
+      "scripts/e2e/contracts.ts",
+      "scripts/contract_compatibility.py",
+      "apps/web/lib/api-schema.ts",
+      "scripts/check_generated_types.mjs"
     ],
     "tests": [
       {
@@ -982,6 +1013,11 @@
         "id": "T-NFR-001-5",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-NFR-001-6",
+        "path": "scripts/test_contract_compatibility.py",
+        "name": "test_removal_and_type_changes_fail"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1027,7 +1063,13 @@
       "scripts/e2e/flow.spec.ts",
       "scripts/test-ingress.py",
       "scripts/test_production_config.py",
-      "scripts/test-upgrade.py"
+      "scripts/test-upgrade.py",
+      "scripts/acceptance.py",
+      "scripts/supply_chain.py",
+      "scripts/security_tools.py",
+      "scripts/test-fuzz.py",
+      "scripts/test-performance.py",
+      "playwright.config.ts"
     ],
     "tests": [
       {
@@ -1049,9 +1091,39 @@
         "id": "T-NFR-003-4",
         "path": "scripts/test-upgrade.py",
         "name": "test_controlled_image_upgrade"
+      },
+      {
+        "id": "T-NFR-003-5",
+        "path": "scripts/e2e/visual.spec.ts",
+        "name": "keyboard navigation, error recovery, themes and 320px reflow"
+      },
+      {
+        "id": "T-NFR-003-6",
+        "path": "scripts/e2e/visual.spec.ts",
+        "name": "reviewed public page visual regression"
+      },
+      {
+        "id": "T-NFR-003-7",
+        "path": "scripts/test-performance.py",
+        "name": "test_load_and_recovery"
+      },
+      {
+        "id": "T-NFR-003-8",
+        "path": "scripts/test_acceptance.py",
+        "name": "test_stale_failed_partial_or_compact_evidence_blocks_release"
+      },
+      {
+        "id": "T-NFR-003-9",
+        "path": "internal/cryptobox/payload_fuzz_test.go",
+        "name": "FuzzPayloadAuthentication"
+      },
+      {
+        "id": "T-NFR-003-10",
+        "path": "internal/httpapi/range_fuzz_test.go",
+        "name": "FuzzByteRangeBounds"
       }
     ],
-    "gap": "Unit/integration/race/fault/fuzz smoke/Chromium/axe/visual/contracts, TLS и controlled upgrade/downtime harness реализованы; full security/container/secret/license/SBOM/browser/load/DR остаются. CI опубликованных срезов и текущие local gates проверять отдельно в session."
+    "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Результаты полного прохода и ограничения — wiki/session.md; независимая и инфраструктурная приёмка отдельно."
   },
   {
     "id": "NFR-004",
@@ -1060,15 +1132,23 @@
     "status": "partial",
     "implementation": [
       "internal/config/config.go",
-      "Makefile"
+      "Makefile",
+      "scripts/supply_chain.py",
+      "contracts/release-acceptance.json",
+      "scripts/acceptance.py"
     ],
     "tests": [
       {
         "id": "T-NFR-004-1",
         "path": "internal/config/config_test.go",
         "name": "TestBootstrapFailClosed"
+      },
+      {
+        "id": "T-NFR-004-2",
+        "path": "scripts/test_acceptance.py",
+        "name": "test_acceptance_without_reviewer_or_evidence_is_not_approval"
       }
     ],
-    "gap": "Production запрещён; npm audit и reachable govulncheck зелёные, module-only openpgp advisory не импортируется. Full license/SBOM/container/secret/release review — фаза 7."
+    "gap": "Source и runtime container scans исправлены до 0 HIGH/CRITICAL; SBOM, secret scans и license inventory реализованы. LGPL optional libvips/MPL dev-only axe требуют решения владельца. R-01–06 и independent review не приняты; production guard сохранён."
   }
 ]

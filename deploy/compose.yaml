@@ -1,7 +1,9 @@
 name: filex-dev
 services:
   postgres:
-    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.postgres
     environment:
       POSTGRES_USER: filex
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/init-dev.py first}
@@ -16,7 +18,9 @@ services:
       retries: 20
     security_opt: [no-new-privileges:true]
   redis:
-    image: redis:7.2-alpine@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.redis
     command: [redis-server, --save, '', --appendonly, 'no']
     networks: [backend]
     security_opt: [no-new-privileges:true]
@@ -82,7 +86,9 @@ services:
     pids_limit: 128
     mem_limit: 512m
   traefik:
-    image: traefik:v3@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.traefik
     user: '65532:65532'
     command:
       - --entrypoints.web.address=:8080

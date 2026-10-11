@@ -1,7 +1,7 @@
 # Разработка, воспроизведение и evidence
 
 ## Контекст
-FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: зависимости → базовые проверки и сборки → PostgreSQL integration → security → Chromium E2E → TLS ingress → controlled upgrade. Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
+FileX имеет рабочий local development data plane: владельцы создают и публикуют передачи, получатели явно скачивают файлы, worker доставляет события и формирует отчёты. Локальные проверки выполнены на macOS arm64/Docker Desktop; актуальный статус прогона и публикации в Git — [session](session.md). Push/PR запускает `development-checks` в GitHub Actions: functional job (static/unit/race/contracts/build/PG/fuzz/five-profile browser/TLS/upgrade/load/verifier) и supply-chain job (source/secret/license/container/SBOM). Workflow не выполняет deployment; результаты remote CI подтверждаются отдельно. Production и реальные внешние SMTP/S3 accounts не использовались.
 
 ## Воспроизведение
 
@@ -10,7 +10,6 @@ npm ci
 make check
 make integration-docker
 make security
-PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/browsers" npx playwright install chromium
 make e2e
 make ingress
 make upgrade-drill
@@ -61,7 +60,7 @@ curl --fail http://localhost:8090/api/v1/status
 Итог выполнения этих gates записывается в session после завершения команд, а не выводится из списка тестов.
 
 ## Неподтверждённое и дальнейшая работа
-Настоящая доставка во внешний mailbox и совместимость конкретного S3 provider проверяются при его подключении. Full Safari/Firefox/mobile browser matrix, ручная WCAG 2.2 AA приёмка, production load/DR, отдельный frontend lint policy, SBOM/license/container/secret scans и independent security review — фаза 7. Backup/restore/reconciliation реализованы фазой 6, [runbook](operations-recovery.md); local fixture evidence не заменяет production DR. `APP_ENV=production` сохраняет запрет запуска. Зелёный development CI не закрывает эти release gates.
+Настоящая доставка во внешний mailbox и совместимость конкретного S3 provider проверяются при его подключении. Автоматическая Chromium/Firefox/WebKit/mobile-emulation matrix, frontend lint, fuzz, local load/DR и SBOM/license/container/secret gates реализованы фазой 7; полный текущий отчёт — [release engineering](release-engineering.md). Настоящие Safari/mobile devices, ручная WCAG 2.2 AA/assistive technology, target load/DR и independent security review остаются внешней приёмкой. Окружение не подготовлено по подтверждению владельца от 2026-10-11. Backup/restore/reconciliation реализованы фазой 6, [runbook](operations-recovery.md); local fixture evidence не заменяет production DR. `APP_ENV=production` сохраняет запрет запуска. Зелёный development CI не закрывает эти release gates.
 
 ## Controlled upgrade: результат 2026-10-11
 
@@ -128,3 +127,30 @@ Unit/race archive checks включают wrong KEK, byte tamper, truncation, sw
 Integration выявила необходимость `.yaml` extension для file provider и literal backend IP в proxy network: Docker DNS при общей egress мог выбрать другой интерфейс. Эти ошибки исправлены и повторный TLS drill прошёл. Test CA содержит явные X.509 extensions для строгой проверки современными TLS clients; проверки сертификата не отключались.
 
 Локальные fixtures используют random secrets и собственные projects, удаляют только свои containers/volumes, не контактируют с public ACME/production/provider accounts. Этот ingress срез добавил `make ingress` в CI; его publication evidence хранится в session. Controlled upgrade выполнен следующим срезом ниже. Full browser/manual WCAG, load/DR, independent security и SBOM/container/secret/license gates остаются открытыми.
+
+
+## Завершающий технический проход фазы 7 (2026-10-11)
+Новый набор проверок и способ воспроизведения: [release engineering](release-engineering.md), [нагрузочный профиль](../docs/performance-testing.md), [license review](../docs/third-party-review.md). Приведённые выше таблицы относятся к ранним commits, а не к текущему кандидату. Финальные source-bound записи сохраняются в `.cache/evidence/gates/`; текущий статус каждого gate — [session](session.md).
+
+Browser harness использует один immutable официальный Playwright Linux image и отдельный Compose project для каждого из пяти browser/device profiles. Host runner управляет restart только своих API/worker; browser server не получает Docker socket. 25 сценариев первого полного прогона прошли: 40.2/49.4/55.6/39.3/50.6 s по Chromium/Firefox/WebKit/mobile Chromium/mobile WebKit. Далее gate повторяется с неизменяемыми baseline images. Desktop/light, desktop/dark, long filename, mobile help и mobile restore review просмотрены. Проверки настоящего Safari/iOS/Android и assistive technology не подменяются эмуляцией. macOS native Firefox не запустился (profile error); поэтому воспроизводимая матрица использует Linux container и на macOS, и на CI.
+
+Source scan охватывает все lockfile dependencies; Trivy images — пять итоговых images. Первоначальные HIGH/CRITICAL устранены без severity exceptions. Остались module advisories UNKNOWN для x/crypto/openpgp, отражённые в отчётах; reachable приложение проверяется отдельно govulncheck. License inventory: 443 npm entries, 24 Go runtime libraries, bundled font SHA, 16 записей для отдельного owner review. Это inventory completeness, не license acceptance.
+
+
+### Полный локальный load/DR: PASS
+Source-bound профиль 2050 MiB и 20000 synthetic transfers прошёл: один файл 2149580800 bytes, 4 MiB chunks, concurrency 8, Local + TLS S3 fixture. Docker VM: Linux aarch64, 8 CPU, 4108632064 bytes RAM, kernel 6.12.76-linuxkit, overlay2. Browser matrix выполнялась параллельно; это общий development host, не изолированный benchmark.
+
+| Этап | Измерено |
+|---|---|
+| tus upload + finalize | 38.441 s, 53.329 MiB/s |
+| Local → TLS S3 | 50.557 s |
+| Payload key rotation | 65.664 s |
+| Worker SIGKILL + injected lease expiry + export/VACUUM | 5.442 s, 20001 CSV rows, 0 idle snapshots |
+| Backup + verify | 1.149 s |
+| Restore/restart/reconcile/reopen | 29.458 s, 1 file / 1540 objects |
+| ZIP download + full SHA-256 check | 116.739 s, 17.560 MiB/s |
+| 100 status requests, concurrency 8 | p50 4.272 ms, p95 20.477 ms, max 25.090 ms |
+
+1022 container samples; sampled peak RAM: API 184.9 MiB, worker 46.8, PostgreSQL 135.8, Traefik 22.2, web 36.0, Redis 3.8, S3 fixture 189.3. Sampled peak CPU: API 107.68%, worker 106.42%, PostgreSQL 98.33%, S3 fixture 111.78% (100% соответствует одному CPU). Raw CPU/RAM/IO records: `.cache/evidence/performance/results-2050mib-20000rows.json`. OOM не было, SHA-256 исходного и восстановленного ZIP payload совпал, repeated lease rejected, audit verified, старые сессии отменены, до reviewed reopen data plane закрыт. Все 15 assertions PASS.
+
+Эти времена не являются production SLA/RPO/RTO. В частности, принудительное истечение lease не измеряет реальную трёхминутную паузу crash recovery; backup исключает payload bytes, которые сверяются отдельно из storage. Реальные provider/host/escrow/DR acceptance остаются заблокированными отсутствием окружения.

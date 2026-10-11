@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "decisions": [
+    {
+      "id": "public-acme-dns",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "host-firewall-backups",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "real-smtp-s3",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "independent-key-checkpoint-escrow",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "target-load-dr",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "real-browser-assistive-technology",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "independent-security-review",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "third-party-licenses",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-01",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-02",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-03",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-04",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-05",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    },
+    {
+      "id": "R-06",
+      "status": "pending",
+      "reviewer": null,
+      "evidence": null
+    }
+  ],
+  "environment": {
+    "status": "not_prepared",
+    "confirmedBy": "owner",
+    "confirmedOn": "2026-10-11",
+    "reason": "Окружение ещё не подготовлено; зафиксировать внешние блокеры"
+  }
+}

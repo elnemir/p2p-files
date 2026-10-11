@@ -1,3 +1,4 @@
+import {evidencePath} from "./evidence";
 import {test,expect,type Page} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import {execFile} from 'node:child_process';
@@ -28,7 +29,7 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await page.setViewportSize({width:390,height:844});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
- await page.screenshot({path:'.cache/evidence/operations-restore-mobile.png',fullPage:true});
+ await page.screenshot({path:evidencePath('operations-restore-mobile.png'),fullPage:true});
  await ops.getByRole('button',{name:'Создать предварительную копию и восстановить',exact:true}).click();
  await expect.poll(async()=>{const r=await page.request.get('/api/v1/auth/me');return (await r.json()).code},{timeout:30000}).toBe('restart_required');
  await command('docker',['compose','--project-name',project,'-f','deploy/compose.yaml','restart','api','worker'],{timeout:60000,maxBuffer:1024*1024});
@@ -46,16 +47,16 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await ops.getByText('Контрольные точки аудита',{exact:true}).click();
  await ops.getByRole('button',{name:'Зафиксировать контрольную точку',exact:true}).click();
  await expect(ops.getByRole('button',{name:'Сохранить новую контрольную точку'})).toBeVisible();
- const anchor=page.waitForEvent('download');await ops.getByRole('button',{name:'Сохранить новую контрольную точку'}).click();await (await anchor).saveAs('.cache/evidence/audit-checkpoint.json');
+ const anchor=page.waitForEvent('download');await ops.getByRole('button',{name:'Сохранить новую контрольную точку'}).click();await (await anchor).saveAs(evidencePath('audit-checkpoint.json'));
  await ops.getByText('Периодические проверки',{exact:true}).click();
  const auditForm=ops.locator('form').filter({hasText:'Проверка аудита'});await auditForm.locator('input').fill('120');await auditForm.getByRole('button').click();
  await expect(auditForm.locator('input')).toHaveValue('120');
  const exports=page.getByRole('region',{name:'Экспорты пользователей',exact:true});await exports.getByRole('button',{name:'Загрузить экспорты',exact:true}).click();
  await exports.getByLabel('Причина доступа к экспорту').fill('Проверка административного доступа к экспорту пользователя');
  await expect(exports.getByRole('button',{name:'Скачать с записью в аудит'}).first()).toBeEnabled();
- const exportFile=page.waitForEvent('download');await exports.getByRole('button',{name:'Скачать с записью в аудит'}).first().click();await (await exportFile).saveAs('.cache/evidence/admin-export.csv');
+ const exportFile=page.waitForEvent('download');await exports.getByRole('button',{name:'Скачать с записью в аудит'}).first().click();await (await exportFile).saveAs(evidencePath('admin-export.csv'));
  await exports.getByRole('button',{name:'Изменить срок хранения'}).first().click();
- await page.screenshot({path:'.cache/evidence/operations-reopened-mobile.png',fullPage:true});
+ await page.screenshot({path:evidencePath('operations-reopened-mobile.png'),fullPage:true});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
  const transfers=await (await page.request.get('/api/v1/transfers')).json();expect(transfers.items.some((x:any)=>x.title==='Сохранённая передача до восстановления')).toBe(true);expect(transfers.items.some((x:any)=>x.title==='Поздняя передача для проверки замены БД')).toBe(false);
