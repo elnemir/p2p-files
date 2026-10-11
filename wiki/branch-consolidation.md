@@ -6,7 +6,7 @@
 
 ## Решение и поток изменений
 
-`origin/*` после fetch → сравнение patch и результата прежних squash merges → перенос совместимых изменений в `codex/consolidate-branches-and-narration` → local gates с единым source hash → PR и обязательные exact-head checks → squash merge → отдельная проверка main. Номер PR и итоговые SHA/измерения записываются в [session](session.md). До подтверждённого merge изменения ниже являются кандидатом, а не состоянием main.
+`origin/*` после fetch → сравнение patch и результата прежних squash merges → перенос совместимых изменений в `codex/consolidate-branches-and-narration` → local gates с единым source hash → PR и обязательные exact-head checks → squash merge → отдельная проверка main. Результат: [PR #16](https://github.com/elnemir/p2p-files/pull/16) слит 2026-10-11, основной code commit main — `2e1d2e4b17cffb59fec53eca55b96c45b1847e43`. Source hash и результаты проверок приведены ниже; отдельный итог проверки main фиксируется в [session](session.md).
 
 `codex/repository-setup` (`0a9f384`) имеет пустой diff к результату PR #1 (`db02ab2`). `codex/repository-verification` (`a2a1af8`) имеет пустой diff к результату PR #15 (`e70af75`). `codex/code-scanning-verification` указывает на `e70af75`; его незакоммиченная wiki сохранена в новом кандидате. Повторное наложение старых commits не требуется.
 
@@ -22,7 +22,7 @@
 | [#12](https://github.com/elnemir/p2p-files/pull/12) | setup-node 7.1.0 | Перенесён SHA pin; runtime остаётся Node 24 по .nvmrc |
 | [#13](https://github.com/elnemir/p2p-files/pull/13) | dependency-review-action 5.0.0 | Перенесён SHA pin; HIGH fail threshold сохранён |
 | [#14](https://github.com/elnemir/p2p-files/pull/14) | setup-go 7.0.0 | Перенесён SHA pin; версия берётся из go.mod |
-| [#3](https://github.com/elnemir/p2p-files/pull/3) | Redis 8.10 | Не включён: image не собирается с прежними OpenSSL apk pins; Redis 8 меняет набор лицензий, нужен [owner review](third-party-review.md) |
+| [#3](https://github.com/elnemir/p2p-files/pull/3) | Redis 8.10 | Не включён: Redis 8 меняет набор лицензий, нужен [owner review](third-party-review.md). Сбой OpenSSL pins исправлен в отдельном review-образе; в runtime остаётся 7.2 |
 | [#5](https://github.com/elnemir/p2p-files/pull/5) | Node 25 image | Не включён: версия EOL с 2026-06-01, исходный PR имеет HIGH/CRITICAL image failure и browser failure; поддерживаемый Node 24 сохранён |
 | [#9](https://github.com/elnemir/p2p-files/pull/9) | @eslint/js 10.0.1 | Не включён: переход на ESLint 10 должен быть согласован со всем lint toolchain |
 | [#10](https://github.com/elnemir/p2p-files/pull/10) | @types/node 26.6.4 | Не включён: major типов не соответствует используемому Node 24; исходный PR зелёный, причина решения — согласованность runtime/types |
@@ -34,11 +34,11 @@
 
 Изменены CI Actions, Go/Alpine build/runtime images, React types, локальные инструменты озвучки и wiki. Требуются `npm ci`, базовый check, PG integration, browser matrix, ingress/upgrade/performance, fuzz/verifier и dependency/source/license/image scans. Запуски выполняются через [acceptance wrapper](testing.md); старые зелёные PR не доказывают совместимость общего кандидата. Реальный ElevenLabs синтез отложен пользователем после HTTP 402; offline тесты не доказывают качество голоса.
 
-Снимок веток и patch-файлы находятся в ignored `.cache/consolidation/`; это локальные диагностические материалы, не release artifacts. Восемь superseded PR можно закрыть после успешного общего merge; пять нерешённых PR остаются открытыми и не считаются слитыми. Удаление веток допустимо только после проверки сохранности их полезного содержимого.
+Снимок веток и patch-файлы находятся в ignored `.cache/consolidation/`; это локальные диагностические материалы, не release artifacts. Восемь superseded PR закрыты после общего merge; их ветки удалены после сравнения точного SHA. Четыре локальные рабочие ветки удалены после проверки tree/diff к соответствующим squash-результатам. Пять нерешённых PR остаются открытыми и не считаются слитыми. Dependabot автоматически перебазировал их на новую main; это не отменяет описанных ограничений.
 
 ## Продолжение
 
-- Redis: получить решение о лицензиях, затем исправить pins и пройти функциональные/security gates; до этого остаётся 7.2.
+- Redis: получить решение о лицензиях, затем перенести проверенные pins из review и пройти полные функциональные/security gates; до этого остаётся 7.2.
 - ESLint: подобрать совместимый a11y-плагин/поддерживаемую комбинацию с прежним покрытием правил и проверить без peer bypass.
 - Node: обновлять runtime, .nvmrc, types, images и CI согласованно в поддерживаемую ветку; Node 25 не использовать как промежуточный шаг.
 - Озвучка: после отдельного сообщения о доступной квоте продолжить по [инструкции](tour-maintenance.md#озвучка-elevenlabs).
@@ -49,4 +49,10 @@ Production deployment и принятие 14 внешних решений не 
 
 Все 13 [gates](testing.md) PASS на source `0cc2cee4b1f8cc10fb1a780a28fd1fd42f8272d466b83b13af72f3a58646c722`. Npm audit: 0 vulnerabilities; source и пять фактических image IDs: 0 HIGH/CRITICAL; secrets scan чист. Пройдены PG integration, все 25 browser scenarios, TLS ingress, distinct baseline/candidate upgrade, fuzz и пять verifier targets. Performance выполнен с 32 MiB / 2000 rows; этот компактный локальный профиль не закрывает release-size/external acceptance.
 
-В момент измерения HEAD был `e70af75` с рабочим diff; source hash связывает результат именно с объединённым кандидатом. `.cache/consolidation/local-gates.json` содержит сводку, `.cache/evidence/gates/` — исходные records. GitHub exact-head CI и результат merge проверяются отдельно; их последняя привязка находится в session и соответствующем PR.
+В момент измерения HEAD был `e70af75` с рабочим diff; source hash связывает результат именно с объединённым кандидатом. `.cache/consolidation/local-gates.json` содержит сводку, `.cache/evidence/gates/` — исходные records. GitHub exact-head CI [PR #16](https://github.com/elnemir/p2p-files/pull/16) также PASS: все 13 скачанных gate records имеют этот source и merge ref `86043498494df2a5e79f7de6899907dc14b1851e`. Обе группы CI artifacts сверены; четыре CodeQL анализа и open alerts чисты. Отдельные post-merge main runs приведены в session.
+
+## Отдельный review Redis 8
+
+Исходный #3 пытался установить libcrypto3/libssl3 3.3.7-r2 поверх base, которому нужен 3.5.8-r0. В отдельном ignored `.cache/consolidation/redis8-review/Dockerfile` сохранены base digest `sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0`, zlib 1.3.2-r1 и оба OpenSSL pins 3.5.8-r0. Образ `sha256:2d6b62c16a496ca9cd93da252efd0735a8f5d28ade047b8cc592e2a208d69459` успешно собран; `redis-server --version` сообщает 8.10.2, Trivy — 0 findings. JSON scan, CycloneDX SBOM и result.json находятся рядом.
+
+Это локальная техническая подготовка к решению, а не включение Redis 8 в FileX. Проверен build/scan/version; полная функциональная/DR приёмка Redis 8 не выполнялась. Владелец/reviewer ещё должен оценить RSALv2/SSPLv1/AGPLv3 и выбранные обязательства. В основном PR/main сохранён Redis 7.2.
