@@ -6,7 +6,8 @@
     "status": "partial",
     "implementation": [
       "apps/web/components/FileX.tsx",
-      "apps/web/app/globals.css"
+      "apps/web/app/globals.css",
+      "scripts/e2e/transfers.ts"
     ],
     "tests": [
       {
@@ -822,7 +823,8 @@
       "internal/maintenance/gate.go",
       "internal/httpapi/operations.go",
       "apps/web/components/OperationsPanel.tsx",
-      "cmd/filex-cli/operations.go"
+      "cmd/filex-cli/operations.go",
+      "scripts/e2e/transfers.ts"
     ],
     "tests": [
       {
