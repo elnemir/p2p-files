@@ -24,7 +24,7 @@ class Client:
     def __init__(self, port):
         self.port, self.cookie, self.csrf = port, '', ''
 
-    def request(self, method, path, value=None, headers=None):
+    def request(self, method, path, value=None, headers=None, after_read=None):
         values = {'Origin': 'http://localhost:8090', 'Cookie': self.cookie, 'X-CSRF-Token': self.csrf}
         if isinstance(value, dict):
             value = json.dumps(value).encode()
@@ -37,15 +37,30 @@ class Client:
             body, result = response.read(), dict(response.getheaders())
             if 'Set-Cookie' in result:
                 self.cookie = result['Set-Cookie'].split(';', 1)[0]
+            if after_read is not None:
+                after_read(response.status)
             return response.status, body, result
         finally:
             conn.close()
 
-    def expect(self, method, path, status, value=None, headers=None):
-        got, body, result = self.request(method, path, value, headers)
+    def expect(self, method, path, status, value=None, headers=None, after_read=None):
+        def completed(actual):
+            if actual == status and after_read is not None:
+                after_read()
+        got, body, result = self.request(method, path, value, headers, completed)
         if got != status:
             raise RuntimeError(f'HTTP {method} probe expected {status}, got {got}')
         return body, result
+
+
+def wait_for_database(read, expected, label, timeout=10):
+    """Observe the server commit while the download connection remains open."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if read() == expected:
+            return
+        time.sleep(0.05)
+    raise RuntimeError('Server commit was not observed: ' + label)
 
 
 def test_controlled_image_upgrade():
@@ -144,7 +159,8 @@ def test_controlled_image_upgrade():
             refs, _ = recipient.expect('GET', '/api/v1/recipient/files', 200)
             lease, _ = recipient.expect('POST', '/api/v1/recipient/downloads', 201, {'fileRef': json.loads(refs)[0]['ref']})
             download = json.loads(lease)['url']
-            first, _ = recipient.expect('GET', download, 206, headers={'Range': 'bytes=0-31'})
+            first, _ = recipient.expect('GET', download, 206, headers={'Range': 'bytes=0-31'},
+                after_read=lambda: wait_for_database(lambda: sql("SELECT count(*) FROM downloads WHERE coverage='[[0,32]]'::jsonb"), '1', 'initial Range coverage'))
             if first != payload[:32]:
                 raise RuntimeError('baseline Range payload mismatch')
             before = cli('baseline', 'upgrade', 'check')
@@ -227,12 +243,15 @@ def test_controlled_image_upgrade():
             owner.expect('GET', '/api/v1/transfers/' + transfer, 200)
             # A long planned outage may expire the reservation. Reacquire the
             # remaining file explicitly; it must not have been consumed by drain.
-            rest_status, rest, _ = recipient.request('GET', download, headers={'Range': 'bytes=32-'})
+            def completed():
+                wait_for_database(lambda: sql("SELECT count(*) FROM transfers WHERE state='completed'"), '1', 'transfer completion')
+            rest_status, rest, _ = recipient.request('GET', download, headers={'Range': 'bytes=32-'},
+                after_read=lambda status: completed() if status == 206 else None)
             if rest_status == 404:
                 refs, _ = recipient.expect('GET', '/api/v1/recipient/files', 200)
                 lease, _ = recipient.expect('POST', '/api/v1/recipient/downloads', 201, {'fileRef': json.loads(refs)[0]['ref']})
                 download = json.loads(lease)['url']
-                rest, _ = recipient.expect('GET', download, 200)
+                rest, _ = recipient.expect('GET', download, 200, after_read=completed)
                 actual = rest
             elif rest_status == 206:
                 actual = first + rest
@@ -240,8 +259,9 @@ def test_controlled_image_upgrade():
                 raise RuntimeError('post-upgrade download failed: ' + str(rest_status))
             if hashlib.sha256(actual).digest() != hashlib.sha256(payload).digest():
                 raise RuntimeError('payload changed during upgrade')
-            # Consuming the last file completes the transfer, so its recipient
-            # session can no longer authenticate; the contract returns 401.
+            # Content-Length can be read before finishDownload commits. Keeping
+            # the connection open through the PG barrier avoids cancelling it;
+            # after committed completion the unchanged contract requires 401.
             recipient.expect('GET', download, 401)
             if sql("SELECT count(*) FROM downloads WHERE state='completed'") != '1' or sql("SELECT count(*) FROM download_journal WHERE status='completed'") != '1':
                 raise RuntimeError('one-time completion journal mismatch')

@@ -26,6 +26,7 @@ test:
 	python3 scripts/test_contract_compatibility.py
 	python3 scripts/test_acceptance.py
 	python3 -m unittest discover -s scripts -p test_s3_fixture.py
+	python3 -m unittest discover -s scripts -p test_upgrade_harness.py
 
 test-race:
 	go test -race ./...
@@ -34,6 +35,7 @@ test-race:
 	python3 scripts/test_contract_compatibility.py
 	python3 scripts/test_acceptance.py
 	python3 -m unittest discover -s scripts -p test_s3_fixture.py
+	python3 -m unittest discover -s scripts -p test_upgrade_harness.py
 
 test-integration:
 	@test -n "$$FILEX_TEST_DATABASE_URL" || (echo 'FILEX_TEST_DATABASE_URL is required; use make integration-docker for an isolated database'; exit 1)
