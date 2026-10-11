@@ -4,7 +4,7 @@
 Полностью реализовать технический объём фазы 7 FileX: static analysis, source/container/secret/license/SBOM, browser/mobile/visual/a11y, fuzz/load/DR, contract compatibility и release evidence. Сохранить обязательную независимую и инфраструктурную приёмку.
 
 ## Status
-2026-10-11: техническая реализация фазы 7 завершена, все 13 local source-bound gates PASS. Внешняя release приёмка остаётся заблокированной. Исходная точка — clean main `f68fc08bb795ae1903333336efe4620ce76cb4ec`. Текущие изменения ещё не опубликованы. Production deployment не выполнялся; `APP_ENV=production` отклоняется.
+2026-10-11: техническая реализация фазы 7 завершена, все 13 local source-bound gates PASS. Внешняя release приёмка остаётся заблокированной. Исходная точка — clean main `f68fc08bb795ae1903333336efe4620ce76cb4ec`. Техническая реализация опубликована в origin/main: `7dce226f1dffa7241267e3546371ad7b2665c423`, remote SHA подтверждён. [CI #38144319522](https://github.com/elnemir/p2p-files/actions/runs/38144319522) — completed/success обоих jobs: functional и supply-chain. Snapshot — `.cache/evidence/phase7-ci.json`, артефакты сохранены в `.cache/evidence/ci-38144319522/`. Production deployment не выполнялся; `APP_ENV=production` отклоняется.
 
 Владелец подтвердил: **«Окружение ещё не подготовлено; зафиксировать внешние блокеры»**. VPS/домен, SMTP/S3, внешние backups/KEK/checkpoints и target load/DR заблокированы подготовкой окружения. Это не waiver требований. R-01–06 и third-party licenses не приняты.
 
@@ -20,8 +20,7 @@
 - Fail-closed release readiness, 14 pending внешних решений, negative tests устаревшего/неполного evidence и five-platform unpublished verifier bundle/checksums реализованы. CI разделён на functional/supply-chain, сохраняет evidence 14 дней, deployment отсутствует.
 
 ## Next steps
-1. Локальные gates и документация завершены; выполнить разрешённые commit/push и проверить exact remote CI; сборка bundle не является публикацией релиза.
-2. Внешняя подготовка и acceptance согласно [release engineering](release-engineering.md), независимый security/license review и решение владельца по R-01–06. Deployment только по отдельной команде.
+1. Подготовка внешнего окружения и acceptance и acceptance согласно [release engineering](release-engineering.md), независимый security/license review и решение владельца по R-01–06. Deployment только по отдельной команде.
 
 ## Decisions
 - Все 32 MUST сохранены; partial release criteria не закрываются локальной эмуляцией. Machine-readable release decisions требуют фактического reviewer/owner evidence.
@@ -42,7 +41,7 @@
 - Production guard и release readiness остаются закрытыми; версия закреплённых scanners/images требует сопровождения и повторного scan перед фактическим release.
 
 ## Final local evidence
-Source SHA-256: `dbcbbf3b774c888d388781933cc3e7e502796eee499a474c6213cdec94566705`. Все 13 gate records: passed=true/sourceUnchanged=true/exitCode=0. Local evidence относится к этому содержимому uncommitted candidate; candidateCommit в upgrade/bundle до публикации — baseline HEAD, candidateDirty=true. Commit-bound remote evidence проверяется после push.
+Source SHA-256: `dbcbbf3b774c888d388781933cc3e7e502796eee499a474c6213cdec94566705`. Все 13 gate records: passed=true/sourceUnchanged=true/exitCode=0. Local evidence относится к этому содержимому uncommitted candidate; candidateCommit в upgrade/bundle до публикации — baseline HEAD, candidateDirty=true. Все 13 commit-bound CI records для 7dce226 подтверждены после push: их source hash совпадает с локальным. CI нагрузка compact (32 MiB/2000 rows); полный профиль подтверждён отдельно локально.
 
 | Gate | Duration, s |
 |---|---|
@@ -61,3 +60,8 @@ Source SHA-256: `dbcbbf3b774c888d388781933cc3e7e502796eee499a474c6213cdec9456670
 | verifier | 18.0 |
 
 Технические результаты: make check (50 Markdown/32 MUST/107 API operations), 36 PG/race, 25 browser, 3 fuzz, 0 HIGH/CRITICAL source + five images. Upgrade fixture maintenance window 39.576 s / sampled unavailable 36.653 s при одновременной нагрузке общего dev host; schema unchanged, baseline 50de642. Это не production downtime guarantee. `make release-check` ожидаемо BLOCKED по 14 внешним решениям и пяти partial MUST (до commit также dirty tree), локальные gates это не скрывают.
+
+После публикации verifier bundle пересобран на чистом `7dce226`: manifest/build metadata теперь указывают этот commit. Source hash не изменился. Чистый working tree устранил dirty blocker; release readiness оставляет только 14 внешних решений и 5 partial MUST.
+
+## Publication evidence
+Implementation commit `7dce226` опубликован и прошёл полный CI. Browser matrix CI: 25 passed/0 skipped/failed/flaky; 38.2/45.1/50.8/38.5/48.2 s по пяти профилям, включая те же 10 pixel baselines на Linux amd64. CI source/container findings HIGH/CRITICAL — 0; 13 gate records совпали по commit/source hash. Эта последующая фиксация меняет только wiki/session и wiki/development; исполняемый код и source hash остаются прежними. Документация повторно проходит docs-check/diff-check. Release/tag/deployment не выполнялись.
