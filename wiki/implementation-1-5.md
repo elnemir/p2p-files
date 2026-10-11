@@ -1,7 +1,9 @@
 # Реализация этапов 1–5
 
+Срез описывает состав этих этапов; текущий проект содержит 16 migrations и технические проверки фазы 7. Актуальные [статус](current-state.md) и [backlog](implementation-plan.md) имеют приоритет для продолжения.
+
 ## Контекст и задача
-Пользователь разрешил автономно привести документацию в порядок, выбрать путь разработки и закрыть этапы 1–5. Сохранены стек, все 32 MUST, one-time semantics, USER/ADMIN privacy и запрет самостоятельного production deploy. Точная проверяемая карта — [матрица](../docs/test-matrix.md), команды/evidence — [development](development.md).
+Пользователь разрешил автономно привести документацию в порядок, выбрать путь разработки и закрыть этапы 1–5. Сохранены стек, все 32 MUST, one-time semantics, USER/ADMIN privacy и запрет самостоятельного production deploy. Точная проверяемая карта — [матрица](test-matrix.md), команды/evidence — [история проверок](history/development-evidence-2026-10-11.md).
 
 ## 1. Платформа и identity
 Go API/worker/CLI/verifier, Next.js, Compose/Traefik, PG/Redis, CI; migrations 0001–0013. Argon2id 64 MiB/t3/p2, 12–1024 byte passwords, последние 5 паролей, no forced rotation. Web sessions/API token hashes, exact Origin+CSRF, SameSite Strict, auth_epoch revocation, granular scopes, session/token/login history UI. ADMIN re-auth 5 min. Typed settings revisions validate/apply/rollback и HMAC-chain audit. Internal health/ready/metrics недоступны через public proxy.
@@ -24,4 +26,4 @@ Exports materialize bounded values в PG и формируют encrypted final a
 QR direct download заменён явным POST → artifact credentials; это исправление исходного privacy contract. Public tombstones скрыты по исходным decisions. Export ADR уточнён: immutable PG staging → verified encrypted final artifact без лишней промежуточной копии snapshot. Snapshot timestamp не меняется при retry уже committed values. GET/HEAD сами по себе не приобретают recipient lease; acquire — только POST.
 
 ## Ограничения и следующий шаг
-Реальные внешние mail/S3 accounts не настраивались. Local Chromium/axe/visual evidence не закрывает всю browser/WCAG release приёмку. Продолжение этого среза — backup/restore/checkpoints/operations — реализовано фазой 6, [runbook](operations-recovery.md). Фаза 7 load/DR/security/SBOM остаётся открытой. Production env отвергается. Session фиксирует финальные результаты, риски автоматически не принимаются.
+Реальные внешние mail/S3 accounts не настраивались. Local Chromium/axe/visual evidence не закрывает всю browser/WCAG release приёмку. Продолжение этого среза — backup/restore/checkpoints/operations — реализовано фазой 6, [runbook](operations-recovery.md). Технические load/DR/security/SBOM и пять browser profiles реализованы и проверены фазой 7; их [историческое evidence](history/development-evidence-2026-10-11.md) не заменяет внешнюю приёмку. Production env отвергается. Session фиксирует финальные результаты, риски автоматически не принимаются.

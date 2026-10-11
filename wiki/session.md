@@ -1,67 +1,36 @@
 # Session State
 
 ## Task
-Полностью реализовать технический объём фазы 7 FileX: static analysis, source/container/secret/license/SBOM, browser/mobile/visual/a11y, fuzz/load/DR, contract compatibility и release evidence. Сохранить обязательную независимую и инфраструктурную приёмку.
+Полностью настроить локальный и GitHub-репозиторий FileX: правила разработки, CI/security, dependency updates, шаблоны задач/PR и защиту main.
 
 ## Status
-2026-10-11: техническая реализация фазы 7 завершена, все 13 local source-bound gates PASS. Внешняя release приёмка остаётся заблокированной. Исходная точка — clean main `f68fc08bb795ae1903333336efe4620ce76cb4ec`. Техническая реализация опубликована в origin/main: `7dce226f1dffa7241267e3546371ad7b2665c423`, remote SHA подтверждён. [CI #38144319522](https://github.com/elnemir/p2p-files/actions/runs/38144319522) — completed/success обоих jobs: functional и supply-chain. Snapshot — `.cache/evidence/phase7-ci.json`, артефакты сохранены в `.cache/evidence/ci-38144319522/`. Production deployment не выполнялся; `APP_ENV=production` отклоняется.
-
-Владелец подтвердил: **«Окружение ещё не подготовлено; зафиксировать внешние блокеры»**. VPS/домен, SMTP/S3, внешние backups/KEK/checkpoints и target load/DR заблокированы подготовкой окружения. Это не waiver требований. R-01–06 и third-party licenses не приняты.
+2026-10-11: настройки подготовлены и локально проверены; GitHub apply и CI/merge ещё впереди. Базовый HEAD `21aaa00c34ddbe7511ca950f1aacec2454989047`, ветка `codex/repository-setup`; прежние изменения DOC-01/02 сохранены и входят в проверяемый PR. [Предыдущая сессия](sessions/2026-10-11-product-tour.md) содержит видео, QA и обсуждение голоса.
 
 ## Completed steps
-- Прочитаны AGENTS/wiki/MEMORY/requirements/architecture/decisions/implementation plan; сохранены PostgreSQL authoritative, Redis ephemeral, immutable publish, one-time/ZIP atomicity, privacy, crypto и restore fencing. HTTP v1, 16 migrations и crypto/backup formats сохранены.
-- Добавлены staticcheck, ESLint/hooks/JSX-a11y, Prettier и генерируемые OpenAPI UI types. Убраны общие `any` модели UI, подтверждение reconciliation привязано к report ID, skip link переводит focus в main.
-- Trivy/Gitleaks pinned по archive SHA-256. Source/history/worktree scans, пять runtime image scans, CycloneDX и license inventory реализованы. Первоначальные HIGH/CRITICAL исправлены: web npm tooling, PG gosu, Redis OpenSSL, Traefik Go/x/net; также zlib/nghttp2. Последний image scan: 0 HIGH/CRITICAL во всех пяти images. Module-only UNKNOWN openpgp advisory остаётся видимым; reachability приложения проверяется отдельно.
-- Production generator требует пять immutable digests проверенных images. Самостоятельный production запуск по-прежнему запрещён.
-- License inventory: 443 npm entries, 24 runtime Go libraries, bundled font SHA; 16 entries требуют owner review. Конкретные позиции и ограничения — [third-party review](../docs/third-party-review.md).
-- Все 25 E2E scenarios прошли в pinned Linux Chromium/Firefox/WebKit/mobile Chromium/mobile WebKit. Просмотрены light/dark/desktop/mobile/long filename/recovery screenshots, сохранены 10 visual baselines. Финальный gate без baseline updates PASS: 25 passed, 0 skipped/failed/flaky; 59.3/100.8/78.5/59.8/123.3 s по пяти профилям. Native macOS Firefox не стартовал из-за profile error; локальная и CI matrix унифицирована Linux browser container без Docker socket.
-- Реальные fuzz campaigns PathKey/FXP1 authentication/Range завершались успешно; финальный проход PASS на текущем source hash (три кампании по 15 s плюс время компиляции). Compatibility tests отклоняют schema/operation/file removal и literal/property изменения, включая поля с названием description/examples.
-- Compact load 32 MiB/2000 rows PASS: tus resume → TLS S3 migration → rotation → Redis loss/8 concurrent acquire → worker SIGKILL/expired-lease injection → CSV rows/VACUUM → backup/restore/restart/reconcile/reopen → ZIP SHA-256/one-time/audit/no OOM. Полный 2050 MiB/20000 rows также PASS: 15 assertions, 20001 CSV rows, полный ZIP SHA-256, 0 OOM. Upload/finalize 38.441 s, migration 50.557 s, rotation 65.664 s, restore/reconcile/reopen 29.458 s, ZIP verification 116.739 s; детали и ресурсы — development.
-- Fail-closed release readiness, 14 pending внешних решений, negative tests устаревшего/неполного evidence и five-platform unpublished verifier bundle/checksums реализованы. CI разделён на functional/supply-chain, сохраняет evidence 14 дней, deployment отсутствует.
+- PR [#1](https://github.com/elnemir/p2p-files/pull/1), первый commit `c872099`, опубликован. Первоначальные CodeQL jobs/dependency review успешно выполнились, но отдельный CodeQL result check выявил 6 HIGH DOM XSS alerts в трёх URL assignments галереи и generated copy. Добавлена строгая проверка локальных PNG paths. Семь негативных browser сценариев, 50 checksums, 44 screens, 19 chapters, desktop/mobile a11y и видео прошли повторный QA; необходим повтор CodeQL и CI, merge до этого не выполняется.
+- Прочитаны AGENTS, wiki и Git status; владелец `elnemir` имеет admin. Репозиторий public, main не защищена; сторонних collaborators и webhooks нет.
+- GitHub Wiki выключена, Issues включены; приватные security reports и Dependabot security updates уже включены. Secrets scanning и push protection выключены; CodeQL не настроен.
+- Снимок исходных параметров без credentials сохранён в `.cache/repository-setup/*-before.json`.
+- Добавлены repository baseline/audit/apply, branch/security policy, CodeQL для четырёх языковых групп, dependency review, формы задач/PR, CODEOWNERS, Dependabot, editor/Git/Node defaults и SECURITY.md. [Описание](repository-governance.md).
+- Repository policy и 5 негативных тестов settings CLI прошли, actionlint 1.7.12 без ошибок. Docs: 66 Markdown / 32 requirements, без битых ссылок; git diff --check чистый.
+- Gates check/source/verifier PASS на source `dcae69a3b79b29a34cc8364fd8fdaea225ddcbf9eafa5d7b9050e0b3aca98310`, sourceUnchanged=true. Время 23,10 / 3,41 / 1,75 s. Gitleaks: no leaks в истории/worktree; source scan HIGH/CRITICAL=0, один прежний module-only finding сохранён. Verifier: пять платформ, review bundle не опубликован.
+- Read-only audit воспроизводимо нашёл 23 несовпадающих поля; result `.cache/repository-setup/20261011T154856.149223Z/result.json`. Это ожидаемое исходное состояние, не успешное применение.
 
 ## Next steps
-1. Подготовка внешнего окружения и acceptance и acceptance согласно [release engineering](release-engineering.md), независимый security/license review и решение владельца по R-01–06. Deployment только по отдельной команде.
+1. Опубликовать проверяемый PR и проверить CI его точного commit; затем merge и первоначальный CodeQL на main.
+2. Применить GitHub settings и CodeQL ruleset, выполнить API-readback/audit и зафиксировать результат.
+3. Продолжение продукта по DEV/EXT/REL остаётся отдельным от repository setup.
 
 ## Decisions
-- Все 32 MUST сохранены; partial release criteria не закрываются локальной эмуляцией. Machine-readable release decisions требуют фактического reviewer/owner evidence.
-- Source SHA-256 связывает код/config/contracts/CI/visual baselines с gate exit code, временем и профилем. Wiki/docs/README/CHANGELOG/MEMORY исключены из hash для публикации измерений; docs-check выполняется отдельно.
-- `make release-check` требует 13 свежих совпадающих gates, полную matrix, ≥2048 MiB/≥20000 rows, все verified MUST, clean Git и 14 принятых внешних решений. Скрипт ничего не публикует.
-- S3 load fixture проверяет TLS и signing envelope, но не криптографическую корректность SigV4; реальный S3 acceptance отдельно. SIGKILL реальный, истечение export lease искусственное и не включено в измеренный crash RTO.
-- Docker compiler cache очищался только по точным ID собственных FileX слоёв; чужие volumes/containers не затрагивались. Heavy Traefik build ограничен compiler parallelism/memory; версии и источник закреплены.
+- Ветки `codex/*`, PR + обязательные проверки, squash merge, запрет force push/delete main и правила для admins. Второе approval не требовать при единственном участнике.
+- GitHub visibility, права участников, proprietary policy и production guard остаются текущими. LICENSE требует решения DEV-03, не генерируется из предположения.
+- Никаких production secrets/deploy, публичных Pages или внешней озвучки эта настройка не запускает.
 
 ## Context
-Основные новые компоненты: scripts/acceptance.py, supply_chain.py/security_tools.py, test-performance.py/fixtures, test-fuzz.py, contract_compatibility.py, release_bundle.py; UI generated types/lint; hardened Dockerfiles/Compose/generator; Playwright config/visual tests/baselines; CI/Makefile; contracts/traceability/release-acceptance. Знания: [ADR-009](adr/009-release-evidence.md), [release engineering](release-engineering.md), [performance](../docs/performance-testing.md), [design review](design-review.md), [roadmap](roadmap.md), [release notes](../docs/release-notes.md).
-
-Предыдущие опубликованные срезы: фазы 1–5 `3af2f0c` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38125813423)); фаза 6 `02c53d9` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38131827674)); ingress `50de642` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38133772690)); controlled upgrade `dda4587` ([CI success](https://github.com/elnemir/p2p-files/actions/runs/38135958275)). Это исторические результаты, не проверка текущего diff.
+[Индекс](index.md), [workflow](development-workflow.md), [тесты](testing.md), [план](implementation-plan.md), [прошлая сессия](sessions/2026-10-11-product-tour.md).
 
 ## Risks / blockers
-- Окружение не подготовлено по подтверждению владельца: нет внешних ACME/DNS/host/provider/escrow/backup/DR evidence.
-- Реальные Safari/mobile devices, assistive technology и независимый security review не подтверждены.
-- LGPL optional libvips/MPL dev-only axe и container/font license obligations требуют owner review; R-01–06 не accepted.
-- Production guard и release readiness остаются закрытыми; версия закреплённых scanners/images требует сопровождения и повторного scan перед фактическим release.
+- Внешнее окружение не подготовлено; 14 решений pending / 5 MUST partial. Настройка GitHub не означает release acceptance.
+- Названия required checks должны соответствовать реально выполненным jobs; CI и API-readback проверяются перед завершением.
 
-## Final local evidence
-Source SHA-256: `dbcbbf3b774c888d388781933cc3e7e502796eee499a474c6213cdec94566705`. Все 13 gate records: passed=true/sourceUnchanged=true/exitCode=0. Local evidence относится к этому содержимому uncommitted candidate; candidateCommit в upgrade/bundle до публикации — baseline HEAD, candidateDirty=true. Все 13 commit-bound CI records для 7dce226 подтверждены после push: их source hash совпадает с локальным. CI нагрузка compact (32 MiB/2000 rows); полный профиль подтверждён отдельно локально.
-
-| Gate | Duration, s |
-|---|---|
-| browser | 502.3 |
-| check | 128.0 |
-| compatibility | 0.1 |
-| dependencies | 6.8 |
-| fuzz | 71.1 |
-| images | 7.5 |
-| ingress | 36.8 |
-| integration | 106.3 |
-| licenses | 4.1 |
-| performance | 346.0 |
-| source | 3.6 |
-| upgrade | 68.3 |
-| verifier | 18.0 |
-
-Технические результаты: make check (50 Markdown/32 MUST/107 API operations), 36 PG/race, 25 browser, 3 fuzz, 0 HIGH/CRITICAL source + five images. Upgrade fixture maintenance window 39.576 s / sampled unavailable 36.653 s при одновременной нагрузке общего dev host; schema unchanged, baseline 50de642. Это не production downtime guarantee. `make release-check` ожидаемо BLOCKED по 14 внешним решениям и пяти partial MUST (до commit также dirty tree), локальные gates это не скрывают.
-
-После публикации verifier bundle пересобран на чистом `7dce226`: manifest/build metadata теперь указывают этот commit. Source hash не изменился. Чистый working tree устранил dirty blocker; release readiness оставляет только 14 внешних решений и 5 partial MUST.
-
-## Publication evidence
-Implementation commit `7dce226` опубликован и прошёл полный CI. Browser matrix CI: 25 passed/0 skipped/failed/flaky; 38.2/45.1/50.8/38.5/48.2 s по пяти профилям, включая те же 10 pixel baselines на Linux amd64. CI source/container findings HIGH/CRITICAL — 0; 13 gate records совпали по commit/source hash. Эта последующая фиксация меняет только wiki/session и wiki/development; исполняемый код и source hash остаются прежними. Документация повторно проходит docs-check/diff-check. Release/tag/deployment не выполнялись.
+Повторные локальные gates после URL hardening и устранения двойного CI feature branch: check/source/verifier PASS, sourceUnchanged=true, source SHA-256 `56f73f7bba5b90c99787eebb720d234cce67a8c888356921299d199f45e1eca3`. Логи `.cache/repository-setup/{check,source,verifier,gallery-check}.log`.

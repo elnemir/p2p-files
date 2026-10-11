@@ -3,7 +3,7 @@
 ## Контекст и задача
 FileX хранит authoritative metadata в PostgreSQL, а зашифрованные payload и artifacts — в отдельных Local/S3 хранилищах. Фаза 6 добавляет управляемое восстановление этих метаданных, расследование расхождений и явное открытие сервиса. Копия БД не возвращает физически удалённые файлы и может воскресить ранее отозванные ссылки/API-токены. Поэтому успешный import сам по себе не разрешает выдачу.
 
-[ADR-006](adr/006-operations-recovery.md) объясняет формат и locks; [CLI](../docs/cli.md) содержит полный интерфейс; [session](session.md) фиксирует фактически выполненные проверки. Production остаётся фазой 7.
+[ADR-006](adr/006-operations-recovery.md) объясняет формат и locks; [CLI](cli.md) содержит полный интерфейс; [session](session.md) фиксирует фактически выполненные проверки. Production остаётся фазой 7.
 
 ## Компоненты и данные
 - `internal/operations`: encrypted archive, logical snapshot/import, KEK recovery, integrity checks, incidents, checkpoints, schedules, reconciliation.

@@ -5,7 +5,12 @@ export NEXT_TELEMETRY_DISABLED := 1
 export STATICCHECK_CACHE := $(CURDIR)/.cache/staticcheck
 
 .PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress upgrade-drill fuzz performance supply-chain release-check
-check: lint test-race docs-check contracts build
+check: lint test-race docs-check repository-check contracts build
+
+.PHONY: repository-check
+repository-check:
+	node scripts/check_repository.mjs
+	python3 -m unittest discover -s scripts -p test_github_repository.py
 lint:
 	@test -z "$$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
 	go vet ./...

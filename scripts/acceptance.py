@@ -29,7 +29,7 @@ def source_hash():
  for name in sorted(set(names)-{''}):
   # Publishing measured results in the wiki must not invalidate binary evidence.
   # Markdown links/format are still checked by the check gate and CI on each push.
-  if name.endswith('.md') and (name.startswith(('wiki/','docs/')) or name in ['README.md','CHANGELOG.md','MEMORY.md']):continue
+  if name.endswith('.md') and (name.startswith('wiki/') or name in ['README.md','CHANGELOG.md','MEMORY.md']):continue
   path=ROOT/name
   digest.update(name.encode()+b'\0')
   if path.is_symlink():digest.update(b'link:'+os.readlink(path).encode())

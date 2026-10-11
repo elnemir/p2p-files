@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Приватное сообщение об уязвимости
+    url: https://github.com/elnemir/p2p-files/security/advisories/new
+    about: Не публикуйте секреты, данные пользователей и подробности уязвимостей в Issues.
+  - name: Документация FileX
+    url: https://github.com/elnemir/p2p-files/blob/main/wiki/index.md
+    about: Архитектура, запуск, проверки, roadmap и ограничения выпуска.

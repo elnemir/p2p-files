@@ -16,7 +16,7 @@
 | SMTP downgrade | Mandatory verified STARTTLS/SMTPS before AUTH | Wire TLS/certificate/plaintext rejection tests |
 | ADMIN privilege loss | Current role/reauth/account epoch during stream and job commit | ADMIN artifact/forensic/export demotion tests |
 | Stale QR/public report | Link change invalidation, private trash tombstones, source-state guards | QR invalidation/report privacy tests |
-| Resource exhaustion | 4 MiB chunks, 8 streams, 4 Argon2 ops, quotas/timeouts/row bounds | Negative tests; sustained load gate 7 |
+| Resource exhaustion | 4 MiB chunks, 8 streams, 4 Argon2 ops, quotas/timeouts/row bounds | Negative tests и bounded 2050 MiB local load; target capacity acceptance отдельно |
 | Retained copies | Compensation rows before Put, idempotent cleanup, hold/write lease guards | Cleanup/migration/expiry tests; restore orphan inventory/quarantine tests |
 | Restore resurrection | Verified pre-backup, generation/session fencing, reconciliation/capability review, explicit reopen | Recovery/fresh DB/drain/rollback PG drills |
 | Incompatible binary / concurrent DDL | Strict migration prefix, closed gate, generation drain, exclusive migration lock, explicit reopen | Controlled upgrade tests по ADR-008; текущий результат в session |
