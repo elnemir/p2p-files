@@ -26,3 +26,6 @@
 
 ## Реализация эксплуатационных решений 2026-10-11
 [ADR-006](../wiki/adr/006-operations-recovery.md) фиксирует encrypted logical archive, отдельный неоткатываемый recovery control plane, обязательный pre-backup, runtime generation и explicit reopen. KEK rewrap сохраняет audit identity, restore в свежую БД требует новый master KEK; исторические backups сохраняют исторический KEK. ADMIN доступ к чужим exports/TTL реализован с reason/audit и непрерывным role/reauth guard. Локальные fault/concurrency/browser evidence и границы release приёмки — [development](../wiki/development.md).
+
+## Начало фазы 7: ingress
+[ADR-007](../wiki/adr/007-ingress-and-network-policy.md) реализует один доверенный Traefik hop, versioned network policy, generation fencing при её смене, host allowlist reset и offline generation production config. Это не принятие residual risks и не разрешение deployment.

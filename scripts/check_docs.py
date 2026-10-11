@@ -29,7 +29,9 @@ for row in rows:
         if not (root/name).is_file(): errors.append('Missing implementation '+name)
     for test in row['tests']:
         p = root/test['path']
-        pattern = (r'func\s+'+re.escape(test['name'])+r'\(') if p.suffix=='.go' else (r'''\btest\(\s*(['"])'''+re.escape(test['name'])+r'''\1\s*,''')
+        if p.suffix == '.go': pattern = r'func\s+'+re.escape(test['name'])+r'\('
+        elif p.suffix == '.py': pattern = r'def\s+'+re.escape(test['name'])+r'\('
+        else: pattern = r'''\btest\(\s*(['"])'''+re.escape(test['name'])+r'''\1\s*,'''
         if not p.is_file() or not re.search(pattern,p.read_text()): errors.append('Missing test '+test['id'])
 subprocess.run(['python3','scripts/traceability.py','--check'],cwd=root,check=True)
 if errors: raise SystemExit('\n'.join(errors))

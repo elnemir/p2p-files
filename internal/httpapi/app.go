@@ -18,7 +18,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
-	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -208,9 +207,10 @@ func (a *App) Handler() http.Handler {
 			failure(w, e)
 			return
 		}
-		remote, _, e := net.SplitHostPort(r.RemoteAddr)
-		if e != nil {
-			remote = r.RemoteAddr
+		remote, ok := r.Context().Value(clientAddressKey{}).(string)
+		if !ok || remote == "" {
+			failure(w, auth.ErrForbidden)
+			return
 		}
 		session, e := a.Auth.Login(r.Context(), input.Email, input.Password, remote, c.SessionTTLSeconds)
 		if e != nil {
@@ -364,7 +364,7 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_ = reply(w, 404, map[string]string{"code": "not_found", "message": "not_found"})
 	})
-	return headers(a.recoveryGate(a.limitStreams(tusProtocol(mux))))
+	return headers(a.recoveryGate(a.networkGate(a.limitStreams(tusProtocol(mux)))))
 }
 func (a *App) Metrics() http.Handler {
 	mux := http.NewServeMux()

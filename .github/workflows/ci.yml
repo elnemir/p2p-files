@@ -38,3 +38,4 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/browsers
       - run: make e2e
+      - run: make ingress

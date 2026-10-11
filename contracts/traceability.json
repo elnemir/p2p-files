@@ -610,7 +610,12 @@
       "apps/web/proxy.ts",
       "internal/httpapi/app.go",
       "internal/communications/transports.go",
-      "deploy/compose.yaml"
+      "deploy/compose.yaml",
+      "internal/config/network.go",
+      "internal/networkpolicy/policy.go",
+      "internal/httpapi/network.go",
+      "internal/settings/store.go",
+      "scripts/production_config.py"
     ],
     "tests": [
       {
@@ -627,9 +632,29 @@
         "id": "T-SEC-005-3",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "public pages, locale and internal route isolation"
+      },
+      {
+        "id": "T-SEC-005-4",
+        "path": "internal/config/network_test.go",
+        "name": "TestNetworkPolicyValidation"
+      },
+      {
+        "id": "T-SEC-005-5",
+        "path": "internal/networkpolicy/policy_test.go",
+        "name": "TestSingleTrustedProxyRejectsSpoofing"
+      },
+      {
+        "id": "T-SEC-005-6",
+        "path": "internal/httpapi/network_integration_test.go",
+        "name": "TestIntegrationNetworkPolicyAndHostRecovery"
+      },
+      {
+        "id": "T-SEC-005-7",
+        "path": "scripts/test-ingress.py",
+        "name": "test_generated_tls_ingress"
       }
     ],
-    "gap": "CSP/session/SSRF/redaction/internal isolation реализованы; production TLS/ACME/trusted forwarding/CIDR и deployment acceptance — фаза 7."
+    "gap": "Реализованы trusted single proxy, IPv4 CIDR policy, generation fencing, host reset и HTTPS/ACME config generator. Local TLS evidence — в session. Public ACME/DNS/host/deployment acceptance и independent review остаются открытыми."
   },
   {
     "id": "SEC-006",
@@ -855,7 +880,9 @@
       "internal/database/database.go",
       "internal/config/config.go",
       "deploy/compose.yaml",
-      "internal/database/upgrade.go"
+      "internal/database/upgrade.go",
+      "scripts/production_config.py",
+      "cmd/filex-cli/settings.go"
     ],
     "tests": [
       {
@@ -877,9 +904,19 @@
         "id": "T-OPS-005-4",
         "path": "internal/httpapi/operations_integration_test.go",
         "name": "TestIntegrationUpgradePreflightIsReadOnly"
+      },
+      {
+        "id": "T-OPS-005-3",
+        "path": "scripts/test_production_config.py",
+        "name": "test_private_backend_and_immutable_nonroot_services"
+      },
+      {
+        "id": "T-OPS-005-4",
+        "path": "scripts/test_production_config.py",
+        "name": "test_rejects_unsafe_configuration"
       }
     ],
-    "gap": "Local non-root Compose/migrations/safety работают; production bootstrap/controlled upgrade и release deployment validation — фаза 7."
+    "gap": "Local non-root Compose/migrations/safety и generator isolated HTTPS profile реализованы. APP_ENV=production пока отклоняется. Controlled upgrade/release deployment acceptance остаются фазой 7."
   },
   {
     "id": "NFR-001",
@@ -959,7 +996,9 @@
       "Makefile",
       ".github/workflows/ci.yml",
       "scripts/check_docs.py",
-      "scripts/e2e/flow.spec.ts"
+      "scripts/e2e/flow.spec.ts",
+      "scripts/test-ingress.py",
+      "scripts/test_production_config.py"
     ],
     "tests": [
       {
@@ -978,7 +1017,7 @@
         "name": "admin backup restore restart reconciliation and explicit reopening"
       }
     ],
-    "gap": "Unit/integration/race/fault/fuzz smoke/Chromium/axe/visual/contracts есть; full security/container/secret/license/SBOM/browser/load/DR — фаза 7. CI этапов 1–5 подтверждён; phase-6 remote CI отдельно после публикации."
+    "gap": "Unit/integration/race/fault/fuzz smoke/Chromium/axe/visual/contracts и local TLS harness есть; full security/container/secret/license/SBOM/browser/load/DR — фаза 7. CI фаз 1–6 подтверждён; новые phase-7 изменения проверяются отдельно."
   },
   {
     "id": "NFR-004",

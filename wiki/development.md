@@ -12,6 +12,7 @@ make integration-docker
 make security
 PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/browsers" npx playwright install chromium
 make e2e
+make ingress
 ```
 
 `make check`: gofmt/vet, TypeScript strict, Go race tests, contract tests, Markdown/traceability, OpenAPI/AsyncAPI validation, Go и Next.js build. Без `FILEX_TEST_DATABASE_URL` обычный Go suite пропускает PG tests; отдельный `make test-integration` требует этот URL. `integration-docker` создаёт disposable PostgreSQL с random credentials, запускает все `TestIntegration*` с race и удаляет только свой container. Каждому test соответствует отдельная schema.
@@ -48,7 +49,7 @@ curl --fail http://localhost:8090/api/v1/status
 ## Набор доказательств
 
 - Go unit/race: passwords, settings, paths/fuzz seeds, AEAD vectors/tamper, ZIP64/ranges, trusted signatures, SMTP TLS/STARTTLS downgrade rejection, S3 TLS/conditional Put/Get/Delete.
-- 31 PG integration/race cases: identity/settings; atomic publish/owner isolation/outbox rollback; leases/concurrent acquire/revoke; freeze/expiry/integrity; migration/rotation; tus/forensic; webhook dedup/retry/DLQ; tree/admin guards; report privacy/hashes/trash; export snapshot/retry/bulk/authorization; QR invalidation and key budgets; WS origin/revocation; backup/restore/pre-backup failure/drain/rollback, KEK rewrap/fresh DB, crypto containment, audit/ops checkpoint evidence, schedules/privacy, ADMIN exports/TTL, read-only upgrade check.
+- 32 PG integration/race cases: identity/settings; atomic publish/owner isolation/outbox rollback; leases/concurrent acquire/revoke; freeze/expiry/integrity; migration/rotation; tus/forensic; webhook dedup/retry/DLQ; tree/admin guards; report privacy/hashes/trash; export snapshot/retry/bulk/authorization; QR invalidation and key budgets; WS origin/revocation; backup/restore/pre-backup failure/drain/rollback, KEK rewrap/fresh DB, crypto containment, audit/ops checkpoint evidence, schedules/privacy, ADMIN exports/TTL, read-only upgrade check; trusted proxy/allowlist/effective IP, privileged request generation fencing и audited host reset.
 - Playwright Chromium через proxy: interrupted PATCH→HEAD resume, publish, mobile recipient ZIP, report PDF/JSON verification, CSV export, settings dark theme, public help RU/EN/status/internal isolation; ADMIN backup→restore с pre-backup→restart→reauth→reconcile→reopen, checkpoint download, schedules, чужой export/TTL. JSON responses сравниваются с OpenAPI. Axe WCAG tags и screenshots: desktop, 390px и 360px.
 - Contracts: 107 runtime operations, OpenAPI 3.1.1/AsyncAPI 3.0, versioned schemas, four contract/privacy/coverage tests. Generated files проверяются `--check`.
 - Earlier bounded path fuzz: 284267 executions, 2 workers, около 6 s. Это smoke fuzz, не исчерпывающий security proof.
@@ -84,10 +85,26 @@ curl --fail http://localhost:8090/api/v1/status
 | Visual | Security incident PDF получен из integration HTTP response, отрендерен Poppler и просмотрен: A4, читаемые Cyrillic/hash/JSON без clipping. Restore/reopened mobile screenshots 390px просмотрены; notices исправлены и повторно проверены. |
 | `make security` | PASS: npm production vulnerabilities 0; govulncheck affected symbols/imported packages 0. Неимпортируемый module-only openpgp advisory описан выше. |
 | Review/contracts/wiki | ADR-006, threat/design review, migrations 0014–0016, operational/incident runbooks, CLI, matrix и session синхронизированы. 27 requirements verified по local evidence; 5 partial остаются фазой 7. |
-| Публикация | Изменения фазы 6 пока локальные: commit/push и remote CI для них не выполнялись. Production deployment отсутствует. Исторический зелёный CI фаз 1–5 не приписывается текущим изменениям. |
+| Публикация | Фаза 6 опубликована как `02c53d9`, [GitHub Actions #38131827674](https://github.com/elnemir/p2p-files/actions/runs/38131827674) success: build/check, PostgreSQL, security, Chromium E2E. Production deployment отсутствует. |
 
 Unit/race archive checks включают wrong KEK, byte tamper, truncation, swapped/missing chunks, incomplete descriptor, malformed/out-of-order snapshot records, Local pagination и TLS S3 roundtrip/inventory pagination. PG drills дополнительно проверяют drain активного writer, rollback failed import, невозврат KEK usage reservations, rewrap/чистую БД с новым KEK, audit и ops ledger corruption/checkpoints, schedule concurrency и critical crypto containment при невозможности записать report.
 
 Для точечного повторения: `python3 scripts/test-integration.py 'TestIntegrationRecoveryBackupFaultAndReopen'`. Это фильтр тестов, не замена полного suite для новой общей регрессии. Логи, snapshots, скачанные synthetic artifacts и browser traces сохраняются только в ignored `.cache`; scoped integration/E2E scripts удалили свои containers/volumes. Tests не обращались к production или реальным SMTP/S3 accounts.
 
 Фаза 6 закрыта по локальным development gates. Следующий этап — release acceptance фазы 7, включая production topology, реальные storage/provider настройки, внешнее хранение checkpoints/KEK, full browser/manual WCAG и load/DR/security/SBOM. Локальный архив ограничен 1 GiB и совпадающей схемой; этот результат не обещает production RPO/RTO.
+
+## Первый срез фазы 7: ingress/network policy (2026-10-11)
+
+[Runbook и ограничения](production-ingress.md). Реализованы typed PG policy, доверенный single-hop proxy, эффективный IP для login rate limit, CIDR/HTTPS/Host guards, settings generation fencing и host reset. Generator production profile не запускает контейнеры; APP_ENV=production остаётся закрытым release guard.
+
+| Gate | Результат текущего среза |
+|---|---|
+| `make check` | PASS: unit/race (включая malformed/spoofed proxy/CIDR), vet, TS, 4 contract tests, 3 generator tests, Go/Next build, 44 Markdown/32 requirements, 107 API operations. `.cache/evidence/phase7-check.log`. |
+| `make integration-docker` | PASS: 27 HTTP + 5 repository = 32 cases с race; HTTP 97.4 s/repository 6.2 s. Новый network scenario проверяет CAS rollback, отмену privileged request, mandatory restart, IP bucket, secure cookie, reset/audit. `.cache/evidence/phase7-all-pg.log`. |
+| `make e2e` | PASS: прежние 3 Chromium scenarios, 28.6 s; пользовательская передача/отчёты/QR/export и ADMIN restore/restart/reopen. Axe/overflow/response-contract errors на проверенных страницах — 0. `.cache/evidence/phase7-e2e.log`. |
+| `make ingress` | PASS: настоящий pinned Traefik, тестовая CA с полной проверкой; TLS 1.2 success, сервер отвергает TLS 1.1, неизвестная CA и чужой Host отвергаются, redirect/HSTS/Secure cookie, private routes, forwarded spoof rejection, CIDR deny, audited host reset и закрытый gate после restart. `.cache/evidence/phase7-ingress.log`. |
+| `make security` | PASS: npm production 0; govulncheck 0 affected symbols/imported packages, прежний module-only openpgp advisory сохраняется. `.cache/evidence/phase7-security.log`. |
+
+Integration выявила необходимость `.yaml` extension для file provider и literal backend IP в proxy network: Docker DNS при общей egress мог выбрать другой интерфейс. Эти ошибки исправлены и повторный TLS drill прошёл. Test CA содержит явные X.509 extensions для строгой проверки современными TLS clients; проверки сертификата не отключались.
+
+Локальные fixtures используют random secrets и собственные projects, удаляют только свои containers/volumes, не контактируют с public ACME/production/provider accounts. GitHub CI теперь включает `make ingress`; результат публикации текущего среза хранится в session. Вся фаза 7 не закрыта: controlled upgrade, full browser/manual WCAG, load/DR, independent security и SBOM/container/secret/license gates остаются следующими шагами.

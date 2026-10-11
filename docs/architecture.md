@@ -58,3 +58,5 @@ W->>DB: deleted
 
 ## Реализация и источники деталей
 [Модель данных](../wiki/data-model.md), [core contracts](../wiki/core-design.md), [фазы](../wiki/roadmap.md). Этапы 1–5 подключают repository к защищённым HTTP routes, UI и worker. Диаграмма выше содержит целевую production архитектуру: BackupProvider и отдельный recovery control plane реализованы фазой 6 ([поток восстановления](../wiki/operations-recovery.md)); ACME/TLS остаются фазой 7; локальный Compose использует loopback HTTP. Redis развёрнут, но correctness/очереди реализованы в PG. Internal health endpoints находятся на отдельном listener. Реальное состояние и ограничения: [development](../wiki/development.md).
+
+Фаза 7.1 добавляет [standalone production ingress generator](../wiki/production-ingress.md) и typed PG networkPolicy. По умолчанию development остаётся loopback HTTP; строгий HTTPS/proxy/CIDR режим проверяется отдельным TLS fixture. Реальный production runtime пока закрыт release guard.

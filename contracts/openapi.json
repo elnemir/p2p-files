@@ -127,7 +127,7 @@
       "post": {
         "operationId": "postAuthLogin",
         "summary": "Sign in with email and password",
-        "description": "Requires exact publicOrigin. Sets HttpOnly SameSite=Strict filexSession cookie. Generic errors and durable per-IP/per-email throttling prevent enumeration. Store csrfToken for unsafe requests.",
+        "description": "Requires exact publicOrigin. Sets HttpOnly SameSite=Strict filexSession cookie. Generic errors and durable per-IP/per-email throttling prevent enumeration. Client IP uses the socket peer unless a configured single Traefik hop supplies valid forwarded headers; network allowlist/proxy/HTTPS guards apply before login. Store csrfToken for unsafe requests.",
         "x-implementation": "implemented",
         "tags": [
           "auth"
@@ -2195,7 +2195,7 @@
       "post": {
         "operationId": "postAdminSettingsRevisionApply",
         "summary": "Apply or roll back to a validated revision",
-        "description": "Compare-and-set active revision, with an audit record in the same transaction. Select a previous validated revision to roll back. ADMIN cookie session with reauthentication within five minutes is required.",
+        "description": "Compare-and-set active revision, with an audit record in the same transaction. Select a previous validated revision to roll back. A changed networkPolicy or publicOrigin atomically closes the recovery gate, changes runtime generation, cancels existing requests and requires API/worker restart plus reconciliation/explicit reopening. Trusted proxy addresses are exact IPv4 /32 peers; requireHttps requires requireProxy and an HTTPS origin. ADMIN cookie session with reauthentication within five minutes is required.",
         "x-implementation": "implemented",
         "tags": [
           "admin"
@@ -16072,10 +16072,44 @@
           "expiresAt"
         ]
       },
+      "NetworkPolicy": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "trustedProxyCidrs": {
+            "type": "array",
+            "maxItems": 16,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "description": "Canonical IPv4 /32 for one designated Traefik peer; broad proxy networks are rejected."
+            }
+          },
+          "allowedClientCidrs": {
+            "type": "array",
+            "maxItems": 128,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "description": "Canonical IPv4 network CIDR; empty list allows all clients."
+            }
+          },
+          "requireProxy": {
+            "type": "boolean"
+          },
+          "requireHttps": {
+            "type": "boolean"
+          }
+        },
+        "required": []
+      },
       "Settings": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "networkPolicy": {
+            "$ref": "#/components/schemas/NetworkPolicy"
+          },
           "version": {
             "const": 1
           },

@@ -3,7 +3,7 @@ export GOMODCACHE := $(CURDIR)/.cache/gomod
 export GOCACHE := $(CURDIR)/.cache/go-build
 export NEXT_TELEMETRY_DISABLED := 1
 
-.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e
+.PHONY: check lint test test-race test-integration integration-docker contracts docs-check build up down migrate security e2e ingress
 check: lint test-race docs-check contracts build
 lint:
 	@test -z "$$(gofmt -l cmd internal)" || (gofmt -l cmd internal; exit 1)
@@ -13,10 +13,12 @@ lint:
 test:
 	go test ./...
 	npm run test:contracts
+	python3 scripts/test_production_config.py
 
 test-race:
 	go test -race ./...
 	npm run test:contracts
+	python3 scripts/test_production_config.py
 
 test-integration:
 	@test -n "$$FILEX_TEST_DATABASE_URL" || (echo 'FILEX_TEST_DATABASE_URL is required; use make integration-docker for an isolated database'; exit 1)
@@ -51,3 +53,6 @@ security:
 
 e2e:
 	python3 scripts/test-e2e.py
+
+ingress:
+	python3 scripts/test-ingress.py

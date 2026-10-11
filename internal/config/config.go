@@ -52,16 +52,17 @@ func Load(getenv func(string) string) (Bootstrap, error) {
 }
 
 type Settings struct {
-	BannerRU              string   `json:"bannerRu,omitempty"`
-	BannerEN              string   `json:"bannerEn,omitempty"`
-	FileTypeMode          string   `json:"fileTypeMode,omitempty"`
-	FileTypes             []string `json:"fileTypes,omitempty"`
-	PublicOrigin          string   `json:"publicOrigin"`
-	SessionTTLSeconds     int64    `json:"sessionTtlSeconds"`
-	Version               int      `json:"version"`
-	TransferMaxTTLSeconds int64    `json:"transferMaxTtlSeconds"`
-	MaxFiles              int      `json:"maxFiles"`
-	MaxPathBytes          int      `json:"maxPathBytes"`
+	NetworkPolicy         NetworkPolicy `json:"networkPolicy,omitempty"`
+	BannerRU              string        `json:"bannerRu,omitempty"`
+	BannerEN              string        `json:"bannerEn,omitempty"`
+	FileTypeMode          string        `json:"fileTypeMode,omitempty"`
+	FileTypes             []string      `json:"fileTypes,omitempty"`
+	PublicOrigin          string        `json:"publicOrigin"`
+	SessionTTLSeconds     int64         `json:"sessionTtlSeconds"`
+	Version               int           `json:"version"`
+	TransferMaxTTLSeconds int64         `json:"transferMaxTtlSeconds"`
+	MaxFiles              int           `json:"maxFiles"`
+	MaxPathBytes          int           `json:"maxPathBytes"`
 }
 
 func ParseSettings(raw []byte) (Settings, error) {
@@ -101,6 +102,9 @@ func ParseSettings(raw []byte) (Settings, error) {
 		if !strings.Contains(v, "/") || strings.ContainsAny(v, " \r\n;") {
 			return s, errors.New("invalid file type")
 		}
+	}
+	if err := ValidateNetworkPolicy(s); err != nil {
+		return s, err
 	}
 	return s, nil
 }

@@ -6,7 +6,7 @@
 ## Status
 **Фазы 1–6 закрыты по локальным development gates.** Фаза 6 реализована и проверена; документация, миграции, контракты и traceability обновлены. В матрице 27 verified/5 partial/0 planned, все 32 MUST сохранены. Оставшиеся partial относятся к release acceptance фазы 7. `APP_ENV=production` по-прежнему отклоняется.
 
-Изменения фазы 6 находятся в текущем working tree ветки `main`; commit/push и remote CI для них не выполнялись. Предыдущие этапы 1–5 опубликованы как `3af2f0c` (`feat: implement FileX development phases 1-5`), publication evidence — `703c2ea`. Их [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) прошёл; это исторический CI, не проверка текущего diff. Production deployment не выполнялся.
+Фаза 6 опубликована коммитом `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` в origin/main; SHA подтверждён. [CI #38131827674](https://github.com/elnemir/p2p-files/actions/runs/38131827674) — success, включая build/PG/security/Chromium E2E. Первый срез фазы 7 (HTTPS ingress/network policy) реализован и прошёл локальные gates; готовится отдельный commit/push. Вся фаза 7 остаётся открытой. Предыдущие этапы 1–5 опубликованы как `3af2f0c` (`feat: implement FileX development phases 1-5`), publication evidence — `703c2ea`. Их [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) прошёл; это исторический CI, не проверка текущего diff. Production deployment не выполнялся.
 
 ## Completed steps
 - Восстановлены правила и контекст wiki/requirements, проведены architecture/crypto review, зафиксирован [ADR-006](adr/006-operations-recovery.md).
@@ -26,8 +26,8 @@
 - Security incident PDF и mobile restore/reopened screenshots 390px просмотрены; clipping/overflow не обнаружены. Scoped fixtures удалили свои контейнеры и volumes; secrets/caches/traces не добавлялись в Git.
 
 ## Next steps
-1. Выполняется публикация фазы 6 по прямой команде владельца: проверка diff/index, Conventional Commit, push в существующий origin и отдельная проверка remote CI. Локальный green не является remote CI evidence.
-2. Фаза 7: production TLS/ACME/trusted proxy/CIDR, controlled upgrade и зависимый network-policy reset; actual provider/escrow/checkpoint/DR acceptance.
+1. Фаза 6 опубликована и CI success. Опубликовать проверенный первый срез фазы 7 и подтвердить его remote CI отдельно.
+2. Продолжить фазу 7: controlled upgrade/downtime drill; actual ACME/DNS/host/provider/escrow/checkpoint/DR acceptance после согласованной инфраструктурной подготовки. HTTPS/proxy/CIDR и host reset реализованы локально.
 3. Full Safari/Firefox/mobile browser matrix, manual WCAG, load/DR, SBOM/license/container/secret scans и independent security review; затем release review всех 32 MUST и residual risks с владельцем.
 4. Реальный deployment только по отдельной явной команде пользователя.
 
@@ -45,5 +45,13 @@
 ## Risks / blockers
 Блокировок для локального закрытия фазы 6 нет. Production topology, real SMTP/S3 accounts, full DR/load/a11y/browser/security и внешнее хранение KEK/checkpoints не подтверждены. Архив ≤1 GiB, record ≤64 MiB, inventory ≤1 млн объектов, findings ≤10 тыс.; worker/CLI execution bounds 5/15 минут — не SLA/RPO/RTO. Backup без payload не восстанавливает физически удалённые bytes; потерянный historical KEK не восстанавливается кодом. Исходное интервью отсутствует. R-01–06 не приняты.
 
-## Перед публикацией фазы 6
-Состав working tree относится к завершённой фазе 6; текущая ветка main, origin — существующий elnemir/p2p-files. Workflow development-checks выполняет только проверки, без deployment. Локальные gates подтверждены предыдущим шагом, включая последние Unicode/restore tests. Перед commit повторяются документационные/contract/whitespace проверки; credentials/caches/traces исключены из Git. Фаза 7 начинается с production ingress/trusted proxy и release evidence; инфраструктурная приёмка не считается выполненной заранее.
+## Итог публикации фазы 6 и первого среза фазы 7
+- Фаза 6: commit `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` отправлен в origin/main; local/remote SHA подтверждены. CI #38131827674 — completed/success.
+- [ADR-007](adr/007-ingress-and-network-policy.md), [production ingress](production-ingress.md): typed PG networkPolicy, точные доверенные proxy /32, single-valued XFF/XFP, effective IP для allowlist/login bucket, requireProxy/HTTPS/Host и bounded CIDR validation.
+- Network policy/publicOrigin changes атомарно меняют active settings, закрывают gate, инвалидируют reconciliation и меняют generation. Проверена отмена privileged request; restart API/worker обязателен. Host network reset снимает только client allowlist, сохраняет transport trust, создаёт revision/audit и не открывает gate.
+- CLI settings show и config ingress-check read-only, без migrations; settings apply использует draft/validate/CAS. Production ingress-check не одобряет release. API contracts остаются 107 operations, новая networkPolicy совместима с прежними settings v1.
+- Standalone production config generator использует pinned base images и требует immutable API/web digests, private networks, non-root/read-only containers, TLS/ACME, strict SNI, HSTS и только 80/443 снаружи. Не выполняет deployment. Runtime APP_ENV=production остаётся запрещён.
+- Проверки: make check PASS (44 Markdown, 32 requirements, Go/Next builds, unit/race, 4 contracts, 3 generator tests); полный PG/race PASS 32 tests (97.4 s HTTP/6.2 s repository); Chromium PASS 3 tests (28.6 s); make ingress PASS; make security PASS (npm 0, reachable govulncheck 0, прежний module-only advisory не скрыт).
+- TLS fixture подтвердил TLS 1.2, отказ сервера TLS 1.1, strict CA, HTTP redirect/HSTS/Secure cookie, неизвестный Host/private routes, spoofed header rejection, CIDR deny, host reset и закрытый gate. Исправлены file-provider extension и неоднозначный service DNS: Traefik обращается по literal proxy-network IP.
+- Evidence logs — ignored `.cache/evidence/phase7-*.log`. Тестовые projects/volumes удалены scoped scripts. Настоящие ACME/DNS/host/production mutations не выполнялись. Новые исходники: config/network, networkpolicy, httpapi/network, settings/CLI, production generator/TLS harness; новая SQL migration не потребовалась.
+- Release phase 7 ещё не закрыта. Остаточные risks не приняты, все 32 MUST сохранены. Следующие gates перечислены выше.

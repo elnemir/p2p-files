@@ -19,5 +19,7 @@
 - ADMIN операции чужих exports/TTL реализованы отдельными routes/UI с reason/audit, без USER notifications. ADMIN credential привязана к session и проверяет role/reauth на каждом Range guard; обычные owner-scoped credentials не открывают чужие artifacts.
 - Restore меняет generation, инвалидирует sessions, останавливает незавершённые jobs и требует restart API/worker. `ops_*` control plane не откатывается. Reopen — только после свежей reconciliation и проверки resurrected links/API tokens; orphan bytes не публикуются и не удаляются.
 - Restore на новую instance требует новый master KEK и исторический recoveryKEK через stdin. Старые backups сохраняют старый KEK; plaintext audit key при rewrap не меняется. Root seal budgets не откатываются при import failure; восстановленные non-signing keys получают exhausted budget.
-- Все operational подробности и команды — [runbook](wiki/operations-recovery.md), [CLI](docs/cli.md). Production CIDR/trusted proxy и зависимый network-policy reset остаются фазой 7.
+- Все operational подробности и команды — [runbook](wiki/operations-recovery.md), [CLI](docs/cli.md). Начата фаза 7.1: [HTTPS/proxy/CIDR и host reset](wiki/production-ingress.md). Network/origin changes требуют restart API/worker и reconciliation/reopen; APP_ENV=production всё ещё отклоняется.
 - Limits/defaults — инженерные bounds, не SLA/RPO/RTO. Все requirement statuses проверять в generated matrix, не по историческому тексту.
+
+Фаза 6 опубликована как `02c53d9`, remote CI #38131827674 success. Текущий phase-7 срез и его evidence проверять в session; его локальная реализация не означает закрытие всей release фазы.

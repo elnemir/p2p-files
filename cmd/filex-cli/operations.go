@@ -40,9 +40,9 @@ func operationalCLI(args []string) (bool, error) {
 			return true, errors.New("usage: completion bash|zsh")
 		}
 		if args[1] == "bash" {
-			fmt.Println("complete -W 'config migrate upgrade user storage backup recovery audit kek operations incidents completion' filex-cli")
+			fmt.Println("complete -W 'config settings network migrate upgrade user storage backup recovery audit kek operations incidents completion' filex-cli")
 		} else {
-			fmt.Println("#compdef filex-cli\n_arguments '1:command:(config migrate upgrade user storage backup recovery audit kek operations incidents completion)' '*:argument:'")
+			fmt.Println("#compdef filex-cli\n_arguments '1:command:(config settings network migrate upgrade user storage backup recovery audit kek operations incidents completion)' '*:argument:'")
 		}
 		return true, nil
 	}

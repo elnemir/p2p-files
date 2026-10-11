@@ -17,11 +17,12 @@ FileX — приватная передача файлов с одноразов
 - [ADR-004: restore и backup](adr/004-restore-gate.md).
 - [ADR-005: криптографические контексты](adr/005-cryptography.md).
 - [ADR-006: эксплуатационный контур и восстановление](adr/006-operations-recovery.md).
+- [ADR-007: HTTPS ingress и сетевая политика](adr/007-ingress-and-network-policy.md).
 
 ## Контракты
 [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [JSON Schemas](../contracts/schemas/event-v1.json). OpenAPI содержит 107 реализованных операций; generator и route coverage проверяются CI. Recovery routes фазы 6 включены; production acceptance фазы 7 остаётся отдельной границей.
 
-[Реализация 1–5](implementation-1-5.md), [file delivery](file-delivery.md), [эксплуатация и restore runbook](operations-recovery.md).
+[Реализация 1–5](implementation-1-5.md), [file delivery](file-delivery.md), [эксплуатация и restore runbook](operations-recovery.md), [фаза 7.1: HTTPS и network policy](production-ingress.md).
 
 ## Ограничения
 Полный MVP включает все 32 требования. Начальные фазы не являются самостоятельным production release. Источник интервью до вопроса 978 отсутствует; новые решения этого цикла фиксируются явно, а не приписываются интервью. Числа в development settings — инженерные defaults, не SLA.

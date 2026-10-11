@@ -30,6 +30,9 @@ func run() error {
 	jsonOutput = slices.Contains(os.Args, "--json")
 	// Operational commands return JSON by default; accept the explicit flag too.
 	os.Args = slices.DeleteFunc(os.Args, func(v string) bool { return v == "--json" })
+	if handled, e := settingsCLI(os.Args[1:]); handled {
+		return e
+	}
 	if handled, e := operationalCLI(os.Args[1:]); handled {
 		return e
 	}
@@ -162,7 +165,7 @@ func run() error {
 		p.Close()
 		return emitLegacy(map[string]string{"status": "verified"}, "Migrations, key check and settings verified.")
 	}
-	return fmt.Errorf("supported commands: --version, config validate, upgrade check, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see docs/cli.md")
+	return fmt.Errorf("supported commands: --version, config validate|ingress-check, settings show|apply, network reset, upgrade check, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see docs/cli.md")
 }
 func main() {
 	if err := run(); err != nil {

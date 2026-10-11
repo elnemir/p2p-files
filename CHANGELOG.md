@@ -2,9 +2,11 @@
 
 Опубликованных releases пока нет. Формат Keep a Changelog.
 
-## Unreleased — этапы 1–6
+## Unreleased — этапы 1–6 и начало фазы 7
 
 ### Added
+- Фаза 7.1: trusted proxy/CIDR network policy в PG settings, effective IP для login rate limit, runtime fencing и host reset при ошибочной сетевой конфигурации.
+- Генератор HTTPS/ACME Compose с immutable images, non-root/private networks и isolated TLS acceptance harness; production startup guard сохранён.
 - Go API/worker/CLI/verifier, Next.js RU/EN owner/recipient UI, themes/mobile layouts, local Compose/Traefik, internal health/readiness/metrics и CI.
 - Argon2id/session/CSRF/scoped tokens, account epoch/history, privileged reauthentication, typed settings revisions и HMAC audit.
 - tus/HEAD resume, Local/S3 encrypted chunks, server finalization/policy/scanner, draft tree/virtual folders/atomic repath, immutable publish, PIN/links/QR.
@@ -16,7 +18,7 @@
 - Audit/crypto/storage reconciliation, quarantine missing/tampered данных, orphan inventory и явный ADMIN reopen после проверки восстановленных links/API tokens.
 - KEK rewrap/recovery, восстановление в новую БД с новым master key, бессрочные encrypted incident reports PDF/JSON, exportable checkpoints обоих журналов.
 - Operational UI/CLI, distributed schedules, private alerts/aggregate metrics, read-only upgrade preflight, отдельный ADMIN доступ к чужим exports и управление TTL с reason/audit.
-- OpenAPI: 107 операций; traceability: 32 требования; unit/race, 31 PG integration test, 3 Chromium E2E, axe/visual и response contract validation.
+- OpenAPI: 107 операций; traceability: 32 требования; unit/race, 32 PG integration tests, 3 Chromium E2E и отдельный TLS ingress drill, axe/visual и response contract validation.
 
 ### Fixed
 - Restore ждёт завершения старых writers, не откатывает KEK usage reservations и отклоняет параллельный import; устаревшая reconciliation не разрешает reopen.
@@ -31,4 +33,4 @@
 
 ### Remaining
 - Фаза 7: production TLS/ACME/trusted proxy/CIDR, DR/load/security/SBOM/license/container/secret и полная browser/WCAG приёмка. Production bootstrap по-прежнему отклоняется.
-- Local fixtures не доказывают совместимость реальных SMTP/S3 accounts. CI этапов 1–5 подтверждён; изменения фазы 6 ещё не опубликованы. Production deployment не выполнялся, residual risks не приняты. См. [development](wiki/development.md) и [session](wiki/session.md).
+- Local fixtures не доказывают совместимость реальных SMTP/S3 accounts. CI этапов 1–6 подтверждён; отдельный статус текущих изменений фазы 7 — в session. Production deployment не выполнялся, residual risks не приняты. См. [development](wiki/development.md) и [session](wiki/session.md).

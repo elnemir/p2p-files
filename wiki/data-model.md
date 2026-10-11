@@ -27,3 +27,6 @@ QR link mutation increment links_revision и инвалидирует связа
 
 ## Пример и ограничения
 Если S3 Put завершился, а DB commit не состоялся, заранее записанный deletion_job позже удалит orphan object. Если worker crash произошёл после export materialization, другая fenced попытка использует те же export_rows. [ADR-003](adr/003-export-snapshot.md). Backup/restore используют отдельный BackupProvider. `ops_*` сохраняется при замене прикладных данных; данные этих таблиц входят в archive только как evidence. Restore запрещает откат KEK budget, инвалидирует sessions и меняет generation; детали и ограничения — [runbook](operations-recovery.md).
+
+## Network policy фазы 7.1
+`app_settings.value.networkPolicy` расширяет settings v1 без новой SQL migration: trustedProxyCidrs, allowedClientCidrs, requireProxy, requireHttps. Apply с expectedRevision атомарно меняет active revision; network/origin change дополнительно закрывает `ops_control`, меняет generation и инвалидирует reconciliation. Host network reset создаёт новую revision и `network.allowlist_reset` audit event, сохраняет HTTPS/proxy/origin. Старые settings без policy остаются совместимыми. Поток/границы — [ingress](production-ingress.md).

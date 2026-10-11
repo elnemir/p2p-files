@@ -15,3 +15,5 @@ Forensic: admin plaintext/ZIP with re-auth/reason/audit, raw ciphertext only on 
 
 ## Threat model и review
 Конкретные границы/угрозы/контроли и этапы доказательства: [threat model](../wiki/threat-model.md). Результат внутреннего review: [design review](../wiki/design-review.md). Data plane подключён к session/scoped auth и проверен локально. Перечень выше — полный нормативный security scope; Incidents, exportable checkpoints и restore reconciliation реализованы фазой 6; production TLS/ACME, IP/CIDR deployment policy и независимое хранение checkpoints/keys проверяются фазой 7. Текущие границы нельзя смешивать с release acceptance.
+
+В первом срезе фазы 7 implemented networkPolicy хранится в PG settings: exact trusted proxy /32, single-hop XFF/XFP, client IPv4 CIDR allowlist, обязательные HTTPS/Host guards. Изменение policy/origin меняет generation и требует restart/reconcile/reopen; host reset снимает только client allowlist. [Ingress runbook](../wiki/production-ingress.md). Public ACME/host/deployment и independent review ещё не подтверждены.

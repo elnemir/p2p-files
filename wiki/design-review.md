@@ -27,3 +27,6 @@ Requirements → ADR/contracts → SQL guards/storage/transport → negative/con
 
 ## Границы и следующий этап
 SMTP/S3 проверены локальными TLS wire fixtures, реальная инфраструктура не подключалась. HTTP completed доказывает server-observed coverage, не fsync устройства получателя. HMAC audit в одной БД не противостоит host+DB+key compromise без внешних checkpoints. IPv4/DNS pin относится к outbound webhooks; SMTP/S3 endpoints — privileged ADMIN configuration. TLS/ACME/trusted forwarding deployment, full a11y/browser, load/DR и SBOM/security acceptance остаются фазой 7. R-01–06 не приняты. Production env запрещён.
+
+## Review первого среза фазы 7
+Network settings используют прежние draft/validate/CAS/audit вместо отдельного config store. При изменении policy/origin generation fencing отменяет также ADMIN streams, а reset не открывает gate. Exact proxy /32 и single-valued XFF/XFP исключают доверие arbitrary chains; allowlist и login bucket используют один effective IP. Generation и policy применяются одной transaction. HTTPS generator не развёртывает сервисы; standalone profile не публикует DB/Redis/API ports и не монтирует Docker socket. Production startup guard сохраняется до полной release приёмки; [ADR-007](adr/007-ingress-and-network-policy.md).

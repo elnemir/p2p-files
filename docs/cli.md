@@ -11,6 +11,10 @@
 |---|---|
 | `--version` | dev binary version |
 | `config validate` | env → validation без соединения с DB |
+| `config ingress-check` | read-only active settings → proxy/HTTPS readiness; не применяет migrations и не одобряет production release |
+| `settings show` | read-only active `{revision,active,validated,value}` |
+| `settings apply` | `{expectedRevision,value}` → draft/validate/CAS apply полного settings v1; network/origin change закрывает gate и меняет generation |
+| `network reset` | `{reason}` → новая revision без client allowlist; proxy/HTTPS/origin сохранены, требуется restart/reconcile/reopen |
 | `upgrade check` | env/DB read-only → `{applied,pending,compatible}`; unknown/checksum mismatch отклоняется, SQL не применяется |
 | `migrate` | locked/checksummed migrations → KEK sentinel → settings |
 | `user create` | `{email,password,role}` → user UUID; role=user/admin |
@@ -52,7 +56,7 @@
 ## Recovery на чистой БД и ограничения
 Matching schema/binary + новый MASTER_KEK → provision backup root/bucket → import с historical recoveryKek → restore → restart → reconcile → read report → reopen. Старый KEK на новой instance ID не допускается из-за неизвестного usage budget. Смена env без rewrap существующей БД блокируется sentinel. [Runbook](../wiki/operations-recovery.md), [ключи](key-management.md).
 
-Network-policy reset зависит от ещё не реализованной production CIDR/trusted-proxy policy и относится к фазе 7; сейчас нет команды, меняющей host firewall или сетевые правила. Upgrade check проверяет только schema compatibility текущего binary и не загружает новые версии. Production deployment и автоматические обновления не выполняются.
+Network reset реализован для application CIDR allowlist: [ingress runbook](../wiki/production-ingress.md). Он не меняет host firewall, proxy trust или TLS. Для восстановления неправильного trusted proxy/origin используется host settings apply. Upgrade check проверяет только schema compatibility текущего binary и не загружает новые версии. Production deployment и автоматические обновления не выполняются.
 
 ## Offline verifier
 
