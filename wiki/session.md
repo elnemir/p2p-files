@@ -6,7 +6,7 @@
 ## Status
 Этапы **1–5 закрыты по локальным development gates 2026-10-11**. Финальные make check, make security, 23 PostgreSQL integration/race tests и оба Chromium E2E (включая QR) прошли. Документация/contracts/traceability синхронизированы. Фазы 6–7 открыты; production startup по-прежнему блокируется config.
 
-Подготовлена публикация 178 файлов в существующий `elnemir/p2p-files`, ветка `main`. `.env`, caches, credentials и browser traces исключены из Git. Remote CI до первого push ещё не запускался; его результат фиксируется отдельно от локальных gates.
+Реализация (178 файлов) опубликована коммитом `3af2f0c` (`feat: implement FileX development phases 1-5`) в существующий `elnemir/p2p-files`, ветка `main`; local/remote SHA совпали. `.env`, caches, credentials и browser traces исключены из Git. Remote CI [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) для этого коммита завершился **success** 2026-10-11: make check, PostgreSQL integration, security и Chromium E2E. Результат публикации сохранён отдельным изменением документации; production deployment не выполнялся.
 
 ## Completed steps
 - Нормализованы requirements/ADR/wiki, сохранены все 32 MUST, определены фазы 0–7 и проверяемые gates.
@@ -20,11 +20,11 @@
 - PDF с Cyrillic/long paths/dates/hashes и mobile recipient/dark settings просмотрены визуально; clipping/overflow не обнаружены.
 - OpenAPI содержит 93 реализованные операции; AsyncAPI/JSON schemas и четыре contract tests синхронизированы. Traceability проверяет реальные Go/Playwright/Node test names.
 - Последняя security evidence: npm production audit 0; govulncheck 0 affected symbols/packages, module-only GO-2026-5932 в неимпортируемом x/crypto/openpgp без fixed version.
+- Проверены состав коммита, отсутствие локальных credentials/caches/traces в индексе, соответствие local/remote main; весь development pipeline дополнительно прошёл на GitHub Actions Ubuntu runner.
 
 ## Next steps
-1. Выполнить запрошенные commit/push в `origin/main`, проверить совпадение remote HEAD и результат `development-checks` в GitHub Actions; сохранить результат публикации в session.
-2. Фаза 6: encrypted BackupProvider/mandatory pre-restore backup, sessions invalidation, reconciliation и ADMIN reopen, KEK recovery/rewrap, incidents/checkpoints/ops CLI.
-3. Фаза 7: production TLS/ACME/trusted proxy, full browser/manual WCAG, load/DR/security/SBOM/container/license/secret scans, release review. Deployment только отдельным поручением.
+1. Фаза 6: encrypted BackupProvider/mandatory pre-restore backup, sessions invalidation, reconciliation и ADMIN reopen, KEK recovery/rewrap, incidents/checkpoints/ops CLI.
+2. Фаза 7: production TLS/ACME/trusted proxy, full browser/manual WCAG, load/DR/security/SBOM/container/license/secret scans, release review. Deployment только отдельным поручением.
 
 ## Decisions
 - Local development closure 1–5 не означает full MVP release; cross-phase requirements остаются partial в matrix. R-01–06 не accepted.

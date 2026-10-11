@@ -68,6 +68,7 @@ curl --fail http://localhost:8090/api/v1/status
 | make e2e | PASS: 2 Chromium scenarios, 14.6 s; QR artifact download включён; no axe violations/overflow/response contract failures на проверенных страницах. |
 | Visual | PDF A4/embedded Cyrillic/long paths/hashes и mobile recipient/dark settings просмотрены. |
 | make security | PASS: npm production 0, govulncheck affected symbols/packages 0; module-only openpgp advisory описан выше. |
+| GitHub Actions | PASS: [development-checks #38125813423](https://github.com/elnemir/p2p-files/actions/runs/38125813423) для `3af2f0c`, Ubuntu runner; check/build, PG integration, security и Chromium E2E. |
 | Workspace | Whitespace 0, source files 178, migrations 13; статус commit/push и remote CI — в session. |
 
 Этапы 1–5 закрыты. В requirement matrix 22 verified/9 partial/1 planned: оставшийся cross-phase scope не исключён и не принят как residual risk.
