@@ -38,7 +38,7 @@
 | [scripts/build_contracts.py](../scripts/build_contracts.py) | contracts/openapi.json, asyncapi.json, schemas; затем `npm run generate:types` → apps/web/lib/api-schema.ts |
 | [contracts/traceability.json](../contracts/traceability.json) | `python3 scripts/traceability.py` → wiki/test-matrix.md |
 | [contracts/release-acceptance.json](../contracts/release-acceptance.json) | Pending/accepted решения reviewer/owner → release readiness; не приложение |
-| [scripts/tour](../scripts/tour/) | Изолированный capture → реальные PNG/видеозаписи → озвученный MP4, manifest, галерея и [скрин-тур](screen-tour.md); [пересъёмка и QA](tour-maintenance.md) |
+| [scripts/tour](../scripts/tour/) | Изолированный capture → реальные PNG/видеозаписи → Milena или narrate.py (ElevenLabs cache) → озвученный MP4, manifest, галерея и [скрин-тур](screen-tour.md); [пересъёмка и QA](tour-maintenance.md) |
 | [scripts/acceptance.py](../scripts/acceptance.py), [Makefile](../Makefile) | 13 source-bound gates → .cache/evidence/gates; [testing](testing.md) |
 | [deploy](../deploy/), [production_config.py](../scripts/production_config.py) | Пять runtime images, dev Compose и offline production config; no deployment |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |

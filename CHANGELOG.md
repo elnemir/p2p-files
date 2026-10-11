@@ -5,6 +5,7 @@
 ## Unreleased — этапы 1–6 и техническая реализация фазы 7
 
 ### Added
+- Локальный ElevenLabs TTS generator с лимитом текста, кэшем, character timings и защитой от повторного платного запроса; renderer принимает проверенное внешнее audio offline. Реальный синтез отложен после HTTP 402, опубликованный MP4 остаётся с Milena.
 - Воспроизводимая настройка GitHub/main/Actions, CODEOWNERS, Issue/PR templates, SECURITY policy, Dependabot для четырёх ecosystems, CodeQL/dependency review, repository validation и общие editor/Git/Node defaults. Применение и CI подтверждаются в session.
 - Скрин-тур по локальному интерфейсу, записанный видеотур с русской озвучкой/субтитрами, автономная галерея и воспроизводимый сценарий на отдельном Compose-стенде. Внешняя приёмка не подменяется демонстрацией.
 - Единая wiki: current state, developer workflow, карта компонентов, configuration/testing reference, backlog с зависимостями и полная внешняя acceptance matrix. Исторические результаты отделены от текущих инструкций.
@@ -30,6 +31,7 @@
 - OpenAPI: 107 операций; traceability: 32 требования; unit/race, 36 PG integration tests, 25 browser E2E, TLS ingress и controlled upgrade drills, axe/visual и response contract validation.
 
 ### Fixed
+- Кандидат объединения восьми Dependabot обновлений: пять Actions по SHA, Alpine 3.24, Go 1.27.2 и React types 19.3.0; пять несовместимых/лицензионно не принятых обновлений учтены отдельно в wiki. Статус merge и проверок — в session.
 - Upgrade harness удерживает download connection до подтверждённого PG commit Range/completion, устраняя гонку client Content-Length против server transaction. Строгие 401 и single journal проверки сохранены; отсутствующий commit приводит к ошибке.
 - Галерея тура принимает только локальные PNG paths перед src/href; тестовый S3 fixture строит имя файла из канонического UUID. Добавлены негативные browser/wire проверки после сигналов первого CodeQL анализа, без исключения файлов из scan.
 - 20 страниц проектной документации перенесены в wiki; ссылки, AGENTS/entrypoints, CLI help, docs checker, matrix generator и release bundle используют канонический путь. Устаревшие статусы фаз/проверок исправлены без принятия внешних blockers.

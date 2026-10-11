@@ -35,7 +35,7 @@
 
 ## DEV-02: сопровождение toolchain и образов
 
-**Проблема:** lockfile помечает ESLint 9.39.5 unsupported; JSX-a11y 6.10.2 ограничивает peer compatibility. Actions закреплены старыми major по SHA; runtime образов и scanners требует повторных scans при advisories.
+**Проблема:** lockfile помечает ESLint 9.39.5 unsupported; JSX-a11y 6.10.2 ограничивает peer compatibility. Actions обновляются с сохранением SHA pins; runtime образов и scanners требует повторных scans при advisories. В кандидате объединения 2026-10-11 подготовлены пять Actions updates, Alpine 3.24, Go 1.27.2 и React types 19.3.0; [таблица PR, blockers и статус](branch-consolidation.md). Node 25 EOL, types Node 26 и ESLint 10 не включены; Redis 8 требует отдельного лицензионного решения. DEV-02 не закрывается переносом восьми patches.
 
 **Работа:** проверить совместимую комбинацию по первичным release/peer данным на момент исполнения; обновлять небольшими срезами, не использовать force/legacy-peer-deps. Для Actions проверить permissions, full Git history, runtime и artifact retention. Для пяти images сохранить pins, non-root/read-only/network policy и scanner fail-closed.
 
