@@ -1,0 +1,10 @@
+CREATE TABLE signing_keys(id uuid PRIMARY KEY,seed_key_id uuid NOT NULL UNIQUE REFERENCES key_versions(id),public_key bytea NOT NULL,created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+ALTER TABLE downloads ADD COLUMN bundle jsonb;
+ALTER TABLE transfers ADD COLUMN publish_request_hash text;
+ALTER TABLE downloads ADD CONSTRAINT download_state CHECK(state IN ('leased','completed','expired','cancelled'));
+ALTER TABLE files ADD CONSTRAINT offset_bounds CHECK(upload_offset>=0 AND upload_offset<=size);
+CREATE INDEX transfer_expiry ON transfers(expires_at) WHERE state='active';
+CREATE INDEX transfer_absolute_expiry ON transfers(absolute_expires_at) WHERE state='active';
+CREATE INDEX download_lease_expiry ON downloads(lease_until) WHERE state='leased';
+CREATE TABLE administrative_actions(id uuid PRIMARY KEY,actor_id uuid NOT NULL REFERENCES users(id),subject_id uuid NOT NULL,action text NOT NULL,reason text NOT NULL,created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE INDEX administrative_actions_subject ON administrative_actions(subject_id,created_at);

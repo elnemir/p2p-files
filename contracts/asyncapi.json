@@ -1,0 +1,81 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "FileX events",
+    "version": "0.1.0",
+    "description": "Implemented owner WebSocket notifications and outbound signed webhooks. PostgreSQL outbox is authoritative. At-least-once delivery; consumers persist and deduplicate event IDs."
+  },
+  "defaultContentType": "application/json",
+  "channels": {
+    "owner": {
+      "address": "/api/v1/events",
+      "description": "Cookie and exact Origin; resume with after cursor. Falls back to GET /notifications. Rechecks session every second; no recipient identity.",
+      "messages": {
+        "owner": {
+          "$ref": "#/components/messages/owner"
+        }
+      }
+    },
+    "webhook": {
+      "address": "configured HTTPS endpoint",
+      "description": "Public IPv4 HTTPS:443, no redirect/proxy. X-FileX-Event-ID matches signed eventId; X-FileX-Timestamp within 300s; X-FileX-Signature is hex HMAC-SHA256(secret, timestamp + dot + exact body). Persist eventId atomically with consumer effects. Retry 8 attempts then dead; manual resend retains ID.",
+      "messages": {
+        "webhook": {
+          "$ref": "#/components/messages/webhook"
+        }
+      }
+    }
+  },
+  "operations": {
+    "sendOwner": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/owner"
+      },
+      "x-implementation": "implemented",
+      "messages": [
+        {
+          "$ref": "#/channels/owner/messages/owner"
+        }
+      ]
+    },
+    "sendWebhook": {
+      "action": "send",
+      "channel": {
+        "$ref": "#/channels/webhook"
+      },
+      "x-implementation": "implemented",
+      "messages": [
+        {
+          "$ref": "#/channels/webhook/messages/webhook"
+        }
+      ]
+    }
+  },
+  "components": {
+    "messages": {
+      "owner": {
+        "name": "owner",
+        "title": "owner notification",
+        "summary": "Cookie and exact Origin; resume with after cursor. Falls back to GET /notifications. Rechecks session every second; no recipient identity.",
+        "payload": {
+          "schemaFormat": "application/schema+json;version=draft-2020-12",
+          "schema": {
+            "$ref": "schemas/event-v1.json"
+          }
+        }
+      },
+      "webhook": {
+        "name": "webhook",
+        "title": "webhook notification",
+        "summary": "Public IPv4 HTTPS:443, no redirect/proxy. X-FileX-Event-ID matches signed eventId; X-FileX-Timestamp within 300s; X-FileX-Signature is hex HMAC-SHA256(secret, timestamp + dot + exact body). Persist eventId atomically with consumer effects. Retry 8 attempts then dead; manual resend retains ID.",
+        "payload": {
+          "schemaFormat": "application/schema+json;version=draft-2020-12",
+          "schema": {
+            "$ref": "schemas/webhook-v1.json"
+          }
+        }
+      }
+    }
+  }
+}

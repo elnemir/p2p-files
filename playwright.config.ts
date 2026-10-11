@@ -1,0 +1,2 @@
+import { defineConfig } from '@playwright/test';
+export default defineConfig({testDir:'scripts/e2e',timeout:90000,fullyParallel:false,workers:1,retries:0,reporter:[['list'],['html',{outputFolder:'.cache/playwright-report',open:'never'}]],outputDir:'.cache/test-results',use:{baseURL:'http://localhost:8090',headless:true,launchOptions:{args:['--disable-gpu']},acceptDownloads:true,trace:'retain-on-failure',screenshot:'only-on-failure'},projects:[{name:'chromium',use:{browserName:'chromium'}}]});

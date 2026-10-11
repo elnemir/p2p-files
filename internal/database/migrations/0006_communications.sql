@@ -1,0 +1,15 @@
+CREATE TABLE notification_preferences(user_id uuid PRIMARY KEY REFERENCES users(id),locale text NOT NULL DEFAULT 'ru' CHECK(locale IN ('ru','en')),timezone text NOT NULL DEFAULT 'UTC',digest text NOT NULL DEFAULT 'immediate' CHECK(digest IN ('immediate','hourly','daily','weekly','off')),quiet_start int CHECK(quiet_start BETWEEN 0 AND 23),quiet_end int CHECK(quiet_end BETWEEN 0 AND 23),browser_enabled boolean NOT NULL DEFAULT false);
+CREATE TABLE notifications(id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,user_id uuid NOT NULL REFERENCES users(id),event_key text NOT NULL UNIQUE,kind text NOT NULL,transfer_id uuid REFERENCES transfers(id),created_at timestamptz NOT NULL DEFAULT clock_timestamp(),read_at timestamptz,emailed_at timestamptz);
+CREATE INDEX notifications_user_cursor ON notifications(user_id,id);
+CREATE INDEX notifications_digest ON notifications(user_id,created_at) WHERE emailed_at IS NULL;
+CREATE TABLE communication_configs(id uuid PRIMARY KEY,owner_id uuid REFERENCES users(id),kind text NOT NULL CHECK(kind IN ('smtp','webhook')),key_id uuid NOT NULL REFERENCES key_versions(id),envelope bytea NOT NULL,enabled boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE UNIQUE INDEX communication_smtp ON communication_configs(kind) WHERE kind='smtp';
+CREATE INDEX communication_owner ON communication_configs(owner_id,kind);
+CREATE INDEX communication_key ON communication_configs(key_id);
+CREATE TABLE deliveries(id uuid PRIMARY KEY,event_key text NOT NULL UNIQUE,kind text NOT NULL CHECK(kind IN ('smtp','webhook')),owner_id uuid REFERENCES users(id),config_id uuid REFERENCES communication_configs(id),link_id uuid REFERENCES recipient_links(id),transfer_id uuid REFERENCES transfers(id),event_type text NOT NULL,locale text NOT NULL DEFAULT 'ru',template_version int NOT NULL DEFAULT 1,payload jsonb NOT NULL DEFAULT '{}',recipient text,system_email boolean NOT NULL DEFAULT false,state text NOT NULL DEFAULT 'pending' CHECK(state IN ('pending','sending','delivered','dead','cancelled')),attempts int NOT NULL DEFAULT 0,available_at timestamptz NOT NULL DEFAULT clock_timestamp(),lease_until timestamptz,fence bigint NOT NULL DEFAULT 0,last_code text,created_at timestamptz NOT NULL DEFAULT clock_timestamp(),delivered_at timestamptz);
+CREATE INDEX delivery_pending ON deliveries(available_at) WHERE state IN ('pending','sending');
+CREATE INDEX delivery_owner ON deliveries(owner_id,created_at);
+CREATE INDEX delivery_link ON deliveries(link_id);
+CREATE INDEX delivery_config ON deliveries(config_id);
+CREATE INDEX delivery_transfer ON deliveries(transfer_id);
+CREATE TABLE webhook_receipts(event_id text PRIMARY KEY,received_at timestamptz NOT NULL DEFAULT clock_timestamp());

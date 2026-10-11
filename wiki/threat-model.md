@@ -1,0 +1,27 @@
+# Модель угроз и реализованные границы
+
+## Контекст
+Активы: payload, capability/PIN/session/API secrets, key material, reports/exports, audit, backups. Browser/recipient/другой USER недоверен. ADMIN управляет инфраструктурой и имеет audited forensic доступ. Host/DB superuser compromise требует внешних checkpoints и независимого KEK backup.
+
+| Граница / угроза | Контроль | Проверка / оставшийся gate |
+|---|---|---|
+| Cross-owner read/mutation | Auth + scopes + owner predicates + neutral404 | PG identity/ownership/tree tests |
+| CSRF/prefetch consume | SameSite Strict, exact Origin, CSRF, explicit acquire POST | Identity, recipient HEAD/Range, browser |
+| Double consume/stale worker | PG leases/epochs/fences, atomic coverage commit | Concurrent acquire/revoke/stale upload/ZIP tests |
+| Path traversal/ZIP slip | NFC safe path, root filesystem API, UUID object keys, collisions | Domain negative/fuzz and ZIP tests |
+| Forged ready/checksum | Server full finalize and MIME/scanner boundary | Upload/policy/tamper integration |
+| Ciphertext/metadata swap | FXP1 authenticated header, per-attempt subkeys, SHA-256, bounded parser | Independent vectors/every-byte tamper/rotation tests |
+| Secret leaks | Generic errors, no body/raw query logs, CSP/no-store/no-referrer, encrypted secrets | HTTP/browser contract privacy tests |
+| Webhook SSRF/replay | HTTPS443/public IPv4, DNS per connect, pin, no redirects/proxy, signed eventId/timestamp, transactional receiver dedup | Webhook guards and receipt rollback tests |
+| SMTP downgrade | Mandatory verified STARTTLS/SMTPS before AUTH | Wire TLS/certificate/plaintext rejection tests |
+| ADMIN privilege loss | Current role/reauth/account epoch during stream and job commit | ADMIN artifact/forensic/export demotion tests |
+| Stale QR/public report | Link change invalidation, private trash tombstones, source-state guards | QR invalidation/report privacy tests |
+| Resource exhaustion | 4 MiB chunks, 8 streams, 4 Argon2 ops, quotas/timeouts/row bounds | Negative tests; sustained load gate 7 |
+| Retained copies | Compensation rows before Put, idempotent cleanup, hold/write lease guards | Cleanup/migration/expiry tests; restore orphan sweep gate 6 |
+| Restore resurrection | Mandatory backup/reconciliation/reopen contract | Not implemented, phase 6 |
+| Audit rewrite by host attacker | HMAC chain detects modification without key; external checkpoints required | Chain test implemented; external checkpoint/incident gate 6 |
+
+## Примеры и ограничения
+Утёкший recipient URL — bearer capability, PIN является дополнительной защитой; невозможно запретить получателю копировать уже полученные bytes. Переключение hold/epoch прерывает stream на следующем bounded write, уже переданные bytes не отзываются. SMTP/webhook имеют at-least-once delivery, поэтому повтор не маскируется как exactly-once.
+
+Rate limits сейчас используют реальный peer RemoteAddr и email: forwarded headers игнорируются, spoofing не работает, но за dev Traefik IP bucket общий. Production trusted proxy/CIDR policy и ACME ещё не реализованы. S3/SMTP network access разрешается доверенной ADMIN конфигурацией, private S3 endpoint не считается untrusted webhook. В development нет публичного обхода auth; production fail closed. Residual risk acceptance и независимый security audit не выполнены.

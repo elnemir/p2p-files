@@ -1,0 +1,105 @@
+name: filex-dev
+services:
+  postgres:
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: filex
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/init-dev.py first}
+      POSTGRES_DB: filex
+    volumes:
+      - pg_data:/var/lib/postgresql
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U filex -d filex]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    security_opt: [no-new-privileges:true]
+  redis:
+    image: redis:7.2-alpine@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0
+    command: [redis-server, --save, '', --appendonly, 'no']
+    networks: [backend]
+    security_opt: [no-new-privileges:true]
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgres://filex:${POSTGRES_PASSWORD}@postgres:5432/filex?sslmode=disable
+      MASTER_KEK: ${MASTER_KEK:?Run scripts/init-dev.py first}
+      HTTP_ADDR: 0.0.0.0:8080
+      INTERNAL_ADDR: 0.0.0.0:9090
+      DEV_PAYLOAD_ROOT: /data/payload
+      DEV_ARTIFACT_ROOT: /data/artifacts
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [edge, backend]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 768m
+    volumes:
+      - payload_data:/data/payload
+      - artifact_data:/data/artifacts
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    entrypoint: [filex-worker]
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgres://filex:${POSTGRES_PASSWORD}@postgres:5432/filex?sslmode=disable
+      MASTER_KEK: ${MASTER_KEK}
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [backend, egress]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 768m
+    volumes:
+      - payload_data:/data/payload
+      - artifact_data:/data/artifacts
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    environment:
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      NEXT_TELEMETRY_DISABLED: '1'
+    networks: [edge]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 512m
+  traefik:
+    image: traefik:v3@sha256:575fa15b135078fe5e50aa847987d96dbddd7b093c172429618404df73f3fa7c
+    user: '65532:65532'
+    command:
+      - --entrypoints.web.address=:8080
+      - --providers.file.filename=/etc/traefik/routes.yaml
+      - --api.dashboard=false
+      - --log.level=ERROR
+    volumes:
+      - ./routes.yaml:/etc/traefik/routes.yaml:ro
+    ports: [127.0.0.1:8090:8080]
+    networks: [edge]
+    depends_on: [web, api]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+networks:
+  edge: {}
+  backend:
+    internal: true
+  egress: {}
+volumes:
+  pg_data: {}
+  payload_data: {}
+  artifact_data: {}

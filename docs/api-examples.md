@@ -1,0 +1,44 @@
+# API: локальные curl примеры
+
+## Контекст
+Точный контракт: [OpenAPI](../contracts/openapi.json). Примеры используют только собственный dev stack. Файлы login/session/cookies содержат секреты, их нельзя коммитить или логировать; каталог с ними ограничить владельцем. UUID и revision ниже заменяются значениями ответов.
+
+```sh
+umask 077
+filex_api=http://localhost:8090/api/v1
+curl --fail --silent --show-error "$filex_api/auth/login" \
+  -H 'Origin: http://localhost:8090' -H 'Content-Type: application/json' \
+  --data-binary @private-login.json --cookie-jar private-cookies \
+  --output private-session.json
+filex_csrf=$(jq -r .csrfToken private-session.json)
+curl --fail --silent --show-error "$filex_api/transfers" \
+  -X POST --cookie private-cookies -H 'Origin: http://localhost:8090' \
+  -H "X-CSRF-Token: $filex_csrf"
+```
+
+private-login.json имеет `{ "email": "your-local-user@example.test", "password": "your actual local password" }`. Не использовать показанный текст как готовый пароль. POST draft возвращает id/revision. API token с transfers:write может заменить cookie через Authorization: Bearer; ADMIN scopes не выдаются API tokens.
+
+## tus и publish
+
+```sh
+curl --include --fail "$filex_api/transfers/<transfer-uuid>/uploads" \
+  -X POST --cookie private-cookies -H 'Origin: http://localhost:8090' \
+  -H "X-CSRF-Token: $filex_csrf" -H 'Tus-Resumable: 1.0.0' \
+  -H 'Upload-Length: 5' -H 'Upload-Metadata: filename YS50eHQ='
+```
+
+Location указывает на /api/v1/uploads/UUID; filename metadata здесь a.txt. PATCH отправляет bytes ≤4 MiB с Content-Type application/offset+octet-stream, Upload-Offset и Tus-Resumable. При неизвестном результате PATCH выполнить HEAD и продолжить с returned Upload-Offset. POST на `<Location>/finalize` запускает server validation. Затем GET transfer возвращает текущую revision, которую нужно включить в publish:
+
+```json
+{"expectedRevision":3,"ttlSeconds":3600,"commonLink":true,"password":"123456","recipients":[{"email":"recipient@example.test","password":"654321"}]}
+```
+
+Payload publish отправляется в POST /transfers/{id}/publish с теми же cookie/Origin/CSRF. Число revision — пример, не фиксированная константа. Password PIN только демонстрационный. Изменение уже выполненного publish request возвращает conflict.
+
+## Отчёт и encrypted artifact
+POST /transfers/{id}/reports `{kind:"user",locale:"ru",timezone:"Europe/Moscow"}` создаёт revision; GET /reports/{id} после renderState=ready возвращает artifact IDs и SHA. Для каждого скачивания: POST /artifacts/{id}/credentials → token → POST /artifacts/{id}/claim `{token}` с cookie jar → GET returned content URL с original session и path-scoped artifact cookie. Range и HEAD поддерживаются, полный coverage расходует credential. QR bundle следует тому же протоколу после POST /transfers/{id}/qr-bundle.
+
+Public POST /api/v1/verify-report получает JSON reportId/revision/canonicalHash. Только точное совпадение active USER revision даёт verified=true; чужой hash, trash/purge/ADMIN/unknown дают один и тот же 404. JSON report сравнивается по точным canonical bytes, а не после произвольного JSON reformat.
+
+## Ошибки
+400 invalid_input, 401 unauthenticated, 403 forbidden, 404 not_found, 409 conflict, 429 rate_limited. Для tus/Range есть дополнительные protocol statuses, описанные OpenAPI. Generic internal_error не содержит DB credentials или request body. Browser GET/HEAD получателя не приобретает download lease; acquire выполняется явным POST.

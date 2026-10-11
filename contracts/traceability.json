@@ -1,0 +1,877 @@
+[
+  {
+    "id": "FR-001",
+    "requirement": "RU/EN минималистичный B2B/SaaS, light/dark/system, responsive, WCAG 2.2 AA, доступная DnD зона.",
+    "phase": 1,
+    "status": "partial",
+    "implementation": [
+      "apps/web/components/FileX.tsx",
+      "apps/web/app/globals.css"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-001-1",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-FR-001-2",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
+      }
+    ],
+    "gap": "RU/EN/theme/responsive/DnD и Chromium axe/visual проверены; full browser/manual WCAG acceptance — фаза 7."
+  },
+  {
+    "id": "FR-002",
+    "requirement": "draft, загрузка файлов/каталогов через tus, автоматический resume, cancel, finalizing с серверным SHA-256, file-type allow/deny/disabled, optional scanner abstraction.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/files/files.go",
+      "internal/files/policy.go",
+      "internal/httpapi/transfers.go",
+      "apps/web/components/FileX.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-002-1",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationFilePolicyAndPIN"
+      },
+      {
+        "id": "T-FR-002-2",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationForensicZIPDoesNotConsumeAndTusProtocol"
+      },
+      {
+        "id": "T-FR-002-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-003",
+    "requirement": "draft tree/table, virtual folders, multi-select, rename/move/delete, поиск/сортировка, bulk operations. После publish immutable file/path/name set; минимум один ready файл.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/tree.go",
+      "internal/httpapi/organization.go",
+      "apps/web/components/FileX.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-003-1",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationAtomicTreeAndAdminArtifactGuards"
+      },
+      {
+        "id": "T-FR-003-2",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationPublishOwnershipAndImmutability"
+      },
+      {
+        "id": "T-FR-003-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-004",
+    "requirement": "atomic publish с pre-review и immutable published manifest + manifestHash, TTL от publishedAt, absolute max TTL; post-publish редактируются только разрешённые metadata/links.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/transfer/store.go",
+      "internal/httpapi/transfers.go",
+      "internal/database/migrations/0010_crypto_maintenance.sql"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-004-1",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationConcurrentPublishIsIdempotent"
+      },
+      {
+        "id": "T-FR-004-2",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationOutboxFailureRollsBackPublish"
+      },
+      {
+        "id": "T-FR-004-3",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationPublishOwnershipAndImmutability"
+      },
+      {
+        "id": "T-FR-004-4",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-005",
+    "requirement": "общая опциональная и индивидуальные recipient links, независимые PIN/password, QR PNG/SVG, QR bundle, rotation/revoke, recoverable encrypted access token и verification hash.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/transfers.go",
+      "internal/httpapi/adminfiles.go",
+      "internal/httpapi/qr.go",
+      "internal/database/migrations/0012_artifact_provenance.sql"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-005-1",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationFilePolicyAndPIN"
+      },
+      {
+        "id": "T-FR-005-2",
+        "path": "internal/httpapi/provenance_integration_test.go",
+        "name": "TestIntegrationQRInvalidationAndExportAuthorization"
+      },
+      {
+        "id": "T-FR-005-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-006",
+    "requirement": "recipient GET/HEAD не инициируют download, явное действие; Range/resume, session-bound opaque file refs, PostgreSQL leases/fencing/heartbeat.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/recipients.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-006-1",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationConcurrentAcquireAndRevoke"
+      },
+      {
+        "id": "T-FR-006-2",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationOneTimeRangesZIPAndCleanup"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-007",
+    "requirement": "individual successful download → logical delete → asynchronous physical delete; revoke/expiry немедленно прерывают поток. Download all — atomic streaming ZIP из всех оставшихся файлов; failure не удаляет ничего.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/recipients.go",
+      "internal/files/maintenance.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-007-1",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationOneTimeRangesZIPAndCleanup"
+      },
+      {
+        "id": "T-FR-007-2",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationConcurrentAcquireAndRevoke"
+      },
+      {
+        "id": "T-FR-007-3",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationFreezeStopsWriterAndPreservesPayload"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-008",
+    "requirement": "ZIP сохраняет относительные пути, безопасные имена, содержит SHA256SUMS.txt, Ed25519 Base64 sig и PEM public key. Сам payload byte-for-byte immutable.",
+    "phase": 3,
+    "status": "verified",
+    "implementation": [
+      "internal/bundle/bundle.go",
+      "internal/verify/verify.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-008-1",
+        "path": "internal/bundle/bundle_test.go",
+        "name": "TestDeterministicZIP64RangesAndSignature"
+      },
+      {
+        "id": "T-FR-008-2",
+        "path": "internal/verify/verify_test.go",
+        "name": "TestTrustedSignatureAndTamperedZIP"
+      },
+      {
+        "id": "T-FR-008-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-009",
+    "requirement": "USER download journal без recipient correlation/IP/UA; Download all одна агрегированная запись (time/count/total bytes/status); ADMIN extended audit/report.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/recipients.go",
+      "internal/reports/reports.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-009-1",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationOneTimeRangesZIPAndCleanup"
+      },
+      {
+        "id": "T-FR-009-2",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationReportPrivacyArtifactsAndTrash"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-010",
+    "requirement": "SMTP STARTTLS/SMTPS, RU/EN versioned templates, resend, retry/DLQ, webhook HMAC/SSRF/replay protection, expiry reminder и финальные письма.",
+    "phase": 4,
+    "status": "verified",
+    "implementation": [
+      "internal/communications/transports.go",
+      "internal/communications/worker.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-010-1",
+        "path": "internal/communications/smtp_tls_test.go",
+        "name": "TestSMTPTLSDeliveryAndCertificateValidation"
+      },
+      {
+        "id": "T-FR-010-2",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestSMTPRequiresSTARTTLS"
+      },
+      {
+        "id": "T-FR-010-3",
+        "path": "internal/httpapi/communications_integration_test.go",
+        "name": "TestIntegrationOutboxRetryDLQAndPrivacy"
+      },
+      {
+        "id": "T-FR-010-4",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationWebhookReceiptAtomicReplay"
+      },
+      {
+        "id": "T-FR-010-5",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestWebhookGuards"
+      }
+    ],
+    "gap": "SMTP/S3 fixtures локальные; delivery в реальный внешний mailbox проверяется при подключении провайдера."
+  },
+  {
+    "id": "FR-011",
+    "requirement": "WebSocket + polling, in-app/browser/email notifications, digest hourly/daily/weekly, quiet hours только для пользовательских писем, cross-tab synchronization.",
+    "phase": 4,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/communications.go",
+      "internal/communications/worker.go",
+      "apps/web/components/FileX.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-011-1",
+        "path": "internal/httpapi/websocket_integration_test.go",
+        "name": "TestIntegrationWebSocketOriginPrivacyAndRevocation"
+      },
+      {
+        "id": "T-FR-011-2",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestQuietHoursDSTAndTemplates"
+      },
+      {
+        "id": "T-FR-011-3",
+        "path": "internal/httpapi/communications_integration_test.go",
+        "name": "TestIntegrationOutboxRetryDLQAndPrivacy"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-012",
+    "requirement": "user/admin reports PDF/CSV/JSON с immutable revisions/canonical SHA-256; публичная verification только user reports; trash/restore/purge history; exports CSV/JSON.",
+    "phase": 5,
+    "status": "verified",
+    "implementation": [
+      "internal/reports/reports.go",
+      "internal/reports/render.go",
+      "internal/httpapi/reports.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-012-1",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationReportPrivacyArtifactsAndTrash"
+      },
+      {
+        "id": "T-FR-012-2",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationAtomicTreeAndAdminArtifactGuards"
+      },
+      {
+        "id": "T-FR-012-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-013",
+    "requirement": "async exports, streaming compression ZIP/GZIP по размеру, progress/cancel/retry, per-user/global concurrency, admin priority anti-starvation, encrypted ArtifactStorage, one-time hashed artifact credentials + Range.",
+    "phase": 5,
+    "status": "verified",
+    "implementation": [
+      "internal/exports/exports.go",
+      "internal/artifacts/artifacts.go",
+      "internal/httpapi/artifacts.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-013-1",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationExportSnapshotRetryAndBulk"
+      },
+      {
+        "id": "T-FR-013-2",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationRotationAcrossClassesAndArtifactLease"
+      },
+      {
+        "id": "T-FR-013-3",
+        "path": "internal/httpapi/provenance_integration_test.go",
+        "name": "TestIntegrationQRInvalidationAndExportAuthorization"
+      },
+      {
+        "id": "T-FR-013-4",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-014",
+    "requirement": "большие exports используют согласованный snapshot значений на момент начала job; гибрид PostgreSQL + encrypted ArtifactStorage, короткие DB snapshot transactions, crash recovery и cleanup.",
+    "phase": 5,
+    "status": "verified",
+    "implementation": [
+      "internal/exports/exports.go",
+      "internal/database/migrations/0007_reports.sql"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-014-1",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationExportSnapshotRetryAndBulk"
+      }
+    ],
+    "gap": "Bounded snapshot ≤50000 rows/16 MiB; production load tuning остаётся фазой 7."
+  },
+  {
+    "id": "FR-015",
+    "requirement": "личные saved views, cursor pagination, filters, URL без raw search text; bulk user/admin actions с dry-run, server-side selection snapshot, progress, cancel.",
+    "phase": 5,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/organization.go",
+      "internal/worker/bulk.go",
+      "apps/web/components/FileX.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-015-1",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationExportSnapshotRetryAndBulk"
+      },
+      {
+        "id": "T-FR-015-2",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationAtomicTreeAndAdminArtifactGuards"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "FR-016",
+    "requirement": "`/help` RU/EN, глобальный banner, `/status` только текущий агрегированный статус, no PWA.",
+    "phase": 1,
+    "status": "verified",
+    "implementation": [
+      "apps/web/components/FileX.tsx",
+      "internal/httpapi/app.go",
+      "internal/httpapi/server.go"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-016-1",
+        "path": "internal/httpapi/server_test.go",
+        "name": "TestStatusPrivacyAndInternalIsolation"
+      },
+      {
+        "id": "T-FR-016-2",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "SEC-001",
+    "requirement": "USER/ADMIN, email login, Argon2id, password history, no forced periodic rotation, login history, anti-enumeration, CSRF, session management, granular API scopes.",
+    "phase": 1,
+    "status": "verified",
+    "implementation": [
+      "internal/auth/store.go",
+      "internal/auth/password.go",
+      "internal/httpapi/app.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-001-1",
+        "path": "internal/auth/password_test.go",
+        "name": "TestPasswordHashBounds"
+      },
+      {
+        "id": "T-SEC-001-2",
+        "path": "internal/httpapi/app_integration_test.go",
+        "name": "TestIntegrationIdentityAndSettings"
+      },
+      {
+        "id": "T-SEC-001-3",
+        "path": "internal/httpapi/websocket_integration_test.go",
+        "name": "TestIntegrationWebSocketOriginPrivacyAndRevocation"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "SEC-002",
+    "requirement": "tamper-evident audit, integrity checks, incidents, checkpoints, security reports, no user-controlled audit purge.",
+    "phase": 6,
+    "status": "partial",
+    "implementation": [
+      "internal/audit/audit.go",
+      "internal/httpapi/app.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-002-1",
+        "path": "internal/httpapi/app_integration_test.go",
+        "name": "TestIntegrationIdentityAndSettings"
+      }
+    ],
+    "gap": "HMAC audit/verify реализован; incidents/checkpoints/security reports и внешняя опора целостности — фаза 6."
+  },
+  {
+    "id": "SEC-003",
+    "requirement": "KEK bootstrap, class DEKs, key rotation, encrypted configuration secrets, encrypted ArtifactStorage/BackupProvider, chunked AEAD payload encryption when enabled.",
+    "phase": 3,
+    "status": "partial",
+    "implementation": [
+      "internal/cryptobox/payload.go",
+      "internal/keyring/keyring.go",
+      "internal/keyring/usage.go",
+      "internal/artifacts/rotate.go",
+      "internal/files/relocate.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-003-1",
+        "path": "internal/cryptobox/payload_test.go",
+        "name": "TestPayloadBinaryVectorAndBindings"
+      },
+      {
+        "id": "T-SEC-003-2",
+        "path": "internal/cryptobox/vector_test.go",
+        "name": "TestEnvelopeBinaryVector"
+      },
+      {
+        "id": "T-SEC-003-3",
+        "path": "internal/httpapi/provenance_integration_test.go",
+        "name": "TestIntegrationPayloadHeaderAndKeyBudget"
+      },
+      {
+        "id": "T-SEC-003-4",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationRotationAcrossClassesAndArtifactLease"
+      },
+      {
+        "id": "T-SEC-003-5",
+        "path": "internal/httpapi/migration_integration_test.go",
+        "name": "TestIntegrationStorageMigrationAndPayloadRotation"
+      }
+    ],
+    "gap": "Payload/artifacts/config/signing keys и class rotation проверены; BackupProvider/KEK recovery и re-wrap — фаза 6."
+  },
+  {
+    "id": "SEC-004",
+    "requirement": "Ed25519 signs only ZIP checksum manifest, signing key encrypted in PostgreSQL, historical public keys forever, offline Go verifier CLI.",
+    "phase": 3,
+    "status": "verified",
+    "implementation": [
+      "internal/keyring/signing.go",
+      "internal/bundle/bundle.go",
+      "cmd/filex-verify/main.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-004-1",
+        "path": "internal/verify/verify_test.go",
+        "name": "TestRFC8032Ed25519Vector"
+      },
+      {
+        "id": "T-SEC-004-2",
+        "path": "internal/verify/verify_test.go",
+        "name": "TestTrustedSignatureAndTamperedZIP"
+      },
+      {
+        "id": "T-SEC-004-3",
+        "path": "internal/bundle/bundle_test.go",
+        "name": "TestDeterministicZIP64RangesAndSignature"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "SEC-005",
+    "requirement": "strict TLS/Traefik/ACME, CSP/no-referrer/no-store, secrets redaction, no body/raw query logging, SSRF controls, trust only Traefik forwarding, IPv4 required.",
+    "phase": 1,
+    "status": "partial",
+    "implementation": [
+      "apps/web/proxy.ts",
+      "internal/httpapi/app.go",
+      "internal/communications/transports.go",
+      "deploy/compose.yaml"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-005-1",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestWebhookGuards"
+      },
+      {
+        "id": "T-SEC-005-2",
+        "path": "internal/communications/smtp_tls_test.go",
+        "name": "TestSMTPTLSDeliveryAndCertificateValidation"
+      },
+      {
+        "id": "T-SEC-005-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
+      }
+    ],
+    "gap": "CSP/session/SSRF/redaction/internal isolation реализованы; production TLS/ACME/trusted forwarding/CIDR и deployment acceptance — 6–7."
+  },
+  {
+    "id": "SEC-006",
+    "requirement": "freeze transfer/file indefinitely, forensic plaintext/ZIP for ADMIN and raw ciphertext only for integrity failures, with re-auth/reason/audit; USER not notified.",
+    "phase": 3,
+    "status": "verified",
+    "implementation": [
+      "internal/httpapi/adminfiles.go",
+      "internal/httpapi/forensic_zip.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-006-1",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationForensicZIPDoesNotConsumeAndTusProtocol"
+      },
+      {
+        "id": "T-SEC-006-2",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationFreezeStopsWriterAndPreservesPayload"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "SEC-007",
+    "requirement": "file integrity_failed/storage_missing fail closed; file-level freeze blocks Download all; admin repair/check/force delete semantics.",
+    "phase": 3,
+    "status": "verified",
+    "implementation": [
+      "internal/files/files.go",
+      "internal/httpapi/adminfiles.go",
+      "internal/files/maintenance.go"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-007-1",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationIntegrityFailureRetainedOnExpiry"
+      },
+      {
+        "id": "T-SEC-007-2",
+        "path": "internal/httpapi/provenance_integration_test.go",
+        "name": "TestIntegrationPayloadHeaderAndKeyBudget"
+      },
+      {
+        "id": "T-SEC-007-3",
+        "path": "internal/httpapi/retention_integration_test.go",
+        "name": "TestIntegrationFreezeStopsWriterAndPreservesPayload"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "OPS-001",
+    "requirement": "PostgreSQL source of truth, Redis ephemeral, transactional outbox, idempotent workers, scheduler distributed leases.",
+    "phase": 2,
+    "status": "verified",
+    "implementation": [
+      "internal/worker/worker.go",
+      "internal/communications/worker.go",
+      "internal/httpapi/recipients.go"
+    ],
+    "tests": [
+      {
+        "id": "T-OPS-001-1",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationOutboxFailureRollsBackPublish"
+      },
+      {
+        "id": "T-OPS-001-2",
+        "path": "internal/httpapi/communications_integration_test.go",
+        "name": "TestIntegrationOutboxRetryDLQAndPrivacy"
+      },
+      {
+        "id": "T-OPS-001-3",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationConcurrentAcquireAndRevoke"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "OPS-002",
+    "requirement": "multiple payload Local/S3 providers with priority/fallback, sticky tus, drain/disable, migration dry-run/pause/resume/cancel; one active ArtifactStorage; separate BackupProvider Local/S3.",
+    "phase": 2,
+    "status": "partial",
+    "implementation": [
+      "internal/storage/storage.go",
+      "internal/storage/s3.go",
+      "internal/files/relocate.go",
+      "internal/httpapi/adminfiles.go"
+    ],
+    "tests": [
+      {
+        "id": "T-OPS-002-1",
+        "path": "internal/storage/s3_test.go",
+        "name": "TestS3TLSWireConditionalWriteAndMissing"
+      },
+      {
+        "id": "T-OPS-002-2",
+        "path": "internal/httpapi/migration_integration_test.go",
+        "name": "TestIntegrationStorageMigrationAndPayloadRotation"
+      },
+      {
+        "id": "T-OPS-002-3",
+        "path": "internal/httpapi/closure_integration_test.go",
+        "name": "TestIntegrationRotationAcrossClassesAndArtifactLease"
+      }
+    ],
+    "gap": "Payload Local/S3 и ArtifactStorage реализованы; отдельный BackupProvider — фаза 6. Внешний S3 account не подключался."
+  },
+  {
+    "id": "OPS-003",
+    "requirement": "encrypted PostgreSQL backups without payload, restore CLI/Admin UI, pre-restore backup, post-restore audit/crypto/storage reconciliation, explicit admin gate before data plane resumes.",
+    "phase": 6,
+    "status": "planned",
+    "implementation": [],
+    "tests": [],
+    "gap": "Backup/restore/reconciliation/reopen gate — обязательный следующий этап 6."
+  },
+  {
+    "id": "OPS-004",
+    "requirement": "scheduled storage checks, audit verification, mandatory cleanup; health/readiness/metrics internal only; admin dashboards and alerts.",
+    "phase": 6,
+    "status": "partial",
+    "implementation": [
+      "internal/httpapi/server.go",
+      "internal/worker/worker.go",
+      "internal/files/maintenance.go"
+    ],
+    "tests": [
+      {
+        "id": "T-OPS-004-1",
+        "path": "internal/httpapi/server_test.go",
+        "name": "TestStatusPrivacyAndInternalIsolation"
+      },
+      {
+        "id": "T-OPS-004-2",
+        "path": "internal/httpapi/files_integration_test.go",
+        "name": "TestIntegrationOneTimeRangesZIPAndCleanup"
+      }
+    ],
+    "gap": "Internal metrics/health, cleanup и maintenance UI готовы; scheduled full storage/audit integrity, incidents/alerts/dashboard — фаза 6."
+  },
+  {
+    "id": "OPS-005",
+    "requirement": "Docker Compose one VPS, non-root, isolated networks, no Docker socket, production safety checks, auto migrations at startup under lock, controlled upgrade downtime.",
+    "phase": 1,
+    "status": "partial",
+    "implementation": [
+      "internal/database/database.go",
+      "internal/config/config.go",
+      "deploy/compose.yaml"
+    ],
+    "tests": [
+      {
+        "id": "T-OPS-005-1",
+        "path": "internal/transfer/store_integration_test.go",
+        "name": "TestIntegrationKeyAndMigrationFailClosed"
+      },
+      {
+        "id": "T-OPS-005-2",
+        "path": "internal/config/config_test.go",
+        "name": "TestBootstrapFailClosed"
+      },
+      {
+        "id": "T-OPS-005-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
+      }
+    ],
+    "gap": "Local non-root Compose/migrations/safety работают; production bootstrap/controlled upgrade и release deployment validation — 6–7."
+  },
+  {
+    "id": "NFR-001",
+    "requirement": "REST/JSON `/api/v1`, tus, Range, WebSocket, OpenAPI 3.1 + curl, AsyncAPI, versioned JSON Schemas, backward-compatible major versions.",
+    "phase": 0,
+    "status": "verified",
+    "implementation": [
+      "scripts/build_contracts.py",
+      "contracts/openapi.json",
+      "contracts/asyncapi.json",
+      "scripts/e2e/contracts.ts"
+    ],
+    "tests": [
+      {
+        "id": "T-NFR-001-1",
+        "path": "scripts/contracts.test.mjs",
+        "name": "owner events and webhooks exclude recipient correlation"
+      },
+      {
+        "id": "T-NFR-001-2",
+        "path": "scripts/contracts.test.mjs",
+        "name": "manifest requires server checksum and nonempty file set"
+      },
+      {
+        "id": "T-NFR-001-3",
+        "path": "scripts/contracts.test.mjs",
+        "name": "every implemented API route is documented and privileged routes require sessions"
+      },
+      {
+        "id": "T-NFR-001-4",
+        "path": "scripts/contracts.test.mjs",
+        "name": "binary Range and tus recovery contracts remain explicit"
+      },
+      {
+        "id": "T-NFR-001-5",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "NFR-002",
+    "requirement": "JSON camelCase, enum snake_case, RFC3339 UTC API, IANA timezone UI, PDF locale preferences, CSV UTF-8 no BOM/comma/RFC4180/formula injection protection.",
+    "phase": 1,
+    "status": "verified",
+    "implementation": [
+      "internal/reports/render.go",
+      "internal/reports/reports.go",
+      "apps/web/components/FileX.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-NFR-002-1",
+        "path": "internal/httpapi/reports_integration_test.go",
+        "name": "TestIntegrationReportPrivacyArtifactsAndTrash"
+      },
+      {
+        "id": "T-NFR-002-2",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestQuietHoursDSTAndTemplates"
+      },
+      {
+        "id": "T-NFR-002-3",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      }
+    ],
+    "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
+  },
+  {
+    "id": "NFR-003",
+    "requirement": "tests unit/integration/E2E/race/fuzz/fault/visual/a11y, dependency/container/secret/license scans, SBOM, release checklist, requirement→test matrix.",
+    "phase": 7,
+    "status": "partial",
+    "implementation": [
+      "Makefile",
+      ".github/workflows/ci.yml",
+      "scripts/check_docs.py",
+      "scripts/e2e/flow.spec.ts"
+    ],
+    "tests": [
+      {
+        "id": "T-NFR-003-1",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-NFR-003-2",
+        "path": "scripts/e2e/flow.spec.ts",
+        "name": "public pages, locale and internal route isolation"
+      }
+    ],
+    "gap": "Unit/integration/race/fault/fuzz smoke/browser/axe/visual/contracts есть; full security/container/secret/license/SBOM/browser/load/DR — фаза 7. Remote CI не запускался."
+  },
+  {
+    "id": "NFR-004",
+    "requirement": "proprietary code; no unapproved copyleft, no critical/high security findings at release, no production deployment without explicit authorization.",
+    "phase": 7,
+    "status": "partial",
+    "implementation": [
+      "internal/config/config.go",
+      "Makefile"
+    ],
+    "tests": [
+      {
+        "id": "T-NFR-004-1",
+        "path": "internal/config/config_test.go",
+        "name": "TestBootstrapFailClosed"
+      }
+    ],
+    "gap": "Production запрещён; npm audit и reachable govulncheck зелёные, module-only openpgp advisory не импортируется. Full license/SBOM/container/secret/release review — фаза 7."
+  }
+]

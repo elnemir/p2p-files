@@ -1,0 +1,22 @@
+{
+  "name": "filex",
+  "version": "0.1.0-dev",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "contracts": "node scripts/check_contracts.mjs",
+    "test:contracts": "node --test scripts/contracts.test.mjs",
+    "typecheck": "npm run typecheck --workspace @filex/web",
+    "build": "npm run build --workspace @filex/web"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
+    "@asyncapi/parser": "3.6.3",
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  }
+}
