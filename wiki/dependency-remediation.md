@@ -63,3 +63,5 @@ Source SHA-256: `bbb995c65af5cd61b18ece6224dd5a1692490b4fa9fc8b318d25a1fe7585bb1
 - Performance — стандартный compact profile; целевой VPS, multi-GB release profile и внешние решения не подтверждаются этим прогоном.
 
 Логи/records: ignored `.cache/dependabot-review/local-gates/` и `local-evidence/`. CI проверяет тот же source отдельно на Linux и на конкретном Git commit; актуальные ссылки и итог — [session](session.md). Исторические failed Dependabot runs остаются доступными и не переименованы в успешные.
+
+Интеграционный [PR #19](https://github.com/elnemir/p2p-files/pull/19) содержит общий diff, окончательный merge/CI статус и ссылки на скачанные/проверенные exact-commit evidence. Исходные #9/#11 переносятся совместно, #10 заменяется согласованным обновлением, #3/#5 отклоняются по причинам выше; они не выдаются за merged.

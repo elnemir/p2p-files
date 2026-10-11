@@ -4,7 +4,9 @@
 Разобрать все открытые Dependabot PR и устранить причины проблем без подавления проверок; пользователь прямо требует фактического исправления.
 
 ## Status
-2026-10-12: реализация завершена, квалификация кандидата в `codex/dependabot-remediation` от main `d8b4e4f0fc1db06c0f7d61e3b963c9c75b31c7bc`. Предыдущая квалификация сохранена в [истории](sessions/2026-10-12-before-dependabot-remediation.md). 45 toolchain tests, lint, typecheck, generated types и full peer-tree прошли на Node 24.21.0. Все 13 local gates PASS для source `bbb995c65af5cd61b18ece6224dd5a1692490b4fa9fc8b318d25a1fe7585bb1d`; следующий шаг — PR/CI.
+Исправления и решения по пяти Dependabot PR собраны в [PR #19](https://github.com/elnemir/p2p-files/pull/19). Исходная main — `d8b4e4f0fc1db06c0f7d61e3b963c9c75b31c7bc`, основной commit исправления — `ce84826`. Предыдущая квалификация сохранена в [истории](sessions/2026-10-12-before-dependabot-remediation.md).
+
+Локально все 13 gates PASS для неизменного source `bbb995c65af5cd61b18ece6224dd5a1692490b4fa9fc8b318d25a1fe7585bb1d`, включая 45 toolchain tests и 25 browser cases без flaky/skipped. Итог merge и exact-head CI подтверждаются непосредственно в PR #19; отдельный post-merge run — в [main Actions](https://github.com/elnemir/p2p-files/actions?query=branch%3Amain). Скачанные PR/main gate records, browser reports и CodeQL readback сохраняются в ignored `.cache/dependabot-review/`; summary PR содержит окончательные ссылки и commit IDs. Эта запись не превращает незавершённый remote run в PASS.
 
 ## Completed steps
 - Прочитаны AGENTS и wiki; дерево исходного main чистое.
@@ -21,8 +23,9 @@
 - Read-only GitHub audit: matchesPolicy=true, differences=[]; защита main/CodeQL не ослаблена.
 
 ## Next steps
-- Commit/push и PR; получить свежие exact-commit GitHub checks и скачать фактические evidence artifacts.
-- После зелёного PR выполнить squash merge, отдельно проверить main и закрыть пять исходных PR с учётом документированных решений.
+- При продолжении сначала прочитать итог PR #19 и main Actions: не повторять перенос уже merged изменений и не считать закрытый version PR устранённой CVE без обоснования.
+- Сопровождать зависимости по [политике](dependency-remediation.md): после новых advisories/version proposals повторять установку, граф/behavioral tests, scan и соответствующие gates. Node 26 рассматривать после наступления LTS с синхронным обновлением runtime/CI/types.
+- Дальнейшие development/release задачи: DEV-01 production admission design, DEV-03 license package, DEV-04 сохранение evidence, затем EXT/REL из [плана](implementation-plan.md). Никакая внешняя приёмка не закрывается этим обновлением.
 
 ## Decisions
 - Не использовать force/legacy-peer-deps, скрывающие vulnerability ignores, отключение accessibility rules или ослабление scanner thresholds.
@@ -33,5 +36,5 @@
 [Правила](../AGENTS.md), [план](implementation-plan.md), [тесты](testing.md), [лицензии](third-party-review.md), [прежний учёт веток](branch-consolidation.md). Диагностика: ignored `.cache/dependabot-review/`.
 
 ## Risks / blockers
-- Требуется отдельная квалификация exact-commit PR и main в GitHub; local PASS не заменяет CI.
+- Источник статуса remote gates — конкретный PR/main run и его artifacts; local PASS и закрытие исходного PR сами по себе не подтверждают remote qualification.
 - Внешняя приёмка фазы 7 и third-party review остаются отдельными неподтверждёнными условиями выпуска.
