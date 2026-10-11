@@ -1,8 +1,12 @@
 # FileX
 
-Приватная передача файлов: tus upload, immutable publish, ссылки с PIN/password, одноразовая выдача файла или ZIP, зашифрованные Local/S3 хранилища, уведомления, отчёты и exports. Интерфейс RU/EN, light/dark/system, адаптивные страницы владельца и получателя.
+[![CI](https://github.com/elnemir/p2p-files/actions/workflows/ci.yml/badge.svg)](https://github.com/elnemir/p2p-files/actions/workflows/ci.yml) [![Security](https://github.com/elnemir/p2p-files/actions/workflows/security.yml/badge.svg)](https://github.com/elnemir/p2p-files/actions/workflows/security.yml)
 
-**Этапы 1–6 закрыты по локальным development gates.** Добавлены зашифрованные резервные копии Local/S3, обязательный backup перед restore, сверка данных и явное открытие доступа, KEK recovery, инциденты и эксплуатационные UI/CLI. Подробности: [состояние сессии](wiki/session.md), [путь разработки](wiki/roadmap.md), [воспроизведение](wiki/development.md), [восстановление](wiki/operations-recovery.md). Реализованы [технические проверки фазы 7](wiki/release-engineering.md): static analysis, SBOM/security/license evidence, browser matrix, fuzz/load/DR и release gate. Владелец подтвердил отсутствие внешнего окружения; инфраструктурная и независимая приёмка остаются открытыми, production запуск блокируется.
+Приватная передача файлов: tus upload, неизменяемая публикация, ссылки с PIN/password, одноразовая выдача файла или ZIP, зашифрованные Local/S3 хранилища, уведомления, отчёты, exports и управляемое восстановление. Интерфейс RU/EN, light/dark/system.
+
+Вся документация — в **[wiki](wiki/index.md)**. [Текущее состояние](wiki/current-state.md) отделяет реализованное и проверенное от оставшейся приёмки. Фазы 1–6 и технический набор проверок фазы 7 реализованы; внешнее окружение не подготовлено, production запуск блокируется.
+
+Для знакомства с интерфейсом: **[скрин-тур и видео](wiki/screen-tour.md)** · [интерактивная галерея](wiki/tour/index.html).
 
 ```sh
 npm ci
@@ -10,6 +14,10 @@ python3 scripts/init-dev.py
 make up
 ```
 
-Открыть http://localhost:8090. Создание первого ADMIN через CLI описано в [development](wiki/development.md). Для проверок: `make check`, `make integration-docker`, `make security`, `make e2e`, `make ingress`, `make upgrade-drill`, `make fuzz`, `make performance`, `make supply-chain`. [Controlled upgrade](wiki/controlled-upgrade.md) проверяет image replacement, startup faults и downtime. Fixtures создают и удаляют только собственные тестовые containers; browser tests запускают pinned официальный Playwright Linux container (пять browser/device profiles) и требуют свободный loopback порт 8090. `make release-check` проверяет полноту evidence и внешних решений, ничего не публикуя.
+Локальный адрес: http://localhost:8090. Необходимые инструменты, первый ADMIN и остановка без удаления данных — [локальный запуск](wiki/development.md). Перед изменениями прочитать [AGENTS](AGENTS.md), [архитектуру](wiki/architecture.md), [план дальнейшей разработки](wiki/implementation-plan.md) и [workflow](wiki/development-workflow.md).
 
-Перед изменениями читать [AGENTS.md](AGENTS.md) и [wiki](wiki/index.md). [Требования](docs/requirements.md), [OpenAPI](contracts/openapi.json), [AsyncAPI](contracts/asyncapi.json), [матрица requirement→test](docs/test-matrix.md), [CLI](docs/cli.md). PostgreSQL — источник истины, Redis ephemeral. Код proprietary; production deployment требует отдельной явной команды владельца.
+[Требования](wiki/requirements.md) · [OpenAPI](contracts/openapi.json) · [матрица](wiki/test-matrix.md) · [CLI](wiki/cli.md) · [проверки](wiki/testing.md) · [backup/restore](wiki/operations-recovery.md) · [внешняя приёмка](wiki/environment-acceptance.md).
+
+PostgreSQL — источник истины, Redis — ephemeral. Код proprietary; лицензии зависимостей ещё требуют review. Production deployment выполняется только по отдельной команде владельца.
+
+[Правила участия](CONTRIBUTING.md) · [Сообщить об уязвимости](SECURITY.md) · [Настройка репозитория](wiki/repository-governance.md).

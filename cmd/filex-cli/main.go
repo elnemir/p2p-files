@@ -150,7 +150,7 @@ func run() error {
 		p.Close()
 		return emitLegacy(map[string]string{"status": "verified"}, "Migrations, key check and settings verified.")
 	}
-	return fmt.Errorf("supported commands: --version, config validate|ingress-check, settings show|apply, network reset, upgrade check|prepare, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see docs/cli.md")
+	return fmt.Errorf("supported commands: --version, config validate|ingress-check, settings show|apply, network reset, upgrade check|prepare, migrate, user create, storage local|backup-local|s3, backup, recovery, audit, kek, operations, incidents, completion; see wiki/cli.md")
 }
 func main() {
 	if err := run(); err != nil {

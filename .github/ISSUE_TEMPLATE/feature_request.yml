@@ -1,0 +1,31 @@
+name: Задача разработки
+description: Изменение с контекстом, границами и проверяемой приёмкой.
+title: "task: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Контекст и проблема
+      description: Кто сталкивается с проблемой, текущее поведение, ID из roadmap/requirements.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Требуемый результат и границы
+      description: Поток данных, затронутые компоненты и инварианты; неизвестные решения указать явно.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Проверяемое поведение, негативные сценарии, необходимые gates и wiki.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Зависимости и ограничения
+      description: Внешние входы, env/config, эксплуатация, миграции и восстановление.

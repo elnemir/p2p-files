@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="FileX: реальный скрин-тур и видео по передаче файлов, отчётам и эксплуатации на локальном стенде.">
+  <title>FileX — экскурсия по системе</title>
+  <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+  <a class="skip" href="#screens">Перейти к скриншотам</a>
+  <header class="bar"><a class="brand" href="#">FileX<span>●</span></a><span class="edition">ПУТЕВОДИТЕЛЬ ПО СИСТЕМЕ</span><a href="../index.md">База знаний ↗</a></header>
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">ОТ ПЕРВОГО ФАЙЛА ДО ВОССТАНОВЛЕНИЯ СИСТЕМЫ</p><h1>Меньше следов.<br> <em>Больше контроля.</em></h1><p class="intro">Пройдите путь владельца, получателя и администратора.<br> Настоящий интерфейс, действия и результаты — на локальном стенде.</p><div class="hero-actions"><a class="primary" href="#video">▶ Смотреть видеотур <span id="duration"></span></a><a class="secondary" href="#screens">Изучить скриншоты ↓</a></div></div>
+      <div class="hero-note"><span class="dot"></span><b>Записано в рабочем интерфейсе</b><p>Демонстрационные документы<br> и вымышленные пользователи.<br> Без внешних интеграций.</p><div class="stats"><div><strong id="screenCount">44</strong><span>экрана</span></div><div><strong id="chapterCount">19</strong><span>глав видео</span></div></div><small>11 октября 2026 · Chromium</small></div>
+    </section>
+    <section id="video" class="video-section">
+      <div class="section-heading"><div><p class="eyebrow">01 / СМОТРЕТЬ</p><h2>Система в действии</h2></div><p>Русская озвучка · субтитры · переход по главам</p></div>
+      <div class="cinema"><video controls preload="metadata" playsinline poster="screenshots/03-draft.png" aria-label="Видеотур по FileX с русской озвучкой и вшитыми субтитрами"><source src="filex-tour.mp4" type="video/mp4"><track kind="captions" src="captions.ru.vtt" srclang="ru" label="Русские (дополнительный слой)">Ваш браузер не поддерживает видео. <a href="filex-tour.mp4">Скачать MP4</a></video><div class="chapter-panel"><h3>Маршрут</h3><ol id="chapters"></ol></div></div>
+      <div class="video-meta"><span>Запись реальных действий; ожидания сокращены. Синтезированный голос Milena.</span><div><a href="filex-tour.mp4" download>Скачать MP4 ↗</a><a href="captions.ru.vtt" download>Субтитры VTT ↗</a></div></div>
+    </section>
+    <section id="screens" class="screen-section">
+      <div class="section-heading"><div><p class="eyebrow">02 / РАССМОТРЕТЬ</p><h2>Каждый шаг — крупным планом</h2></div><p>Нажмите на кадр, чтобы открыть оригинал</p></div>
+      <div class="toolbar"><label class="search"><span>Поиск по экранам</span><input id="search" type="search" placeholder="Например: backup, отчёт, пароль…" autocomplete="off"></label><p id="results" role="status"></p></div>
+      <div class="workspace"><nav id="filters" aria-label="Разделы тура"></nav><div><div id="grid" class="grid"></div><p id="empty" hidden>Таких экранов нет. Попробуйте другой запрос.</p></div></div>
+    </section>
+    <section class="limits"><div><p class="eyebrow">03 / ПОНИМАТЬ ГРАНИЦЫ</p><h2>Что подтверждает этот тур</h2></div><div><p><b>Выполнено на стенде:</b> загрузка и публикация, ZIP получателя, QR, PDF/JSON/CSV, проверка хеша, backup → restore → restart → сверка → открытие доступа.</p><p><b>Показано как конфигурация:</b> SMTP, S3, webhook, перенос провайдеров, ротация и forensic. Внешние сервисы и физические мобильные устройства не проверялись.</p><p>Все временные ресурсы удалены после съёмки. Ссылки в кадрах больше не действуют. Внешняя приёмка и разрешение на production остаются отдельными шагами.</p><a href="../tour-maintenance.md">Как воспроизвести запись ↗</a></div></section>
+  </main>
+  <footer><span class="brand">FileX<span>●</span></span><p>Приватная передача файлов. Понятный путь по системе.</p><a href="../screen-tour.md">Текстовая версия ↗</a></footer>
+  <dialog id="lightbox" aria-labelledby="lightboxTitle"><div class="lightbox-head"><span id="position"></span><button id="close" aria-label="Закрыть изображение">Закрыть ×</button></div><div class="image-frame"><img id="large" alt=""></div><div class="lightbox-caption"><div><h2 id="lightboxTitle"></h2><p id="lightboxDescription"></p></div><div class="lightbox-actions"><a id="original" target="_blank" rel="noopener">Оригинал ↗</a><button id="prev" aria-label="Предыдущий экран">←</button><button id="next" aria-label="Следующий экран">→</button></div></div></dialog>
+  <script id="tour-data" type="application/json">/* MANIFEST */</script>
+  <script src="gallery.js"></script>
+</body>
+</html>

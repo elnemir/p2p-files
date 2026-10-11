@@ -1,4 +1,12 @@
 {
+  "actionlint": {
+    "version": "1.7.12",
+    "repository": "rhysd/actionlint",
+    "platforms": {
+      "Darwin-arm64": ["actionlint_1.7.12_darwin_arm64.tar.gz", "aba9ced2dee8d27fecca3dc7feb1a7f9a52caefa1eb46f3271ea66b6e0e6953f"],
+      "Linux-x86_64": ["actionlint_1.7.12_linux_amd64.tar.gz", "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"]
+    }
+  },
   "trivy": {
     "version": "0.75.0",
     "repository": "aquasecurity/trivy",

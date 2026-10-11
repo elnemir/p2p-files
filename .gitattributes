@@ -1,0 +1,20 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.webm binary
+*.wav binary
+*.aiff binary
+*.woff2 binary
+*.ttf binary
+*.zip binary
+*.gz binary
+apps/web/lib/api-schema.ts linguist-generated=true
+contracts/openapi.json linguist-generated=true
+contracts/asyncapi.json linguist-generated=true
+contracts/schemas/*.json linguist-generated=true
+wiki/test-matrix.md linguist-generated=true
+wiki/tour/** linguist-documentation=true

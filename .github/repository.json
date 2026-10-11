@@ -1,0 +1,68 @@
+{
+  "repository": "elnemir/p2p-files",
+  "settings": {
+    "description": "FileX — приватная одноразовая передача файлов: Go, Next.js, зашифрованные Local/S3 хранилища, аудит и управляемое восстановление.",
+    "homepage": "https://github.com/elnemir/p2p-files/blob/main/wiki/index.md",
+    "has_issues": true,
+    "has_wiki": false,
+    "allow_squash_merge": true,
+    "allow_merge_commit": false,
+    "allow_rebase_merge": false,
+    "allow_auto_merge": false,
+    "delete_branch_on_merge": true,
+    "allow_update_branch": true,
+    "squash_merge_commit_title": "PR_TITLE",
+    "squash_merge_commit_message": "PR_BODY"
+  },
+  "topics": ["file-transfer", "golang", "nextjs", "postgresql", "self-hosted", "typescript"],
+  "actions": {"enabled": true, "allowed_actions": "selected", "sha_pinning_required": true},
+  "allowedActions": {"github_owned_allowed": true, "verified_allowed": false, "patterns_allowed": []},
+  "workflowPermissions": {"default_workflow_permissions": "read", "can_approve_pull_request_reviews": false},
+  "forkApproval": {"approval_policy": "all_external_contributors"},
+  "security": {
+    "secret_scanning": {"status": "enabled"},
+    "secret_scanning_push_protection": {"status": "enabled"}
+  },
+  "branch": "main",
+  "codeScanningRuleset": {
+    "name": "FileX main code scanning",
+    "target": "branch",
+    "enforcement": "active",
+    "bypass_actors": [],
+    "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+    "rules": [{"type": "code_scanning", "parameters": {"code_scanning_tools": [
+      {"tool": "CodeQL", "alerts_threshold": "errors", "security_alerts_threshold": "high_or_higher"}
+    ]}}]
+  },
+  "protection": {
+    "required_status_checks": {
+      "strict": true,
+      "checks": [
+        {"context": "checks", "app_id": 15368},
+        {"context": "supply-chain", "app_id": 15368},
+        {"context": "repository-policy", "app_id": 15368},
+        {"context": "security-checks", "app_id": 15368}
+      ]
+    },
+    "enforce_admins": true,
+    "required_pull_request_reviews": {
+      "dismiss_stale_reviews": true,
+      "require_code_owner_reviews": false,
+      "required_approving_review_count": 0,
+      "require_last_push_approval": false
+    },
+    "restrictions": null,
+    "required_linear_history": true,
+    "allow_force_pushes": false,
+    "allow_deletions": false,
+    "required_conversation_resolution": true
+  },
+  "labels": [
+    {"name": "dependencies", "color": "0366d6", "description": "Обновление зависимостей; обязательны проверки и license review"},
+    {"name": "ci", "color": "5319e7", "description": "CI, repository settings и инструменты разработки"},
+    {"name": "security", "color": "b60205", "description": "Публичная задача безопасности без деталей уязвимостей"},
+    {"name": "blocked", "color": "d93f0b", "description": "Необходим внешний вход или отдельное решение"},
+    {"name": "priority:p0", "color": "b60205", "description": "Блокирует выпуск"},
+    {"name": "priority:p1", "color": "fbca04", "description": "Приоритетная задача сопровождения"}
+  ]
+}

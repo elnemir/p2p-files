@@ -51,7 +51,7 @@ func operationalCLI(args []string) (bool, error) {
 		return false, nil
 	}
 	if len(args) != 2 {
-		return true, errors.New("operational commands require a subcommand; see docs/cli.md")
+		return true, errors.New("operational commands require a subcommand; see wiki/cli.md")
 	}
 	command := args[0] + " " + args[1]
 	var in operationInput
@@ -172,7 +172,7 @@ func operationalCLI(args []string) (bool, error) {
 		clear(key)
 		output = map[string]any{"status": "completed", "requiresRestart": true}
 	default:
-		return true, errors.New("unsupported operational command; see docs/cli.md")
+		return true, errors.New("unsupported operational command; see wiki/cli.md")
 	}
 	if e != nil {
 		return true, errors.New("operation failed; inspect the protected operations dashboard and retry after resolving the cause")

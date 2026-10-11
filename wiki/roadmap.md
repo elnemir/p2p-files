@@ -1,31 +1,42 @@
-# Путь разработки и критерии закрытия
+# Дорожная карта разработки
 
-## Контекст
-Исходная нумерация 0–7 сохранена. После этапов 1–5 по поручению владельца реализована и проверена фаза 6. Все 32 MUST остаются в MVP; инфраструктурная приёмка и release acceptance выполняются фазой 7. Закрытие development-фаз не разрешает production запуск.
+## Контекст и статус
 
-**Статус на 2026-10-11: этапы 1–6 закрыты по локальным development gates.** Полная release приёмка остаётся в фазе 7.
+Исходная нумерация 0–7 сохранена. Все 32 MUST входят в MVP; отдельный урезанный scope не согласован. Фаза закрывается по работающему вертикальному сценарию, проверкам и синхронной документации. Development completion, выпуск и production deployment — разные события.
 
-## Фазы и результаты
+## Реализованные фазы
 
-| Фаза | Результат | Проверяемая граница |
+| Фаза | Результат | Статус на 2026-10-11 |
 |---|---|---|
-| 0. Контрактная база | Requirements, ADR, threat model, state machines, traceability | Устранены противоречия, полный набор requirements сохранён; contracts синхронизированы с runtime. |
-| 1. Платформа | Go/Next.js/Compose, migrations, auth/roles/CSRF, settings revisions, internal metrics, CLI provisioning, CI | Unit/race, DB bootstrap/upgrade/checksum, negative auth tests, TS/build, local proxy isolation. |
-| 2. Передача | tus/resume, Local/S3, SHA/scanner, draft tree, immutable publish, links/PIN, acquire/Range/fencing, cleanup | Browser upload→publish→recipient ZIP, interrupted PATCH/HEAD resume, concurrency/revoke/fault/retention tests. |
-| 3. ZIP/криптография | Deterministic ZIP64/Ed25519, verifier, FXP1 AEAD, class key rotation, migration, freeze/forensic | Independent binary vectors, tamper/nonce bounds, atomic ZIP/Range, stale worker/rotation/hold tests. |
-| 4. Коммуникации | SMTP TLS/templates/outbox, HMAC webhooks, retry/DLQ, WS+poll, preferences/digest/quiet hours | TLS fixture delivery and certificate rejection, SSRF/replay transaction, delivery faults, session revocation/privacy. |
-| 5. Отчёты | Immutable PDF/CSV/JSON snapshots, three hashes, public verify/trash, export jobs, credentials, saved views/bulk, encrypted QR | Snapshot/retry/privacy/Range/authorization/invalidation tests, browser PDF/JSON/CSV, visual inspection. |
-| 6. Эксплуатация | BackupProvider, encrypted backup, mandatory pre-restore backup, reconciliation, reopen gate, KEK recovery/rewrap, incidents/checkpoints, schedules/metrics, expanded CLI и ADMIN exports | **Закрыта локально:** 8 новых PG/race drills, archive tamper/Local/S3 unit tests, Chromium backup→restore→restart→reauth→reconcile→reopen, PDF/mobile visual, contracts/build/security. |
-| 7. Приёмка | Production TLS/ACME, performance/DR/security, browser matrix, accessibility acceptance, SBOM/license/container/secret scans | Все MUST с release evidence, residual risks приняты владельцем, нет critical/high. **Техническая реализация завершена; 13 local gates PASS, evidence — в session. Внешняя приёмка заблокирована отсутствием окружения и независимых решений.** |
+| 0. Контрактная база | Requirements, ADR, threat model, state machines, OpenAPI/AsyncAPI/schemas, traceability | Реализовано; документы актуализируются с каждым изменением |
+| 1. Платформа | Go/Next.js/Compose, migrations, auth/roles/CSRF, settings, audit, CLI и CI | Закрыта по локальным development gates |
+| 2. Передачи | tus/resume/tree, Local/S3, server finalize, publish/links/PIN, leases/Range/cleanup | Закрыта по локальным development gates |
+| 3. ZIP/crypto | Atomic ZIP64/Ed25519, verifier, FXP1, rotation/migration, freeze/forensic | Закрыта по локальным development gates |
+| 4. Коммуникации | SMTP TLS/templates, outbox/retry/DLQ, HMAC webhooks, WS/poll/digest | Закрыта по локальным development gates |
+| 5. Отчёты | Immutable reports/three hashes, verify/trash, exports/artifacts/QR, saved views/bulk | Закрыта по локальным development gates |
+| 6. Эксплуатация | Backup/restore/pre-backup, reconciliation/reopen, KEK recovery, incidents/checkpoints, UI/CLI | Закрыта по локальным development gates |
+| 7. Приёмка | Ingress/upgrade, quality/security/browser/fuzz/load/DR gates и release evidence | Технический набор реализован и проверен на 7dce226; полная release приёмка открыта |
 
-Итог текущего прогона: [session](session.md). Доказательства и ограничения: [development](development.md), устройство восстановления: [runbook](operations-recovery.md). В [матрице](../docs/test-matrix.md) 27 `verified` по локальным тестам и 5 `partial` с оставшимся scope фазы 7. Ни одно требование не исключено.
+Исторические результаты — [evidence](history/development-evidence-2026-10-11.md); текущая граница — [current state](current-state.md). 27 MUST verified локально и 5 partial не означают 32 release-accepted MUST.
 
-## Фаза 7: выполненная разработка и продолжение
-- **7.1:** [HTTPS/proxy/CIDR/host reset](production-ingress.md) и [controlled upgrade/downtime](controlled-upgrade.md) реализованы и локально проверены.
-- **7.2:** [release engineering](release-engineering.md): static analysis/generated types, source/container/secret/license/SBOM, browser matrix/visual/axe, fuzz, bounded multi-GB/export/fault/DR, compatibility и CLI verifier review bundle реализованы. Все 13 local gates PASS; измерения и source hash указаны в session.
-- **7.3:** fail-closed `make release-check`, review inventory, [release notes](../docs/release-notes.md) и 14 внешних decision records подготовлены. Независимая приёмка остаётся открытой.
+## Порядок продолжения фазы 7
 
-Владелец подтвердил 2026-10-11: окружение не подготовлено. Следующее внешнее действие — подготовить VPS/домен, SMTP/S3, backup storage, независимое хранение KEK/checkpoints. Затем выполнить target load/DR/ACME/host/device/assistive-technology acceptance, независимый security review и owner review лицензий/R-01–06. Production deployment требует отдельной команды. Отсутствие окружения не превращает требования в исключения.
+Это рабочая декомпозиция оставшегося допуска и сопровождения, а не изменение продуктового scope.
 
-## Принцип закрытия
-Фаза закрывается при реализации вертикального сценария, зелёных относящихся к нему проверках и синхронных wiki/contracts/changelog. Наличие файлов, успешная компиляция или пропущенные integration tests не являются доказательством. Ни ограничения env, ни открытые release risks нельзя скрывать отметкой «готово».
+| Шаг | Вход | Выход / условие завершения |
+|---|---|---|
+| 7.4. Подготовка кандидата | Текущий код и данная wiki | DEV-01 design, DEV-02 сопровождение, DEV-03 пакет license review, DEV-04 evidence retention; локальные проверки зелёные |
+| 7.5. Подготовка окружения | Назначенные оператором VPS/домен/аккаунты/escrow и явная команда на внешние действия | Заполненная карточка окружения, EXT-01–03 с фактическими протоколами |
+| 7.6. Независимая и целевая приёмка | Согласованный кандидат, изолированное целевое окружение, reviewer | EXT-04–07: load/DR, реальные устройства/AT, security, лицензии и R-01–06; найденные дефекты исправлены и проверены |
+| 7.7. Допуск и выпуск | Все внешние evidence, reviewed DEV-01 implementation | REL-01: свежие 13 gates, полная traceability, clean commit, release-check PASS, сохранённый release package |
+| Production deployment | Принятый выпуск и отдельное поручение владельца | Контролируемый rollout/проверка/rollback plan по фактическому окружению; эта задача сейчас не поручена |
+
+DEV-01 сначала определяет безопасный путь тестового допуска и финального production допуска: существующий безусловный guard иначе создаёт цикл «нельзя проверить production до release, release нельзя принять до проверки». Проектное решение и его review должны предшествовать любому включению режима. До них generator/TLS fixture не считаются работающим production deployment.
+
+## Что можно начать без внешнего окружения
+
+Приоритет: проектирование DEV-01 и пакет DEV-03; затем DEV-02 и DEV-04. Независимый reviewer может начать разбор кода/форматов без VPS, но его финальные выводы должны учитывать выбранную поставку. Конкретные карточки, зависимости, тесты и ответственные роли — [implementation plan](implementation-plan.md).
+
+При записи [тура](screen-tour.md) выявлен DEV-05: уже открытая страница получателя сохраняет устаревший список после completed/401. Сервер повторную выдачу запрещает; отдельный локальный шаг должен сделать терминальное состояние UI явным, сохранив privacy и resume. Визуальные материалы показывают действующее поведение, а не будущий исправленный интерфейс.
+
+Новые бизнес-функции после MVP не согласованы. Multi-tenant organizations, billing, PWA, IPv6 или замена стека не добавлены в план как обязательные задачи. Обнаруженный дефект фиксируется отдельной карточкой с requirement ID и фактическим воспроизведением.

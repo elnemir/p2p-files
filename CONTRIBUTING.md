@@ -1,7 +1,9 @@
-# Разработка
+# Разработка FileX
 
-Начать с [AGENTS.md](AGENTS.md), [wiki/index.md](wiki/index.md) и [wiki/session.md](wiki/session.md). Conventional Commits; PR содержит поведение, FR/SEC/OPS/NFR IDs, миграции, риски и фактически выполненные проверки.
+Обязательные правила — [AGENTS](AGENTS.md). Начать с [wiki](wiki/index.md), [состояния](wiki/current-state.md) и [сессии](wiki/session.md); выбрать задачу из [плана](wiki/implementation-plan.md).
 
-`make check` — локальный базовый gate; `make integration-docker` — обязательные PostgreSQL/race tests на disposable БД; `make security` — dependency scans. Эти команды не заменяют [release checklist](docs/release-checklist.md). `make e2e` проверяет реальные transfer/report/export/QR сценарии через disposable Compose/Traefik, OpenAPI response contracts и axe; нужен установленный Playwright Chromium и свободный порт 8090.
+[Developer workflow](wiki/development-workflow.md) содержит порядок изменения кода/контрактов, шаблон задачи/PR и Definition of Done. [Локальный запуск](wiki/development.md), [карта компонентов](wiki/repository-map.md), [конфигурация](wiki/configuration.md), [проверки](wiki/testing.md) позволяют воспроизвести работу без истории чата.
 
-Source API contracts: `scripts/build_contracts.py`; после изменения запускать generator и проверки `make contracts`. Source traceability: `contracts/traceability.json`; матрицу обновлять через `contracts/traceability.json` и `python3 scripts/traceability.py`. Применённые SQL migrations не изменять. Generated files — только через source/codegen. После каждого шага обновлять wiki с контекстом, проблемой, решением, data flow, примерами, ограничениями и результатами проверки.
+Conventional Commits; applied migrations и generated files вручную не менять. После каждого шага обновлять тематическую wiki и session. Обязательные gates не отключать. Все проверки записывать с областью действия: unit, PostgreSQL, браузер, CI, внешний provider и production acceptance различаются. CI не выполняет deployment.
+
+Изменения проходят через `codex/<topic>` и PR в main с обязательным CI и squash merge. [Настройка репозитория](wiki/repository-governance.md) описывает required checks, CODEOWNERS, Dependabot, GitHub settings и их проверку. Об уязвимостях сообщать по [SECURITY.md](SECURITY.md), без публичных секретов и пользовательских данных.

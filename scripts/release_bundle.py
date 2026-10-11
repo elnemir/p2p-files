@@ -21,7 +21,7 @@ def main():
   (OUT/(name+'.build.txt')).write_text(metadata)
  (OUT/'SHA256SUMS').write_text(''.join(r['sha256']+'  '+r['name']+'\n' for r in records))
  (OUT/'manifest.json').write_text(json.dumps({'status':'unpublished_review_bundle','sourceSha256':source_hash(),'commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'artifacts':records,'releaseRequires':'python3 scripts/acceptance.py readiness'},indent=2)+'\n')
- shutil.copyfile(ROOT/'docs/release-notes.md',OUT/'RELEASE-NOTES.md')
+ shutil.copyfile(ROOT/'wiki/release-notes.md',OUT/'RELEASE-NOTES.md')
  print('PASS: five verifier targets built; checksums recorded. Nothing published.')
 
 

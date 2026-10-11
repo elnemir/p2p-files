@@ -1,0 +1,33 @@
+name: Ошибка
+description: Воспроизводимое нарушение поведения на изолированном стенде.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Для уязвимостей используйте приватный Security Advisory. Не прикладывайте секреты, пользовательские файлы и дампы.
+  - type: input
+    id: version
+    attributes:
+      label: Версия и окружение
+      description: Commit, ОС, браузер, local/test; без секретных URL.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Шаги воспроизведения
+      description: Минимальный сценарий с синтетическими данными.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Ожидаемое и фактическое поведение
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence и влияние
+      description: Очищенные логи, скриншоты, requirement IDs, частота и область проблемы.

@@ -1,7 +1,7 @@
 # Фаза 7.1: HTTPS ingress и сетевая политика
 
 ## Контекст и статус
-Фаза 6 опубликована как `02c53d9`; [CI](https://github.com/elnemir/p2p-files/actions/runs/38131827674) прошёл. Фаза 7 начинается с ingress, границы доверия к proxy и воспроизводимой локальной проверки. Здесь описаны реализация и порядок подготовки конфигурации; это не разрешение production deploy. `APP_ENV=production` пока отклоняется binary до завершения release acceptance.
+Ingress/network policy реализованы в фазе 7.1 и входят в проверенный кандидат 7dce226. Здесь описаны текущие guards и воспроизводимый локальный harness; исторические [результаты](history/development-evidence-2026-10-11.md) имеют собственные commit/hash. Здесь описаны реализация и порядок подготовки конфигурации; это не разрешение production deploy. `APP_ENV=production` пока отклоняется binary до завершения release acceptance.
 
 ## Проблема и решение
 За development Traefik прежний rate limit видел общий IP proxy. Доверие присланному клиентом X-Forwarded-For создало бы обход rate limit и CIDR ограничений. [ADR-007](adr/007-ingress-and-network-policy.md) фиксирует один доверенный hop: Traefik удаляет недоверенные forwarded headers на входе, API принимает их только от заранее указанных IPv4 `/32` peers.
@@ -62,7 +62,7 @@ python3 scripts/production_config.py \
 
 Проверяются реальный TLS/CA, HTTP redirect, HSTS/privacy, secure session cookie, Host routing, недоступность public /health /ready /metrics, spoofed forwarded headers, client CIDR denial, host reset и restart fencing. Unit/PG tests отдельно проверяют malformed headers/CIDR, effective IP bucket, stale revision rollback, отмену привилегированного запроса и audit reset. Скрипт в finally удаляет только собственный project/volumes; images/build cache остаются.
 
-Фактические результаты сохраняются в [session](session.md) и [development](development.md). Наличие генератора и локальной CA не доказывает issuance/renewal ACME, host firewall, public DNS или readiness реального VPS.
+Фактические результаты сохраняются в [session](session.md) и [история проверок](history/development-evidence-2026-10-11.md). Наличие генератора и локальной CA не доказывает issuance/renewal ACME, host firewall, public DNS или readiness реального VPS.
 
 ## Продолжение фазы 7
-[Controlled upgrade/downtime](controlled-upgrade.md) реализован отдельным срезом с локальным fixture; точный статус регрессии/CI — в session. Остаются полный browser/manual WCAG, load/DR на целевой топологии, SBOM/license/container/secret/static analysis, независимый security review и рассмотрение residual risks владельцем. Production guard снимается только после review этих gates; реальные DNS/host/deploy mutations требуют отдельного поручения. Все 32 MUST сохранены, SEC-005/OPS-005 пока partial.
+[Controlled upgrade/downtime](controlled-upgrade.md) реализован отдельным срезом с локальным fixture; точный статус регрессии/CI — в session. Автоматическая browser matrix и local load/DR/SBOM/license/container/secret/static gates реализованы. Остаются реальные devices/manual WCAG, load/DR на целевой топологии, independent security review и решения владельца о лицензиях/residual risks. Production guard безусловный; reviewed механизм допуска ещё требует DEV-01 в [плане](implementation-plan.md), успешный release-check не изменяет его; реальные DNS/host/deploy mutations требуют отдельного поручения. Все 32 MUST сохранены, SEC-005/OPS-005 пока partial.
