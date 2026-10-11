@@ -4,13 +4,13 @@
 Полностью настроить локальный и GitHub-репозиторий FileX: правила разработки, CI/security, dependency updates, шаблоны задач/PR и защиту main.
 
 ## Status
-2026-10-11: техническая настройка GitHub применена и подтверждена независимым audit без расхождений. Основной [PR #1](https://github.com/elnemir/p2p-files/pull/1) merged в `db02ab2ad7c2d233811236d1473adf45a30cdad0` после всех обязательных проверок. [PR #15](https://github.com/elnemir/p2p-files/pull/15) содержит исправления двух обнаруженных при первичном CI проблем в тестовых инструментах. Эта запись фиксирует локальные результаты перед его публикацией; окончательные head, merge commit и checks читаются на странице PR, чтобы не подменять ещё не завершённый remote run локальным PASS.
+2026-10-11: техническая настройка репозитория завершена; GitHub settings применены и подтверждены независимым audit без расхождений. Основной [PR #1](https://github.com/elnemir/p2p-files/pull/1) merged в `db02ab2ad7c2d233811236d1473adf45a30cdad0` после всех обязательных проверок. [PR #15](https://github.com/elnemir/p2p-files/pull/15) содержит исправления двух обнаруженных при первичном CI проблем в тестовых инструментах. Эта запись фиксирует проверенный состав и результаты перед финальным commit; [состояние PR](https://github.com/elnemir/p2p-files/pull/15) и [CI main](https://github.com/elnemir/p2p-files/actions/workflows/ci.yml?query=branch%3Amain) служат источниками окончательных merge/head/checks. Локальный PASS не подменяет remote CI.
 
 ## Completed steps
 - Добавлены versioned GitHub policy и audit/apply CLI, формы Issues/PR, CODEOWNERS, Dependabot для npm/Go/Docker/Actions, editor/Git/Node defaults, SECURITY.md и документация сопровождения. [Состав и поток](repository-governance.md).
 - Применены main protection для admins, обязательные `checks`, `supply-chain`, `repository-policy`, `security-checks`, squash-only и линейная история; force push/delete запрещены. Approvals = 0 при единственном владельце; независимый review этим не заявляется.
 - Actions используют read token, GitHub-owned actions и SHA pins; внешние fork требуют approval. Secret scanning/push protection включены. CodeQL выполняет Go, JS/TS, Python, Actions; ruleset **active**, HIGH/CRITICAL и errors блокируют merge. Первый bootstrap сохранял новое правило disabled только до появления анализов main; теперь оно активно.
-- Final apply/readback PASS: `.cache/repository-setup/20261011T163025.333552Z/result.json`; независимый audit PASS без drift: `.cache/repository-setup/20261011T163600.430835Z/result.json`. Visibility, collaborators, secrets и production не менялись. CODEOWNERS API errors = 0.
+- Final apply/readback PASS: `.cache/repository-setup/20261011T163025.333552Z/result.json`; независимые audit PASS без drift: `.cache/repository-setup/20261011T163600.430835Z/result.json` и повтор после публикации follow-up `.cache/repository-setup/20261011T165821.370695Z/result.json`. Visibility, collaborators, secrets и production не менялись. CODEOWNERS API errors = 0.
 - Локально установлены `pull.ff=only`, `fetch.prune=true`, `push.default=simple`; прежние значения сохранены в `.cache/repository-setup/git-local-before.json`. Глобальный Git config не менялся.
 - PR #1 head `0a9f384ad9ab0aa9c32b985709a621a23add3795`: development-checks [38153575839](https://github.com/elnemir/p2p-files/actions/runs/38153575839) и security-analysis [38153575851](https://github.com/elnemir/p2p-files/actions/runs/38153575851) SUCCESS, все 10 checks зелёные. Все 13 gate records скачаны, PASS/sourceUnchanged=true на одном source `56f73f7bba5b90c99787eebb720d234cce67a8c888356921299d199f45e1eca3`.
 - Сигналы CodeQL в галерее устранены проверкой локального PNG path перед src/href. QA: 7 негативных URL сценариев, 50 checksums, 44 скриншота, 19 глав, desktop/mobile accessibility и playback PASS. Артефакты тура сохранены.
@@ -22,7 +22,7 @@
 - NFR-003 implementation/test mappings и generated matrix дополнены; 32 требования и их acceptance status не менялись. Dependabot уже создал первые PR; major обновления не включены автоматически.
 
 ## Next steps
-- При продолжении сначала сверить фактический state/checks PR #15. Merge допустим только при зелёных required checks и CodeQL; после merge проверить повторный main CI и read-only repository audit. CI evidence сохраняется 14 дней.
+- При продолжении сверить свежие GitHub head/checks по ссылкам выше. Если PR #15 ещё открыт, дождаться всех required checks/CodeQL до merge без bypass; если merged, использовать его merge commit и повторный main CI. CI evidence сохраняется 14 дней, поэтому для release нужен DEV-04.
 - Продолжить [DEV-01–05 и EXT/REL](implementation-plan.md): production admission design, toolchain review, licenses, долговременное evidence и recipient terminal UI.
 - После выбора правообладателя/условий владельцем оформить proprietary LICENSE в DEV-03. Техническая настройка не принимает это решение.
 
