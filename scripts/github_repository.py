@@ -148,7 +148,8 @@ def apply(policy, before):
     existing_labels = {x['name'] for x in before['labels']}
     for label in policy['labels']:
         if label['name'] in existing_labels:
-            api(base + '/labels/' + quote(label['name'], safe=''), 'PATCH', label)
+            api(base + '/labels/' + quote(label['name'], safe=''), 'PATCH',
+                {'new_name': label['name'], 'color': label['color'], 'description': label['description']})
         else:
             api(base + '/labels', 'POST', label)
     # Enable the complete merge gate only after the remaining settings succeed.

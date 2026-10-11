@@ -16,7 +16,7 @@ FileX разрабатывается в [elnemir/p2p-files](https://github.com/e
 | Reviews и merge | Resolve conversations, squash-only, линейная история, удаление merged branch. Approvals = 0: единственный владелец не может одобрить собственный PR. CODEOWNERS назначает владельца, но не имитирует независимый review |
 | CodeQL ruleset | Для main требуется анализ CodeQL; security HIGH/CRITICAL и alert errors блокируют merge. Правило вводится после первой успешной базовой загрузки результатов на main |
 | Actions | GitHub-owned actions, полные SHA pins, default contents:read, без bot approval. Внешние fork PR требуют maintainer approval; checkout не сохраняет credentials |
-| [.github/workflows/ci.yml](../.github/workflows/ci.yml) | Существующие functional/supply-chain gates и новый repository-policy; superseded runs отменяются, timeout ограничен, evidence сохраняется 14 дней |
+| [.github/workflows/ci.yml](../.github/workflows/ci.yml) | Functional/supply-chain gates и repository-policy на PR/main/manual без дублирующего push-run feature branch; superseded runs отменяются, timeout ограничен, evidence сохраняется 14 дней |
 | [.github/workflows/security.yml](../.github/workflows/security.yml) | CodeQL для Go, JS/TS, Python и Actions; dependency review HIGH/CRITICAL в PR; стабильный aggregate security-checks не принимает failed/skipped CodeQL |
 | Secrets и сообщения | GitHub secret scanning/push protection плюс существующий Gitleaks worktree/history; приватный канал описан в [SECURITY](../SECURITY.md) |
 | [.github/dependabot.yml](../.github/dependabot.yml) | Еженедельные PR для npm workspaces, Go, Dockerfiles в deploy и GitHub Actions; minor/patch npm/Go сгруппированы, major идут отдельно; автоматического merge нет |

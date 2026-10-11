@@ -82,6 +82,28 @@ try {
   const mobileA11y = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(mobileA11y.violations).toEqual([]);
   expect(errors).toEqual([]);
+  // Exercise a tampered embedded manifest through the real renderer, without navigation.
+  const html = (await readFile(path.join(out, 'index.html'), 'utf8')).replace('<script src="gallery.js"></script>', '');
+  const rejectedPaths = ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>',
+    'https://example.test/tracker.png', '//example.test/tracker.png', 'screenshots/../secret.png',
+    'screenshots/01-login.svg', 'screenshots/01-login.png?redirect=1'];
+  for (const file of rejectedPaths) {
+    const unsafe = await context.newPage();
+    const failures = [];
+    unsafe.on('pageerror', error => failures.push(error.message));
+    await unsafe.setContent(html);
+    await unsafe.evaluate(file => {
+      const node = document.getElementById('tour-data');
+      const manifest = JSON.parse(node.textContent);
+      manifest.screens[0].file = file;
+      node.textContent = JSON.stringify(manifest);
+    }, file);
+    await unsafe.addScriptTag({ path: path.join(out, 'gallery.js') });
+    await expect.poll(() => failures).toContain('Invalid screenshot path in tour manifest');
+    expect(await unsafe.locator('img,a').evaluateAll((nodes, file) => nodes.some(node =>
+      node.getAttribute('src') === file || node.getAttribute('href') === file), file)).toBe(false);
+    await unsafe.close();
+  }
   // Contact sheets are private review aids; original PNG bytes are never changed.
   for (let start = 0; start < data.screens.length; start += 6) {
     const review = await context.newPage();
@@ -107,6 +129,7 @@ try {
   await writeFile(path.join(evidence, 'result.json'), JSON.stringify({ passed: true, checkedAt: new Date().toISOString(),
     browser: browser.version(), screenshots: data.screens.length, chapters: data.chapters.length, checksums: listed.length, media,
     checks: ['PNG dimensions', 'SHA256SUMS', 'search and empty results', 'category filter', 'lightbox arrows/Escape/focus',
-      'desktop/mobile axe', 'no horizontal overflow', 'video decoding/playback/seeking', 'no JavaScript errors'] }, null, 2));
+      'desktop/mobile axe', 'no horizontal overflow', 'video decoding/playback/seeking', 'no JavaScript errors',
+      'tampered manifest URL schemes/origins/traversal rejected'] }, null, 2));
   console.log(`PASS: ${listed.length} checksums; ${data.screens.length} screens; ${data.chapters.length} chapters; gallery, a11y and video playback`);
 } finally { await browser.close(); }

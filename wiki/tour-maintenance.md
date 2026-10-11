@@ -15,6 +15,8 @@
 5. [render.py](../scripts/tour/render.py) берёт записанные фрагменты, генерирует русскую озвучку macOS Milena и ASS/VTT субтитры, собирает H.264/AAC MP4 с главами. Ускорение ожиданий ограничено; короткие фрагменты замедляются под повествование. Заголовки и вшитые субтитры находятся в полях вокруг UI.
 6. Шаблоны [HTML](../scripts/tour/gallery.html), [CSS](../scripts/tour/gallery.css) и [JavaScript](../scripts/tour/gallery.js) создают автономную галерею. Встроенный manifest позволяет открывать её через `file://` без fetch и без внешних шрифтов/сервисов. Отдельный [manifest](tour/manifest.json) содержит описания, временные отметки и границу проверки.
 
+Поля URL из manifest проходят отдельную проверку перед установкой src/href: разрешён только `screenshots/NN-name.png` без query, traversal, внешнего origin, data/javascript schemes или другого формата. Имя кодируется как один URL segment. Текстовые поля вставляются через textContent; JSON внутри HTML экранирует `<`. Это закрывает предупреждения CodeQL DOM XSS, обнаруженные при первом включении сканера: три места в исходнике и три в generated copy. Негативный browser QA подставляет семь недопустимых путей в настоящий embedded manifest и проверяет отказ до появления URL в DOM. После изменения gallery.js выполняется `render.py --gallery-only`, а затем повторные checksums/browser QA; PNG и MP4 не пересоздаются.
+
 ## Подготовка
 
 Нужны Docker/Compose, Node/npm и зависимости репозитория (`npm ci`), Python 3, свободный loopback-порт 8090 и несколько гигабайт под Docker cache. Сценарий длится несколько минут; cold build может идти дольше. Не запускать одновременно с E2E/dev на том же порту.

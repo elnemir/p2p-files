@@ -7,6 +7,7 @@
 2026-10-11: настройки подготовлены и локально проверены; GitHub apply и CI/merge ещё впереди. Базовый HEAD `21aaa00c34ddbe7511ca950f1aacec2454989047`, ветка `codex/repository-setup`; прежние изменения DOC-01/02 сохранены и входят в проверяемый PR. [Предыдущая сессия](sessions/2026-10-11-product-tour.md) содержит видео, QA и обсуждение голоса.
 
 ## Completed steps
+- PR [#1](https://github.com/elnemir/p2p-files/pull/1), первый commit `c872099`, опубликован. Первоначальные CodeQL jobs/dependency review успешно выполнились, но отдельный CodeQL result check выявил 6 HIGH DOM XSS alerts в трёх URL assignments галереи и generated copy. Добавлена строгая проверка локальных PNG paths. Семь негативных browser сценариев, 50 checksums, 44 screens, 19 chapters, desktop/mobile a11y и видео прошли повторный QA; необходим повтор CodeQL и CI, merge до этого не выполняется.
 - Прочитаны AGENTS, wiki и Git status; владелец `elnemir` имеет admin. Репозиторий public, main не защищена; сторонних collaborators и webhooks нет.
 - GitHub Wiki выключена, Issues включены; приватные security reports и Dependabot security updates уже включены. Secrets scanning и push protection выключены; CodeQL не настроен.
 - Снимок исходных параметров без credentials сохранён в `.cache/repository-setup/*-before.json`.
@@ -31,3 +32,5 @@
 ## Risks / blockers
 - Внешнее окружение не подготовлено; 14 решений pending / 5 MUST partial. Настройка GitHub не означает release acceptance.
 - Названия required checks должны соответствовать реально выполненным jobs; CI и API-readback проверяются перед завершением.
+
+Повторные локальные gates после URL hardening и устранения двойного CI feature branch: check/source/verifier PASS, sourceUnchanged=true, source SHA-256 `56f73f7bba5b90c99787eebb720d234cce67a8c888356921299d199f45e1eca3`. Логи `.cache/repository-setup/{check,source,verifier,gallery-check}.log`.

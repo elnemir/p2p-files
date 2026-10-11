@@ -17,6 +17,12 @@ function element(tag, text, className) {
   if (className) node.className = className;
   return node;
 }
+function screenshotURL(file) {
+  // Manifest data must never select a URL scheme, origin or non-image resource.
+  const match = typeof file === 'string' && /^screenshots\/([0-9]{2}-[a-z0-9-]+\.png)$/.exec(file);
+  if (!match) throw new Error('Invalid screenshot path in tour manifest');
+  return `screenshots/${encodeURIComponent(match[1])}`;
+}
 document.getElementById('duration').textContent = time(Math.round(data.duration));
 document.getElementById('screenCount').textContent = data.screens.length;
 document.getElementById('chapterCount').textContent = data.chapters.length;
@@ -51,12 +57,12 @@ for (const name of groups) {
 function openImage(i) {
   index = (i + shown.length) % shown.length;
   const screen = shown[index];
-  document.getElementById('large').src = screen.file;
+  document.getElementById('large').src = screenshotURL(screen.file);
   document.getElementById('large').alt = screen.title;
   document.getElementById('lightboxTitle').textContent = screen.title;
   document.getElementById('lightboxDescription').textContent = screen.description;
   document.getElementById('position').textContent = `${screen.id.split('-')[0]} / ${data.screens.length} · ${screen.group}`;
-  document.getElementById('original').href = screen.file;
+  document.getElementById('original').href = screenshotURL(screen.file);
   if (!lightbox.open) { previousFocus = document.activeElement; lightbox.showModal(); }
 }
 function render() {
@@ -69,7 +75,7 @@ function render() {
     const button = element('button', null, `preview${screen.viewport.width < 600 ? ' mobile' : ''}`);
     button.setAttribute('aria-label', `Открыть экран ${screen.id.split('-')[0]}: ${screen.title}`);
     const img = element('img');
-    img.src = screen.file; img.alt = screen.title; img.loading = 'lazy'; img.decoding = 'async';
+    img.src = screenshotURL(screen.file); img.alt = screen.title; img.loading = 'lazy'; img.decoding = 'async';
     button.append(img, element('span', '↗', 'zoom'));
     button.addEventListener('click', () => openImage(i));
     const caption = element('figcaption');
