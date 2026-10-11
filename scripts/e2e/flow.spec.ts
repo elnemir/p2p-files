@@ -1,13 +1,14 @@
 import {evidencePath} from "./evidence";
 import { test,expect, type Page } from '@playwright/test';
 import {contractObserver} from './contracts';
+import {createDraft} from './transfers';
 import AxeBuilder from '@axe-core/playwright';
 const email=process.env.FILEX_E2E_EMAIL!; const password=process.env.FILEX_E2E_PASSWORD!;
 async function login(page:Page){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:'Новая передача'})).toBeVisible();}
 async function a11y(page:Page){const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();expect(results.violations).toEqual([]);}
 test('authenticated upload resumes, publishes, issues ZIP, renders reports and exports',async({page,browser})=>{
  const contract=await contractObserver();contract.observe(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await login(page);await a11y(page);
- await page.getByRole('button',{name:'Новая передача'}).click();await page.getByLabel('Название',{exact:true}).fill('Контракт · длинное название для проверки переноса и всех действий');await page.getByRole('button',{name:'Сохранить название'}).click();
+ await createDraft(page,'Контракт · длинное название для проверки переноса и всех действий');
  let interrupted=false;await page.route('**/api/v1/uploads/*',async route=>{if(route.request().method()==='PATCH'&&!interrupted){interrupted=true;await route.fetch();await route.abort('connectionreset');}else await route.continue();});
  await page.locator('input[type=file]:not([webkitdirectory])').setInputFiles([{name:'договор.txt',mimeType:'text/plain',buffer:Buffer.from('Тестовые данные договора\n')},{name:'a-very-long-file-name-for-responsive-layout-and-actions-012345678901234567890.txt',mimeType:'text/plain',buffer:Buffer.alloc(1024*64,65)}]);
  await expect(page.getByRole('button',{name:'Проверить перед публикацией'})).toBeEnabled({timeout:30000});expect(interrupted).toBe(true);await a11y(page);await page.screenshot({path:evidencePath('draft-desktop.png'),fullPage:true});

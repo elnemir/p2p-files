@@ -4,11 +4,12 @@ import AxeBuilder from '@axe-core/playwright';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {contractObserver} from './contracts';
+import {createDraft} from './transfers';
 const command=promisify(execFile);
 const email=process.env.FILEX_E2E_ADMIN!;const password=process.env.FILEX_E2E_PASSWORD!;
 async function login(page:Page,address=email){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(address);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:address===email?'Администрирование':'Новая передача',exact:true})).toBeVisible();}
 async function admin(page:Page){await page.getByRole('button',{name:'Администрирование',exact:true}).click();await expect(page.getByRole('heading',{name:'Эксплуатация и восстановление',exact:true})).toBeVisible();}
-async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'← Все передачи',exact:true});if(await back.isVisible())await back.click();await page.getByRole('button',{name:'Новая передача',exact:true}).click();await page.getByLabel('Название',{exact:true}).fill(title);await page.getByRole('button',{name:'Сохранить название',exact:true}).click();}
+async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'← Все передачи',exact:true});if(await back.isVisible())await back.click();return createDraft(page,title);}
 
 test('admin backup restore restart reconciliation and explicit reopening',async({page,browser,baseURL})=>{
  test.setTimeout(150000);
@@ -29,13 +30,13 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
   await expect.poll(async()=>{const response=await owner.request.get('/api/v1/exports');const jobs=await response.json();return jobs.find((job:any)=>job.id===exportId)?.state;},{timeout:30000}).toBe('completed');
   const observed=await ownerContracts.finish();expect(observed.count).toBeGreaterThan(3);expect(observed.failures).toEqual([]);
  }finally{await ownerContext.close();}
- await login(page);await draft(page,'Сохранённая передача до восстановления');await admin(page);
+ await login(page);const savedId=await draft(page,'Сохранённая передача до восстановления');await admin(page);
  const ops=page.getByRole('region',{name:'Эксплуатация и восстановление',exact:true});
  await ops.getByLabel('Причина эксплуатационного действия').fill('Полный браузерный тест резервного копирования и восстановления');
  await ops.getByRole('button',{name:'Создать резервную копию',exact:true}).click();
  await expect(ops.getByLabel('Копия для восстановления').locator('option')).toHaveCount(2,{timeout:30000});
  const source=await ops.getByLabel('Копия для восстановления').locator('option').nth(1).getAttribute('value');expect(source).toBeTruthy();
- await draft(page,'Поздняя передача для проверки замены БД');await admin(page);
+ const laterId=await draft(page,'Поздняя передача для проверки замены БД');await admin(page);
  await ops.getByLabel('Причина эксплуатационного действия').fill('Восстановление выбранной копии с проверкой предварительного backup');
  await ops.getByLabel('Копия для восстановления').selectOption(source!);
  await ops.getByRole('button',{name:'Подготовить восстановление',exact:true}).click();
@@ -74,6 +75,6 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await page.screenshot({path:evidencePath('operations-reopened-mobile.png'),fullPage:true});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
- const transfers=await (await page.request.get('/api/v1/transfers')).json();expect(transfers.items.some((x:any)=>x.title==='Сохранённая передача до восстановления')).toBe(true);expect(transfers.items.some((x:any)=>x.title==='Поздняя передача для проверки замены БД')).toBe(false);
+ const transfers=await (await page.request.get('/api/v1/transfers')).json();expect(transfers.items.find((x:any)=>x.id===savedId)).toMatchObject({title:'Сохранённая передача до восстановления',state:'draft'});expect(transfers.items.some((x:any)=>x.id===laterId)).toBe(false);
  expect(errors).toEqual([]);const result=await contracts.finish();expect(result.count).toBeGreaterThan(15);expect(result.failures).toEqual([]);
 });
