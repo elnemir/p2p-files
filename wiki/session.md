@@ -1,49 +1,41 @@
 # Session State
 
 ## Task
-Объединить ветки репозитория и подготовить озвучку тура ElevenLabs; по решению пользователя реальный синтез отложен.
+Объединить ветки FileX, сохранить проверенные настройки GitHub/Code scanning и подготовленную озвучку тура. Пользователь отложил реальный ElevenLabs синтез.
 
 ## Status
-Исправлены обнаруженные после merge #16 CI сбои: готовность публичной verify формы, независимая подготовка USER export для recovery и завершение contract observer. На source `8390f72c6ac08927e609dc9eccfb78d93ebc7fbbdae8363c47e449cf50feb210` все 13 local gates PASS, включая 25 browser cases / 5 profiles и пять image scans без HIGH/CRITICAL. Негативные контрольные прогоны подтвердили причины до исправления. [PR #17](https://github.com/elnemir/p2p-files/pull/17) готовится к отправке нового code commit и exact-head CI; прежние неуспешные runs не считаются результатом исправления. Ниже source 0cc2cee описывает историческое объединение #16.
+В main перенесены восемь совместимых Dependabot обновлений через [PR #16](https://github.com/elnemir/p2p-files/pull/16), затем исправления обнаруженных браузерных гонок через [PR #17](https://github.com/elnemir/p2p-files/pull/17). Code commit исправления: `548359d9d722641a5a66acd53afd8702d98876c6`. Пять PR остаются открытыми с конкретными блокерами и не считаются объединёнными. Production deployment и внешняя приёмка не выполнялись.
 
-Основное объединение выполнено через [PR #16](https://github.com/elnemir/p2p-files/pull/16): code commit main `2e1d2e4b17cffb59fec53eca55b96c45b1847e43`, squash 2026-10-11T19:12:37Z без bypass. Включены восемь совместимых обновлений Dependabot; пять несовместимых/лицензионно не принятых PR остаются открытыми и **не считаются объединёнными**. Все 13 local и PR CI gates PASS. Эта часть записи описывает прежний кодовый merge #16. Новый UI/E2E diff имеет отдельный source hash и повторную квалификацию; Markdown-уточнения сами по себе hash не меняют.
-
-Исходники: `0cc2cee4b1f8cc10fb1a780a28fd1fd42f8272d466b83b13af72f3a58646c722`. PR head `5b166ff3b5a5519fe3810a7e47dd86f85ec13fe5`; проверенный PR merge ref `86043498494df2a5e79f7de6899907dc14b1851e` имеет тот же source. Отдельные post-merge runs main: [development 38167045971](https://github.com/elnemir/p2p-files/actions/runs/38167045971), [security 38167045959](https://github.com/elnemir/p2p-files/actions/runs/38167045959). Итог/детали каждого запуска доступны по этим ссылкам; PR PASS не подменяет состояние отдельного main run.
+Source исправления: `8390f72c6ac08927e609dc9eccfb78d93ebc7fbbdae8363c47e449cf50feb210`. Все 13 local и PR CI gates PASS; локальные и скачанные CI records проверены на этот source и точный PR merge ref `83cd5aa67fd44f8b6ec60a5b41f57362641c99e8`. [PR development](https://github.com/elnemir/p2p-files/actions/runs/38172130775), [PR security](https://github.com/elnemir/p2p-files/actions/runs/38172130794). Отдельные main runs: [development 38173765276](https://github.com/elnemir/p2p-files/actions/runs/38173765276), [security 38173765280](https://github.com/elnemir/p2p-files/actions/runs/38173765280). Эти ссылки относятся к реальному post-merge запуску; статус текущей main доступен в [Actions](https://github.com/elnemir/p2p-files/actions?query=branch%3Amain).
 
 ## Completed steps
-- Повторная квалификация UI/E2E исправления: все 13 local gates PASS на source `8390f72c6ac08927e609dc9eccfb78d93ebc7fbbdae8363c47e449cf50feb210`; records/raw logs — `.cache/consolidation/hydration-gates/`. Browser 25/25, Node contracts/lifecycle tests 8/8, npm vulnerabilities 0, Go reachable 0, source/image HIGH/CRITICAL 0. Performance 32 MiB / 2000 rows; полная внешняя приёмка не заявляется. Первый кандидат 11a18ce7 FAILED на navigation/body race, исправленный 8390f72c прошёл целиком.
-- По trace расследованы verify initialization и observer teardown. Применены готовность input/button, собственный USER export с точным ID для recovery и detach/drain observer с немедленной обработкой rejected promises. Добавлены browser/Node regressions и traceability FR-012/OPS-003/NFR-003; API/crypto/privacy инварианты не менялись. Контрольные RED сохранены в .cache/consolidation/hydration-control/ и contracts-before.log; Node tests после fix — 8 PASS.
-- Прочитаны AGENTS и wiki; сохранены прежний незакоммиченный diff и [сессия Code scanning](sessions/2026-10-11-repository-code-scanning.md). Проверены все 13 Dependabot PR и прежние человеческие ветки.
-- В main включены пять Actions updates, Alpine 3.24, React types 19.3.0 и Go 1.27.2 с согласованными go.mod/Dockerfiles. Go 1.27.0 из предложения заменён исправленной patch-версией. npm ci проходит без peer bypass.
-- Commit/push и PR #16 выполнены; все обязательные checks exact head SUCCESS. Скачаны оба CI artifacts и проверены все 13 gate records: passed/sourceUnchanged, правильный merge commit и совпадающий source hash. [PR development](https://github.com/elnemir/p2p-files/actions/runs/38165736942), [PR security](https://github.com/elnemir/p2p-files/actions/runs/38165736956).
-- Source/history/worktree scans не нашли секретов; npm audit — 0 vulnerabilities; source и пять фактических images — 0 HIGH/CRITICAL. Пройдены PG integration, 25 browser scenarios / 5 profiles, TLS ingress, distinct-image upgrade, fuzz, пять verifier targets и compact performance 32 MiB / 2000 rows. Это не release-size/external acceptance.
-- Отдельный CodeQL main `2e1d2e4` подтверждён: четыре анализа с этим SHA, 0 findings, пустые error/warning, 0 open alerts. GitHub repository audit: matchesPolicy=true. Политика main и code scanning не ослаблялась.
-- Прежние локальные рабочие ветки удалены после сравнения tree/diff к squash-результатам; полезный код сохранён. PR #2/#4/#6/#7/#8/#12/#13/#14 закрыты как superseded by #16, remote refs проверены/удалены с защитой точного SHA. Dependabot перебазировал пять оставшихся PR; они сохранены. [Полная таблица и продолжение](branch-consolidation.md).
-- Для Redis 8 отдельно подготовлен build/scan review: OpenSSL pins 3.5.8-r0, Redis 8.10.2, image `sha256:2d6b62c16a496ca9cd93da252efd0735a8f5d28ade047b8cc592e2a208d69459`, Trivy 0 findings. Dockerfile, JSON scan, CycloneDX SBOM и result — `.cache/consolidation/redis8-review/`. Это не интеграция в FileX и не лицензия/полная функциональная приёмка; runtime остаётся Redis 7.2.
-- Предоставленный ElevenLabs ключ сохранён вне Git в `~/.config/filex/elevenlabs.env`: каталог 0700, файл 0600. Новый ключ не выпускался. После добавления пользователем подтверждён голос Ariana `xyu8HSCv1JYrhLx4m8UG`. Первый синтез главы 1 получил HTTP 402 payment_required, аудио не получено. Пользователь: «Продолжай, озвучку завершим позже»; новых synthesis requests не выполнялось.
-- Добавлены narrate.py, поддержка проверенного external audio в renderer, лимит текста/кэш/защита повторного списания/lock и 8 unit/fault tests (PASS). Offline FFmpeg fixture собрал и полностью декодировал 19 глав с MP3/alignment; 19 VTT cues проверены. Публичная галерея: 50 checksums / 44 screens / 19 chapters / a11y / playback PASS. MP4 остаётся Milena, 325,94 s; реальная Ariana ещё не принята.
-- Wiki актуализирована по toolchain, всем веткам, Code scanning, Redis review и продолжению озвучки. docs-check: 68 Markdown / 32 requirements / 0 broken links; diff-check PASS.
+- Сохранены изменения прежних человеческих веток; восемь superseded Dependabot PR закрыты после переноса изменений. Учёт всех 13 предложений и основания — [branch consolidation](branch-consolidation.md).
+- Обновлены пять Actions SHA pins, Alpine 3.24, Go 1.27.2, React types 19.3.0. Node 24 и Redis 7.2 сохранены. Для Redis 8 подготовлен отдельный build/scan review с исправленными OpenSSL pins и 0 findings; runtime/лицензия не приняты.
+- Публичная verify форма ждёт client initialization; delayed-hydration regression проверяет недоступность SSR controls, ID из fragment, один фактический API request и запрет пустого submit. Recovery создаёт собственный USER CSV в отдельном context и после ADMIN restore выбирает тот же ID. Observer снимает listeners до drain, читает body до schema compilation, фиксирует capture errors без unhandled rejection.
+- Контрольные RED на прежней реализации подтверждены. Исправленный кандидат: 25/25 browser cases на пяти Linux профилях, Node contract/lifecycle tests 8/8, PG/race, fuzz, TLS ingress, controlled upgrade, compatibility и пять verifier targets PASS. Performance 32 MiB / 2000 rows — compact, не release-size/external acceptance.
+- Main CodeQL отдельно подтверждён для `548359d`: четыре свежих анализа без findings/error/warning и 0 open alerts; readback сохранён рядом с PR evidence.
+- Npm vulnerabilities 0; Go reachable 0; source и пять images без HIGH/CRITICAL; history/worktree secrets scan чист. CodeQL PR: четыре языка, 0 findings/error/warning; open alerts 0. GitHub audit: matchesPolicy=true, main protection не ослаблена.
+- ElevenLabs generator/renderer и 8 unit/fault tests включены в #16. Ключ хранится вне Git в `~/.config/filex/elevenlabs.env` (0600; каталог 0700), приложению/CI не передаётся. Первый синтез отклонён HTTP 402; по решению пользователя новых synthesis requests нет. Публичный тур сохраняет Milena, 19 глав, 44 PNG и 325,94 s; реальная Ariana ещё не принята.
+- Wiki/session/traceability/changelog обновлены. Причины двух неуспешных CI runs и промежуточной fixture-гонки сохранены в [testing](testing.md) и [истории квалификации](sessions/2026-10-11-consolidation-qualification.md). Исторические FAILED не переименованы в PASS.
 
 ## Next steps
-- Commit/push UI и E2E fixes в #17 после 13 local PASS; проверить exact-head CI и CodeQL, затем squash merge и отдельный main CI. Запуски 38167045971 и 38167905201 FAILED; они не выдаются за успешные.
-- Redis #3: владелец/reviewer выбирает допустимую лицензию/обязательства; после решения перенести подготовленные pins и пройти полные gates. До решения сохраняется Redis 7.2.
-- ESLint #9/#11: подобрать комбинацию с a11y-плагином, поддерживающим ESLint 10, без force/legacy-peer-deps и без удаления проверок.
-- Node #5/#10: согласованно выбирать поддерживаемые runtime/types/CI/images; Node 25 EOL не включён, types 26 не соответствуют runtime 24.
-- Возобновить ElevenLabs только после следующего сообщения пользователя о доступной квоте: sample с явным --retry-rejected → прослушивание → остальные главы из кэша → offline render → media/browser QA.
-- Внешняя приёмка FileX ведётся отдельно по [плану](environment-acceptance.md); текущие blockers не сняты объединением веток.
+- Redis #3: owner/reviewer выбирает допустимую лицензию; затем перенести проверенные pins и пройти полные gates.
+- ESLint #9/#11: дождаться/подобрать поддерживаемую комбинацию с JSX-a11y без force/legacy-peer-deps и потери проверок.
+- Node #5/#10: согласованно обновлять поддерживаемые runtime/types/images/CI; Node 25 EOL не включать как промежуточный шаг.
+- ElevenLabs: только после нового сообщения пользователя о доступной квоте — sample с явным --retry-rejected, прослушивание, остальные главы через кэш, offline render и media/browser QA.
+- Внешняя приёмка продолжается по [карточке окружения](environment-acceptance.md) и [плану](implementation-plan.md).
 
 ## Decisions
-- Main принимает изменения только через PR и обязательные зелёные checks; предыдущий PASS не используется для изменённого source hash.
-- Секрет ElevenLabs получает только локальный генератор тура; приложение/CI/production/Git его не получают. Покупки, пополнение и изменение других ключей не выполняются.
-- Кэш сохраняет marker до платного POST. Неоднозначный исход запрещает автоматический повтор; --retry-rejected разрешён только для известного HTTP 402 после решения пользователя. Новая дорожка не объявляется готовой по offline fixtures.
-- Лицензионное решение Redis 8 не принимается автоматически. Закрытие восьми superseded PR означает перенос их полезных изменений через #16; пять отложенных PR не выдаются за merged.
+- Merge только с зелёными required checks exact head; старое evidence не подтверждает новый source. Markdown-фиксация измерений не меняет binary source hash, но проходит docs-check и обычный CI.
+- Пять отложенных PR не выдаются за merged; лицензии и residual risks не принимаются автоматически.
+- Новых реальных TTS запросов, покупок/пополнений, расширения scope ключа и production deployment нет.
 
 ## Context
-[Индекс](index.md), [объединение веток](branch-consolidation.md), [озвучка](tour-maintenance.md), [проверки](testing.md), [план разработки](implementation-plan.md), [repository governance](repository-governance.md).
+[Индекс](index.md), [объединение](branch-consolidation.md), [проверки](testing.md), [repository governance](repository-governance.md), [озвучка](tour-maintenance.md).
 
-Локальные evidence: `.cache/consolidation/local-gates.json`, `pr-gates.json`, `pr-codeql.json`, `main-codeql.json`, `closed-prs.json`, `pr-evidence/` и raw logs в том же каталоге. Они ignored и не заменяют долговременное release evidence. CI artifacts содержат результаты конкретного run, не подпись внешнего reviewer.
+Ignored evidence: `.cache/consolidation/hydration-gates/`, `hydration-pr-evidence/`, `hydration-pr-gates.json`, `hydration-pr-codeql.json`, `hydration-main-codeql.json`. Контрольный RED: `hydration-control/`, `contracts-before.log`; промежуточный FAILED: `hydration-first-attempt/`. CI artifacts сохраняются 14 дней и не заменяют долговременный release package.
 
 ## Risks / blockers
-- Пять Dependabot PR остаются нерешёнными: лицензии Redis 8, неподдерживаемый Node 25, ESLint/a11y peers, согласованность Node types/runtime.
-- ElevenLabs HTTP 402; успешный provider response и качество голоса не проверены. Subscription endpoint вернул missing_permissions; scope не расширялся.
-- Внешняя production-приёмка: 14 pending decisions / 5 partial MUST; APP_ENV=production guard сохранён, deployment не выполнялся. License inventory требует owner review (443 npm / 24 Go / 16 entries), это не разрешение поставки.
+- Пять открытых Dependabot PR: лицензии Redis 8, Node 25 EOL, ESLint/a11y peers и Node types/runtime.
+- ElevenLabs HTTP 402: реальное аудио и качество Ariana не проверены; subscription scope не расширялся.
+- Окружение не подготовлено: 14 pending external decisions / 5 partial MUST. APP_ENV=production guard сохранён, release/deploy не объявлены разрешёнными.

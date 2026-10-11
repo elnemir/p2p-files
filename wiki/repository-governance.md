@@ -88,6 +88,8 @@ python3 scripts/github_repository.py audit
 
 После объединения зависимостей [PR #16](https://github.com/elnemir/p2p-files/pull/16) выполнен отдельный [main security run 38167045959](https://github.com/elnemir/p2p-files/actions/runs/38167045959) на `2e1d2e4b17cffb59fec53eca55b96c45b1847e43`: SUCCESS, четыре анализа с тем же SHA, 0 findings, пустые error/warning и 0 open alerts. Локальный readback — `.cache/consolidation/main-codeql.json`. Это подтверждение кодового merge; последующие документационные commits не меняют состав scanner или защищённые thresholds.
 
+После исправления browser CI [PR #17](https://github.com/elnemir/p2p-files/pull/17) отдельно проверен [main security run 38173765280](https://github.com/elnemir/p2p-files/actions/runs/38173765280): commit `548359d9d722641a5a66acd53afd8702d98876c6`, SUCCESS, четыре категории без findings/error/warning, 0 open alerts. Exact-SHA readback сохранён в `.cache/consolidation/hydration-main-codeql.json`. Функциональный post-merge run проверяется отдельно; успешный CodeQL не заменяет browser/DR/load результаты.
+
 ## Примеры и ограничения
 
 - Ошибка имени required job блокирует merge. `check_repository.mjs` проверяет соответствие policy и workflow; переименование должно быть согласовано в обоих файлах и GitHub settings.
