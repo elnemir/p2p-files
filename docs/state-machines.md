@@ -19,10 +19,13 @@
 | Export | queued → snapshotting → materialized → rendering → completed; ошибка → failed, owner cancel/authority loss → cancelled. Lease crash возвращает queued либо materialized в зависимости от committed snapshot. Retry failed сохраняет committed values/time, если staging complete. |
 | Delivery | pending → sending → delivered; временная ошибка → pending/backoff, 8 attempts → dead; manual retry dead/delivered → pending. Invalid recipient link/config → cancelled. |
 | Migration/rotation | paused ↔ running → completed/cancelled; active key при cancel не откатывается. Внешняя ошибка не даёт pointer swap, следующая попытка повторяет безопасно. |
+| Recovery gate | open → maintenance при restore queue/явном close → restoring после verified pre-backup → reconcile после atomic import/new generation → open только matching fresh report/hash/generation + ADMIN review. Critical failure → blocked. Restart не открывает gate. |
+| Operations job | queued → running под единственным schema-scoped advisory runner lock → completed/failed. Обнаруженный после crash running становится failed/interrupted; destructive replay не автоматический. |
+| Security incident | open → acknowledged → resolved; каждая ревизия encrypted report сохраняется. Audit/crypto resolution требует успешной проверки. Critical unresolved блокирует reopen. |
 | Bulk | paused (dry-run selection) → queued → running → completed; cancel → cancelled. Items pending → done/conflict; выполненные элементы не откатываются. |
 
 ## Примеры и порядок удержания
 Download all атомарно резервирует все оставшиеся published files; один busy/error/frozen member даёт conflict, partial consume запрещён. Ordinary TTL оставляет integrity_failed для диагностики. Revoke удаляет retained content, но physical hold сильнее cleanup и сохраняется до ADMIN решения. [ADR-001](../wiki/adr/001-download-completion.md), [ADR-002](../wiki/adr/002-retention-precedence.md).
 
 ## Ограничения
-Lifecycle guard проверяется непосредственно при request/commit, а не только scheduler. Поэтому задержка worker не продлевает recipient права. DB state completed означает server-observed coverage, не доказательство сохранения получателем. Restore state machine и incidents реализуются фазой 6. Проверяемые transitions связаны с [матрицей](test-matrix.md).
+Lifecycle guard проверяется непосредственно при request/commit, а не только scheduler. Поэтому задержка worker не продлевает recipient права. DB state completed означает server-observed coverage, не доказательство сохранения получателем. Restore не отменяет фактическое удаление payload; восстановленные ссылки/API tokens удерживаются закрытым gate до review. [Runbook](../wiki/operations-recovery.md). Проверяемые transitions связаны с [матрицей](test-matrix.md).

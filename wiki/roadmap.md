@@ -1,9 +1,9 @@
 # Путь разработки и критерии закрытия
 
 ## Контекст
-Исходная нумерация 0–7 сохранена. Текущее поручение — реализовать и проверить этапы 1–5 без дополнительных согласований. Все 32 MUST остаются в MVP; эксплуатация и release acceptance выполняются последующими фазами. Закрытие development-фаз не разрешает production запуск.
+Исходная нумерация 0–7 сохранена. После этапов 1–5 по поручению владельца реализована и проверена фаза 6. Все 32 MUST остаются в MVP; инфраструктурная приёмка и release acceptance выполняются фазой 7. Закрытие development-фаз не разрешает production запуск.
 
-**Статус на 2026-10-11: этапы 1–5 закрыты по локальным development gates.** Полная release приёмка остаётся в 6–7.
+**Статус на 2026-10-11: этапы 1–6 закрыты по локальным development gates.** Полная release приёмка остаётся в фазе 7.
 
 ## Фазы и результаты
 
@@ -15,13 +15,13 @@
 | 3. ZIP/криптография | Deterministic ZIP64/Ed25519, verifier, FXP1 AEAD, class key rotation, migration, freeze/forensic | Independent binary vectors, tamper/nonce bounds, atomic ZIP/Range, stale worker/rotation/hold tests. |
 | 4. Коммуникации | SMTP TLS/templates/outbox, HMAC webhooks, retry/DLQ, WS+poll, preferences/digest/quiet hours | TLS fixture delivery and certificate rejection, SSRF/replay transaction, delivery faults, session revocation/privacy. |
 | 5. Отчёты | Immutable PDF/CSV/JSON snapshots, three hashes, public verify/trash, export jobs, credentials, saved views/bulk, encrypted QR | Snapshot/retry/privacy/Range/authorization/invalidation tests, browser PDF/JSON/CSV, visual inspection. |
-| 6. Эксплуатация | BackupProvider, encrypted backup, mandatory pre-restore backup, reconciliation, reopen gate, incidents/checkpoints, expanded CLI | Restore drills, orphan/audit/crypto reconciliation, key recovery, operational dashboards. **Не закрыта.** |
+| 6. Эксплуатация | BackupProvider, encrypted backup, mandatory pre-restore backup, reconciliation, reopen gate, KEK recovery/rewrap, incidents/checkpoints, schedules/metrics, expanded CLI и ADMIN exports | **Закрыта локально:** 8 новых PG/race drills, archive tamper/Local/S3 unit tests, Chromium backup→restore→restart→reauth→reconcile→reopen, PDF/mobile visual, contracts/build/security. |
 | 7. Приёмка | Production TLS/ACME, performance/DR/security, browser matrix, accessibility acceptance, SBOM/license/container/secret scans | Все MUST с release evidence, residual risks приняты владельцем, нет critical/high. **Не закрыта.** |
 
-Итог финального прогона этапов 1–5: [session](session.md). Доказательства и ограничения: [development](development.md). Статус `verified` в [матрице](../docs/test-matrix.md) относится к указанному локальному тесту; требования, захватывающие фазы 6–7, остаются `partial`.
+Итог текущего прогона: [session](session.md). Доказательства и ограничения: [development](development.md), устройство восстановления: [runbook](operations-recovery.md). В [матрице](../docs/test-matrix.md) 27 `verified` по локальным тестам и 5 `partial` с оставшимся scope фазы 7. Ни одно требование не исключено.
 
 ## Порядок продолжения
-После 1–5: (6.1) backup encrypted DB без payload и KEK recovery → (6.2) обязательный backup перед restore, invalidate sessions и заблокировать data plane → (6.3) reconciliation и явное ADMIN reopen → (6.4) incidents/checkpoints/CLI. Затем (7.1) production deploy configuration, (7.2) load/DR/security/browser/a11y evidence, (7.3) release review. Deployment требует отдельной команды пользователя.
+Следующая работа: (7.1) production TLS/ACME/trusted-proxy/CIDR configuration и controlled upgrade, (7.2) load/DR/security/SBOM/container/license/secret/browser/a11y evidence, (7.3) release review и явное рассмотрение residual risks владельцем. Network-policy reset реализуется вместе с production policy. Реальный deployment требует отдельной команды пользователя.
 
 ## Принцип закрытия
 Фаза закрывается при реализации вертикального сценария, зелёных относящихся к нему проверках и синхронных wiki/contracts/changelog. Наличие файлов, успешная компиляция или пропущенные integration tests не являются доказательством. Ни ограничения env, ни открытые release risks нельзя скрывать отметкой «готово».

@@ -42,3 +42,15 @@ Public POST /api/v1/verify-report получает JSON reportId/revision/canoni
 
 ## Ошибки
 400 invalid_input, 401 unauthenticated, 403 forbidden, 404 not_found, 409 conflict, 429 rate_limited. Для tus/Range есть дополнительные protocol statuses, описанные OpenAPI. Generic internal_error не содержит DB credentials или request body. Browser GET/HEAD получателя не приобретает download lease; acquire выполняется явным POST.
+
+## Эксплуатация: ADMIN cookie + fresh re-auth
+
+Создание backup использует отдельный BackupProvider UUID. Credential cookies/CSRF хранить приватно; значения ниже — env placeholders существующей локальной сессии.
+
+```sh
+curl --fail -b "$COOKIE_JAR" -H "Origin: $ORIGIN" -H "X-CSRF-Token: $CSRF" \
+  -H 'Content-Type: application/json' -d @backup-request.json \
+  "$ORIGIN/api/v1/admin/operations/jobs"
+```
+
+`backup-request.json`: `{ "kind": "backup", "providerId": "<backup-provider-uuid>", "reason": "Перед плановым обслуживанием" }`. Ответ 202 `{id}` означает queue, не completed. GET `/admin/operations` показывает state/result. Restore: kind=restore + sourceId=completed backup UUID + providerId=pre-backup destination. Gate закрывается при queue; restart и reconciliation/reopen обязательны. [Runbook](../wiki/operations-recovery.md), полный [OpenAPI](../contracts/openapi.json).

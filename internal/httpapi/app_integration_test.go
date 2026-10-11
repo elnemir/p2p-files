@@ -17,6 +17,9 @@ import (
 )
 
 func integrationApp(t *testing.T) (*App, *pgxpool.Pool) {
+	return integrationAppWithKEK(t, bytes.Repeat([]byte{1}, 32))
+}
+func integrationAppWithKEK(t *testing.T, kek []byte) (*App, *pgxpool.Pool) {
 	t.Helper()
 	url := os.Getenv("FILEX_TEST_DATABASE_URL")
 	if url == "" {
@@ -52,10 +55,11 @@ func integrationApp(t *testing.T) (*App, *pgxpool.Pool) {
 	if e = database.Migrate(ctx, p); e != nil {
 		t.Fatal(e)
 	}
-	a, e := New(p, bytes.Repeat([]byte{1}, 32))
+	a, e := New(p, kek)
 	if e != nil {
 		t.Fatal(e)
 	}
+	t.Cleanup(a.Close)
 	return a, p
 }
 func call(h http.Handler, method, path, body string, cookie *http.Cookie, csrf, origin string) *httptest.ResponseRecorder {

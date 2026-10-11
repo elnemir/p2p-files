@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
@@ -44,12 +45,86 @@ func Append(ctx context.Context, tx pgx.Tx, key []byte, actor, action, subject s
 	return e
 }
 func Verify(ctx context.Context, p *pgxpool.Pool, key []byte) error {
-	rows, e := p.Query(ctx, "SELECT actor_id,action,subject_id,occurred_at,payload,previous_hash,hash FROM audit_events ORDER BY id")
+	var payload []byte
+	var signature, id, eventHash, evidenceHash, reason string
+	var eventID int64
+	e := p.QueryRow(ctx, "SELECT id::text,event_id,event_hash,evidence_hash,reason,payload,signature FROM audit_checkpoints WHERE kind='recovery' ORDER BY event_id DESC,created_at DESC,id DESC LIMIT 1").Scan(&id, &eventID, &eventHash, &evidenceHash, &reason, &payload, &signature)
+	if errors.Is(e, pgx.ErrNoRows) {
+		return VerifyFull(ctx, p, key)
+	}
+	if e != nil {
+		return e
+	}
+	var anchor Checkpoint
+	if e = json.Unmarshal(payload, &anchor); e != nil || !CheckSignature(key, payload, signature) || anchor.Kind != "recovery" || anchor.ID != id || anchor.EventID != eventID || anchor.EventHash != eventHash || anchor.EvidenceHash != evidenceHash || anchor.Reason != reason {
+		return errors.New("invalid audit checkpoint")
+	}
+	var hash string
+	if e = p.QueryRow(ctx, "SELECT hash FROM audit_events WHERE id=$1", anchor.EventID).Scan(&hash); e != nil || hash != anchor.EventHash {
+		return errors.New("audit checkpoint boundary missing")
+	}
+	evidence, e := Evidence(ctx, p, "audit_events", anchor.EventID)
+	if e != nil || evidence != anchor.EvidenceHash {
+		return errors.New("audit checkpoint history changed")
+	}
+	return verifyAfter(ctx, p, key, anchor.EventID, anchor.EventHash)
+}
+
+type Querier interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+}
+
+// Evidence binds the exact preserved rows, including already damaged history.
+// A negative boundary means the whole current journal; zero means no rows.
+func Evidence(ctx context.Context, p Querier, table string, through int64) (string, error) {
+	if table != "audit_events" && table != "ops_events" {
+		return "", errors.New("invalid audit table")
+	}
+	rows, e := p.Query(ctx, "SELECT row_to_json(e)::text FROM "+table+" e WHERE $1<0 OR id<=$1 ORDER BY id", through)
+	if e != nil {
+		return "", e
+	}
+	defer rows.Close()
+	h := sha256.New()
+	for rows.Next() {
+		var raw string
+		if e = rows.Scan(&raw); e != nil {
+			return "", e
+		}
+		h.Write([]byte(raw))
+		h.Write([]byte{'\n'})
+	}
+	return fmt.Sprintf("%x", h.Sum(nil)), rows.Err()
+}
+func VerifyFull(ctx context.Context, p *pgxpool.Pool, key []byte) error {
+	return verifyAfter(ctx, p, key, 0, "")
+}
+
+type Checkpoint struct {
+	ID           string    `json:"id"`
+	Kind         string    `json:"kind"`
+	EventID      int64     `json:"eventId"`
+	EventHash    string    `json:"eventHash"`
+	EvidenceHash string    `json:"evidenceHash"`
+	Reason       string    `json:"reason"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+func SignCheckpoint(key, payload []byte) string {
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte("filex/audit/checkpoint/v1/"))
+	mac.Write(payload)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+func CheckSignature(key, payload []byte, signature string) bool {
+	return hmac.Equal([]byte(SignCheckpoint(key, payload)), []byte(signature))
+}
+func verifyAfter(ctx context.Context, p *pgxpool.Pool, key []byte, after int64, previous string) error {
+	rows, e := p.Query(ctx, "SELECT actor_id,action,subject_id,occurred_at,payload,previous_hash,hash FROM audit_events WHERE id>$1 ORDER BY id", after)
 	if e != nil {
 		return e
 	}
 	defer rows.Close()
-	previous := ""
 	for rows.Next() {
 		var actor, action, subject, prev, hash string
 		var at time.Time

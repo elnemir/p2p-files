@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
+	"errors"
 	"filex.local/filex/internal/audit"
 	"filex.local/filex/internal/auth"
 	"filex.local/filex/internal/config"
@@ -296,72 +296,18 @@ func (a *App) addStorage(w http.ResponseWriter, r *http.Request, p auth.Principa
 	if v.Purpose == "" {
 		v.Purpose = "payload"
 	}
-	if v.Purpose != "payload" && v.Purpose != "artifacts" {
+	if v.Purpose != "payload" && v.Purpose != "artifacts" && v.Purpose != "backups" {
 		return auth.ErrInvalid
 	}
-	id := domain.NewID()
-	var provider storage.Provider
-	var raw []byte
-	var box []byte
-	var kid *string
-	if v.Kind == "local" {
-		provider = storage.Local{Root: v.Root}
-		raw, _ = json.Marshal(map[string]string{"root": v.Root})
-	} else if v.Kind == "s3" {
-		s, e := storage.NewS3(v.S3)
-		if e != nil {
-			return auth.ErrInvalid
-		}
-		provider = s
-		keyID, key, e := a.Keys.Active(r.Context(), "configuration")
-		if e != nil {
-			return e
-		}
-		kid = &keyID
-		secret, e := json.Marshal(v.S3)
-		if e != nil {
-			return e
-		}
-		box, e = a.Keys.Seal(r.Context(), keyID, key, "filex/storage/v1/"+id, secret)
-		if e != nil {
-			return e
-		}
-		raw = []byte(`{}`)
-	} else {
+	d := storage.Descriptor{Kind: v.Kind, Root: v.Root}
+	if v.Kind == "s3" {
+		d.S3 = &v.S3
+	}
+	id, e := a.Files.Storage.Register(r.Context(), d, v.Purpose, v.Priority, a.Key, p.ID)
+	if errors.Is(e, storage.ErrConfig) {
 		return auth.ErrInvalid
 	}
-	probe := domain.NewID()
-	if e := provider.Put(r.Context(), probe, []byte("filex-storage-probe")); e != nil {
-		return e
-	}
-	b, e := provider.Get(r.Context(), probe)
-	del := provider.Delete(r.Context(), probe)
 	if e != nil {
-		return e
-	}
-	if del != nil {
-		return del
-	}
-	if string(b) != "filex-storage-probe" {
-		return transfer.ErrConflict
-	}
-	tx, e := a.DB.Begin(r.Context())
-	if e != nil {
-		return e
-	}
-	defer tx.Rollback(context.Background())
-	if kid != nil {
-		if e = keyring.RequireActive(r.Context(), tx, *kid); e != nil {
-			return e
-		}
-	}
-	if _, e = tx.Exec(r.Context(), "INSERT INTO storage_providers(id,kind,config,priority,secret_key_id,secret_envelope,purpose) VALUES($1,$2,$3,$4,$5,$6,$7)", id, v.Kind, raw, v.Priority, kid, box, v.Purpose); e != nil {
-		return e
-	}
-	if e = audit.Append(r.Context(), tx, a.Key, p.ID, "storage.created", id); e != nil {
-		return e
-	}
-	if e = tx.Commit(r.Context()); e != nil {
 		return e
 	}
 	return reply(w, 201, map[string]string{"id": id})

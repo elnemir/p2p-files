@@ -1,6 +1,6 @@
 # Release checklist
 
-> Нормативный scope следующих фаз 6–7. Этот документ не является отчётом о выполнении; текущее evidence и ограничения — [development](../wiki/development.md), порядок работы — [roadmap](../wiki/roadmap.md).
+> Нормативный production/release scope фазы 7. Локальные recovery drills фазы 6 не означают production DR acceptance. Этот документ не является отчётом о выполнении; текущее evidence и ограничения — [development](../wiki/development.md), порядок работы — [roadmap](../wiki/roadmap.md).
 
 - [ ] Requirements ↔ implementation ↔ test matrix без необъяснённых gaps
 - [ ] Architecture/threat/crypto reviews и ADR актуальны

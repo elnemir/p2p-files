@@ -11,7 +11,7 @@ def arr(schema):return {'type':'array','items':schema}
 def obj(props,required=None):return {'type':'object','additionalProperties':False,'properties':props,'required':list(props) if required is None else required}
 D={}
 def define(name,props,required=None):D[name]=obj(props,required);return ref(name)
-Error=define('Error',{'code':enum('unauthenticated','forbidden','not_found','conflict','invalid_input','rate_limited','internal_error'),'message':S})
+Error=define('Error',{'code':enum('unauthenticated','forbidden','not_found','conflict','invalid_input','rate_limited','internal_error','maintenance','restart_required'),'message':S})
 ID=define('Identifier',{'id':U});Draft=define('Draft',{'id':U,'revision':I});Status=define('Status',{'status':enum('operational','unavailable')})
 Principal=define('Principal',{'id':U,'email':{'type':'string','format':'email'},'role':enum('user','admin'),'locale':enum('ru','en'),'sessionId':U},['id','email','role','locale'])
 Session=define('Session',{'csrfToken':S,'user':Principal,'expiresAt':T})
@@ -39,12 +39,20 @@ Bulk=define('Bulk',{'id':U,'action':enum('revoke','cancel_upload'),'state':enum(
 SMTP=define('SMTPConfiguration',{'host':S,'port':{'type':'integer','minimum':1,'maximum':65535},'tls':enum('starttls','smtps'),'username':S,'password':S,'from':{'type':'string','format':'email'}},['host','port','tls','from'])
 S3=define('S3Configuration',{'endpoint':S,'region':S,'bucket':S,'accessKey':S,'secretKey':S,'sessionToken':S},['region','bucket','accessKey','secretKey'])
 Storage=define('StorageProvider',{'id':U,'kind':enum('local','s3'),'purpose':enum('payload','artifacts','backups'),'priority':{'type':'integer'},'enabled':B,'draining':B})
-Reason={'type':'string','minLength':5,'maxLength':2000}
+Reason={'type':'string','minLength':5,'maxLength':2000,'description':'5 to 2000 Unicode characters; at least 5 characters must remain after trimming surrounding whitespace.'}
+OpsState=define('OperationsState',{'mode':enum('open','maintenance','restoring','reconcile','blocked'),'generation':U,'reason':S,'restoreId':null(U),'reconciliationId':null(U),'changedAt':T})
+OpsJob=define('OperationsJob',{'id':U,'kind':enum('backup','restore','reconcile','audit','storage'),'state':enum('queued','running','completed','failed'),'reason':S,'sourceId':null(U),'providerId':null(U),'preBackupId':null(U),'progress':I,'errorCode':null(S),'result':{'type':'object','additionalProperties':True},'createdAt':T,'completedAt':null(T)})
+Incident=define('SecurityIncident',{'id':U,'kind':S,'subject':S,'severity':enum('warning','critical'),'state':enum('open','acknowledged','resolved'),'createdAt':T})
+Checkpoint=define('AuditCheckpoint',{'id':U,'kind':enum('regular','recovery'),'eventId':I,'eventHash':S,'evidenceHash':H,'reason':S,'createdAt':T})
+SignedCheckpoint=define('SignedCheckpoint',{'checkpoint':Checkpoint,'signature':H,'operationsCheckpoint':null(Checkpoint),'operationsSignature':null(H)})
+OpsSchedule=define('OperationsSchedule',{'kind':enum('backup','audit','storage'),'intervalSeconds':I,'nextAt':T,'providerId':null(U)})
+Reconciliation=define('Reconciliation',{'id':U,'generation':U,'createdAt':T,'files':I,'artifacts':I,'objects':I,'links':I,'tokens':I,'findings':arr(obj({'kind':S,'subject':S,'severity':enum('warning','critical')})),'passed':B,'hash':H})
+SecurityReport=define('SecurityReport',{'schemaVersion':{'const':1},'id':U,'incidentId':U,'revision':I,'kind':S,'subject':S,'severity':enum('warning','critical'),'state':enum('open','acknowledged','resolved'),'reason':S,'evidence':{'type':'object','additionalProperties':True},'createdAt':T})
 password={'type':'string','maxLength':1024,'description':'Account password: 12–1024 UTF-8 bytes. Link secrets also accept a numeric PIN of 6–12 digits.'}
 ops={}
 def add(method,path,title,response=None,body=None,code=None,description=''):
  ops[(method,'/api/v1'+path)]={'title':title,'response':response,'body':body,'code':code or (204 if response is None else 200),'description':description}
-add('GET','/status','Read aggregate service status',Status,description='Current database reachability only; no topology, history or component identifiers. Does not prove production readiness.')
+add('GET','/status','Read aggregate service status',Status,description='Aggregate database reachability, recovery gate and runtime generation status; no topology, history or component identifiers. Does not prove production readiness.')
 add('GET','/banner','Read the global announcement',obj({'ru':S,'en':S}))
 add('POST','/auth/login','Sign in with email and password',Session,obj({'email':S,'password':password}),description='Requires exact publicOrigin. Sets HttpOnly SameSite=Strict filexSession cookie. Generic errors and durable per-IP/per-email throttling prevent enumeration. Store csrfToken for unsafe requests.')
 add('GET','/auth/me','Read current principal',Principal)
@@ -60,7 +68,21 @@ add('GET','/admin/settings','List configuration revisions',arr(obj({'revision':I
 add('POST','/admin/settings','Create a typed configuration draft',obj({'revision':I}),Settings,201)
 add('POST','/admin/settings/{revision}/validate','Validate a configuration revision')
 add('POST','/admin/settings/{revision}/apply','Apply or roll back to a validated revision',body=obj({'expectedRevision':I}),description='Compare-and-set active revision, with an audit record in the same transaction. Select a previous validated revision to roll back.')
-add('POST','/admin/audit/verify','Verify the full HMAC audit chain',obj({'status':{'const':'verified'}}))
+add('POST','/admin/audit/verify','Verify current audit segments and preserved checkpoint evidence',obj({'status':{'const':'verified'}}))
+add('GET','/admin/operations','Read private operational state and alerts',obj({'state':OpsState,'jobs':arr(OpsJob),'incidents':arr(Incident),'checkpoints':arr(SignedCheckpoint),'schedules':arr(OpsSchedule)}),description='ADMIN cookie session and fresh reauthentication required. Never exposed by public status or owner notifications.')
+add('POST','/admin/operations/maintenance','Close the durable recovery gate',body=obj({'reason':Reason}))
+add('POST','/admin/operations/jobs','Queue a backup, restore, reconciliation or integrity check',ID,obj({'kind':D['OperationsJob']['properties']['kind'],'sourceId':U,'providerId':U,'reason':Reason},['kind','reason']),202,'Restore requires a completed source backup and an enabled backup provider for the mandatory pre-restore copy. Closing the gate cancels and drains active handlers. Restore invalidates sessions and requires API/worker restart; no automatic reopen.')
+add('GET','/admin/operations/reconciliations/{id}','Read immutable recovery findings',Reconciliation)
+add('POST','/admin/operations/reopen','Explicitly reopen after reviewed reconciliation',body=obj({'reconciliationId':U,'hash':H,'reason':Reason,'acknowledgeCapabilities':B}),description='Requires matching current generation, current reconciliation ID/hash, age under 15 minutes, no unresolved critical incident and no pending operations. Explicitly acknowledge restored links/API tokens and quarantined files/orphans; this does not accept production residual risks.')
+add('POST','/admin/operations/capabilities/revoke','Revoke all restored capabilities before reopening',body=obj({'reason':Reason}),description='Maintenance only. Revokes recipient links and API tokens, invalidates previous reconciliation. No owner notification.')
+add('POST','/admin/operations/checkpoints','Create an exportable audit anchor',SignedCheckpoint,obj({'kind':enum('regular','recovery'),'reason':Reason,'evidenceHash':H},['kind','reason']),201,'Recovery anchors require a closed gate and matching current full-chain evidence hash. Preserve damaged history; subsequent verification checks the preserved prefix hash and authenticates all subsequent events in both journals. Store the returned anchor independently.')
+add('GET','/admin/operations/audit-evidence','Read the full audit history evidence hash',obj({'evidenceHash':H}),description='ADMIN-only hash of every historical audit row, including a damaged prefix. Preserve the evidence before creating an explicit recovery boundary.')
+add('PATCH','/admin/operations/incidents/{id}','Acknowledge or resolve an incident with an immutable report revision',body=obj({'state':enum('acknowledged','resolved'),'reason':Reason}))
+add('GET','/admin/operations/incidents/{id}/report','Read a private immutable security report',SecurityReport,description='Query format=json|pdf, revision=0 for latest or a positive revision. No TTL or public verification; canonical JSON SHA-256 is returned in X-Content-SHA256.')
+add('PUT','/admin/operations/schedules','Configure distributed operational schedules',body=obj({'kind':enum('backup','audit','storage'),'intervalSeconds':{'anyOf':[{'const':0},{'type':'integer','minimum':60,'maximum':2592000}]},'providerId':U},['kind','intervalSeconds']),description='Zero disables this optional schedule; otherwise minimum 60 seconds. Backup requires a provider. Mandatory existing cleanup schedules remain active when the data plane is open.')
+add('GET','/admin/exports','List up to 100 latest exports for administrative review',arr(obj({'id':U,'ownerId':U,'kind':ReportKind,'format':enum('json','csv'),'state':ExportState,'artifactId':null(U),'expiresAt':null(T),'createdAt':T})),description='Optional ownerId UUID query filter. Fresh ADMIN web reauthentication required; owner notifications are not generated.')
+add('POST','/admin/exports/{id}/credentials','Issue an audited credential for another owner export',obj({'artifactId':U,'token':S}),obj({'reason':Reason}),201,'Only completed, ready, unexpired exports. Use the normal artifact claim/content flow. Every stream guard requires the ADMIN role and fresh reauthentication.')
+add('PATCH','/admin/exports/{id}/ttl','Adjust an unexpired export artifact lifetime',body=obj({'reason':Reason,'ttlSeconds':{'type':'integer','minimum':60,'maximum':604800}}),description='Audited with reason. Lifetime is measured from now; deleted or expired artifacts cannot be resurrected. No owner notification.')
 add('POST','/transfers','Create a draft',Draft,code=201)
 add('GET','/transfers','List own transfers by ID cursor',obj({'items':arr(obj({'id':U,'state':TransferState,'revision':I,'title':S,'manifestHash':null(H)})),'nextCursor':S}))
 add('POST','/transfers/search','Search own transfers using a private request body',Search,Filter,description='Literal case-insensitive title search, state filter and stable createdAt/id cursor; no raw search text in the URL. A saved view is owner-scoped.')
@@ -171,7 +193,7 @@ for (method,path),v in ops.items():
  elif isinstance(v['response'],dict):op['responses'][code]['content']={'application/json':{'schema':v['response']}}
  if not ispublic:
   for code,desc in [('401','Missing, expired or revoked authentication'),('403','Origin, CSRF, role, reauthentication, ownership or scope rejected'),('404','Resource unavailable'),('409','State, offset, revision, lease or key changed')]:op['responses'][code]={'description':desc,'content':{'application/json':{'schema':Error}}}
- for code,desc in [('400','Invalid input'),('429','Rate or concurrency limit; retry later'),('500','Fail-closed internal failure without private details')]:op['responses'][code]={'description':desc,'content':{'application/json':{'schema':Error}}}
+ for code,desc in [('400','Invalid input'),('429','Rate or concurrency limit; retry later'),('500','Fail-closed internal failure without private details'),('503','Maintenance or runtime restart required')]:op['responses'][code]={'description':desc,'content':{'application/json':{'schema':Error}}}
  if path=='/api/v1/status':op['responses']={'200':op['responses']['200'],'503':{'description':'Unavailable','content':{'application/json':{'schema':Status}}}}
  tus=(path.endswith('/uploads') or re.fullmatch(r'/api/v1/uploads/{id}',path))
  if tus:
@@ -186,10 +208,15 @@ for (method,path),v in ops.items():
  if path in ['/api/v1/notifications','/api/v1/events']:op['parameters'].append({'name':'after','in':'query','schema':I,'description':'Last received monotonic notification ID.'})
  if path=='/api/v1/transfers' and method=='GET':op['parameters'].append({'name':'cursor','in':'query','schema':S,'description':'nextCursor from the previous result.'})
  if path.endswith('/qr'):op['parameters'].append({'name':'format','in':'query','schema':enum('png','svg')})
+ if path=='/api/v1/admin/exports':op['parameters'].append({'name':'ownerId','in':'query','schema':U,'description':'Optional exact owner UUID filter.'})
+ if path=='/api/v1/admin/operations/incidents/{id}/report':
+  op['parameters'].extend([{'name':'format','in':'query','schema':enum('json','pdf'),'description':'Defaults to json.'},{'name':'revision','in':'query','schema':I,'description':'Zero or omitted selects latest revision.'}])
+  op['responses']['200']['content']['application/pdf']={'schema':{'type':'string','format':'binary'}}
+  op['responses']['200']['headers']={'X-Content-SHA256':{'schema':H,'description':'SHA-256 of the immutable source JSON, including for a PDF response.'}}
  if not op['parameters']:op.pop('parameters')
  paths.setdefault(path,{})[method.lower()]=op
 # Signing API field names are intentionally verified against its implementation.
-api={'openapi':'3.1.1','info':{'title':'FileX API','version':'0.1.0','description':'Implemented local-development API for phases 1–5. Generated by scripts/build_contracts.py. Cookie mutations require Origin and X-CSRF-Token; recipient mutations require Origin. Capability, PIN and secrets must never be logged. Production deployment remains gated by phases 6–7.'},'servers':[{'url':'http://localhost:8090','description':'Isolated local development through Traefik'}],'paths':paths,'components':{'schemas':D,'securitySchemes':{'session':{'type':'apiKey','in':'cookie','name':'filexSession'},'recipient':{'type':'apiKey','in':'cookie','name':'filexRecipient'},'artifact':{'type':'apiKey','in':'cookie','name':'filexArtifact'},'bearer':{'type':'http','scheme':'bearer','description':'Scoped API token; no privileged ADMIN operations.'}}}}
+api={'openapi':'3.1.1','info':{'title':'FileX API','version':'0.1.0','description':'Implemented local-development API for phases 1–6. Generated by scripts/build_contracts.py. Cookie mutations require Origin and X-CSRF-Token; recipient mutations require Origin. Capability, PIN and secrets must never be logged. Production deployment remains gated by phase 7.'},'servers':[{'url':'http://localhost:8090','description':'Isolated local development through Traefik'}],'paths':paths,'components':{'schemas':D,'securitySchemes':{'session':{'type':'apiKey','in':'cookie','name':'filexSession'},'recipient':{'type':'apiKey','in':'cookie','name':'filexRecipient'},'artifact':{'type':'apiKey','in':'cookie','name':'filexArtifact'},'bearer':{'type':'http','scheme':'bearer','description':'Scoped API token; no privileged ADMIN operations.'}}}}
 outputs={'contracts/openapi.json':api}
 for name,definition in [('event-v1',D['OwnerEvent']),('webhook-v1',D['WebhookEvent'])]:outputs['contracts/schemas/'+name+'.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/'+name+'.json',**definition}
 asyncapi={'asyncapi':'3.0.0','info':{'title':'FileX events','version':'0.1.0','description':'Implemented owner WebSocket notifications and outbound signed webhooks. PostgreSQL outbox is authoritative. At-least-once delivery; consumers persist and deduplicate event IDs.'},'defaultContentType':'application/json','channels':{},'operations':{},'components':{'messages':{}}}

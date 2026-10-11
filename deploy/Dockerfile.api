@@ -6,7 +6,7 @@ COPY cmd ./cmd
 COPY internal ./internal
 RUN set -eu; for target in filex-api filex-worker filex-cli filex-verify; do CGO_ENABLED=0 go build -trimpath -o /out/$target ./cmd/$target; done
 FROM alpine:3.23
-RUN apk add --no-cache ca-certificates && mkdir -p /data/payload /data/artifacts && chown -R 65532:65532 /data
+RUN apk add --no-cache ca-certificates && mkdir -p /data/payload /data/artifacts /data/backups && chown -R 65532:65532 /data
 COPY --from=build /out/ /usr/local/bin/
 USER 65532:65532
 ENTRYPOINT ["filex-api"]

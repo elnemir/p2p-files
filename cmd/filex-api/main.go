@@ -25,6 +25,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer app.Close()
 	servers := []*http.Server{
 		{Addr: c.HTTPAddr, Handler: app.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 60 * time.Second, WriteTimeout: 0, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16384},
 		{Addr: c.InternalAddr, Handler: app.Metrics(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16384},

@@ -50,7 +50,16 @@ func (l Local) Put(ctx context.Context, key string, b []byte) error {
 		f.Close()
 		return e
 	}
-	return f.Close()
+	if e = f.Close(); e != nil {
+		return e
+	}
+	// Persist the new directory entry before reporting a durable backup/object.
+	dir, e := r.Open(".")
+	if e != nil {
+		return e
+	}
+	defer dir.Close()
+	return dir.Sync()
 }
 func (l Local) Get(ctx context.Context, key string) ([]byte, error) {
 	if !keyPattern.MatchString(key) {

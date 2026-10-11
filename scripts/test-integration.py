@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run tests in a new disposable PostgreSQL container, then remove that container only."""
 import os
+import sys
 from pathlib import Path
 import secrets
 import subprocess
@@ -24,7 +25,8 @@ try:
     else: raise RuntimeError('Test PostgreSQL did not become ready')
     port = docker('port',name,'5432/tcp',capture_output=True).stdout.strip().split(':')[-1]
     test_env = dict(os.environ, FILEX_TEST_DATABASE_URL=f'postgres://postgres:{password}@127.0.0.1:{port}/filex_test?sslmode=disable',GOMODCACHE=str(root/'.cache/gomod'),GOCACHE=str(root/'.cache/go-build'))
-    subprocess.run(['go','test','-race','-count=1','-run','TestIntegration','-v','./internal/...'],cwd=root,env=test_env,check=True)
+    pattern = sys.argv[1] if len(sys.argv) > 1 else 'TestIntegration'
+    subprocess.run(['go','test','-race','-count=1','-run',pattern,'-v','./internal/...'],cwd=root,env=test_env,check=True)
 finally:
     if started:
         docker('rm','--force',name,stdout=subprocess.DEVNULL)

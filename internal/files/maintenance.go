@@ -131,7 +131,7 @@ func (s Service) MarkFailure(ctx context.Context, f File, state string) error {
 	if e = tx.QueryRow(ctx, "SELECT state FROM transfers WHERE id=$1 FOR UPDATE", f.TransferID).Scan(&parent); e != nil {
 		return e
 	}
-	_, e = tx.Exec(ctx, "UPDATE files SET state=$2 WHERE id=$1 AND state IN ('ready','leased','finalizing')", f.ID, state)
+	_, e = tx.Exec(ctx, "UPDATE files SET state=$2 WHERE id=$1 AND state IN ('ready','leased','finalizing') AND provider_id::text=$3 AND key_id::text=$4 AND salt=$5", f.ID, state, f.ProviderID, f.KeyID, f.Salt)
 	if e != nil {
 		return e
 	}

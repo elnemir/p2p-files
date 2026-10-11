@@ -14,4 +14,4 @@ Forensic: admin plaintext/ZIP with re-auth/reason/audit, raw ciphertext only on 
 
 
 ## Threat model и review
-Конкретные границы/угрозы/контроли и этапы доказательства: [threat model](../wiki/threat-model.md). Результат внутреннего review: [design review](../wiki/design-review.md). Data plane подключён к session/scoped auth и проверен локально. Перечень выше — полный нормативный security scope; production TLS/ACME, IP/CIDR deployment policy, external checkpoints, incidents и restore reconciliation ещё относятся к фазам 6–7. Текущие границы нельзя смешивать с release acceptance.
+Конкретные границы/угрозы/контроли и этапы доказательства: [threat model](../wiki/threat-model.md). Результат внутреннего review: [design review](../wiki/design-review.md). Data plane подключён к session/scoped auth и проверен локально. Перечень выше — полный нормативный security scope; Incidents, exportable checkpoints и restore reconciliation реализованы фазой 6; production TLS/ACME, IP/CIDR deployment policy и независимое хранение checkpoints/keys проверяются фазой 7. Текущие границы нельзя смешивать с release acceptance.

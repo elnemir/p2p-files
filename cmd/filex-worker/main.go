@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"filex.local/filex/internal/bootstrap"
+	"filex.local/filex/internal/maintenance"
 	"filex.local/filex/internal/worker"
 	"fmt"
 	"log/slog"
@@ -29,6 +31,7 @@ func run() error {
 	if e != nil {
 		return e
 	}
+	defer w.Close()
 	if len(os.Args) == 2 && os.Args[1] == "--once" {
 		return w.Step(ctx)
 	}
@@ -43,6 +46,10 @@ func run() error {
 				step, cancel := context.WithTimeout(ctx, 5*time.Minute)
 				err := task(step)
 				cancel()
+				if errors.Is(err, maintenance.ErrRestart) {
+					stop()
+					return
+				}
 				if err != nil && ctx.Err() == nil {
 					slog.Error("worker task failed; durable work remains retryable", "task", name)
 				}

@@ -32,6 +32,7 @@ services:
       INTERNAL_ADDR: 0.0.0.0:9090
       DEV_PAYLOAD_ROOT: /data/payload
       DEV_ARTIFACT_ROOT: /data/artifacts
+      DEV_BACKUP_ROOT: /data/backups
     depends_on:
       postgres: {condition: service_healthy}
     networks: [edge, backend]
@@ -43,6 +44,7 @@ services:
     volumes:
       - payload_data:/data/payload
       - artifact_data:/data/artifacts
+      - backup_data:/data/backups
   worker:
     build:
       context: ..
@@ -63,6 +65,7 @@ services:
     volumes:
       - payload_data:/data/payload
       - artifact_data:/data/artifacts
+      - backup_data:/data/backups
   web:
     build:
       context: ..
@@ -103,3 +106,4 @@ volumes:
   pg_data: {}
   payload_data: {}
   artifact_data: {}
+  backup_data: {}

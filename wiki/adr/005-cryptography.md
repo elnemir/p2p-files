@@ -1,6 +1,6 @@
 # ADR-005: криптографические контексты и формат payload
 
-Статус: реализовано, внутренний review 2026-10-11. SEC-003–004. Production допуск по-прежнему зависит от фаз 6–7; это не независимый криптоаудит.
+Статус: реализовано, внутренний review 2026-10-11. SEC-003–004. Production допуск по-прежнему зависит от фазы 7; это не независимый криптоаудит.
 
 ## Контекст и проблема
 Class DEK не используется как универсальный ключ всех данных. KEK находится вне PostgreSQL; разные классы имеют отдельные версии. Помимо защиты ciphertext, необходимо аутентифицировать длины, положение чанка, идентичность файла и версию ключа. Повтор PATCH после сбоя и восстановление старой БД не должны повторять пару key/nonce с другим plaintext.
@@ -19,4 +19,4 @@ KEK → unwrap class DEK → derive object keys → authenticate header/chunk �
 [Node/OpenSSL vector](../../internal/cryptobox/testdata/payload-v1.json), `TestPayloadBinaryVectorAndBindings`, `TestEnvelopeBinaryVector`, RFC8032 vector и PG `TestIntegrationPayloadHeaderAndKeyBudget`. Тесты меняют каждый byte, header fields, truncation/trailing bytes и проверяют отдельный subkey для retry. [Verifier](../../cmd/filex-verify/main.go) проверяет signed manifest по умолчанию; `--verify-files` явно включает чтение payload.
 
 ## Ограничения
-FXP1 — первый зафиксированный payload format до первого релиза. Экспериментальные ciphertext ранних локальных срезов не являются поддерживаемым release format; нельзя открывать такой storage новым binary без отдельной миграции. Restore/reconciliation и KEK re-wrap CLI ещё относятся к фазе 6. Не выводить ключи/секреты в logs. Randomness, UUID и независимые backup KEK остаются частью trust model. Нормативные primitives: [Go cipher](https://pkg.go.dev/crypto/cipher), [RFC5869](https://www.rfc-editor.org/rfc/rfc5869).
+FXP1 — первый зафиксированный payload format до первого релиза. Экспериментальные ciphertext ранних локальных срезов не являются поддерживаемым release format; нельзя открывать такой storage новым binary без отдельной миграции. Restore/reconciliation и KEK rewrap/recovery CLI реализованы фазой 6; key budgets и fresh-instance recovery описаны в [ADR-006](006-operations-recovery.md). Не выводить ключи/секреты в logs. Randomness, UUID и независимые backup KEK остаются частью trust model. Нормативные primitives: [Go cipher](https://pkg.go.dev/crypto/cipher), [RFC5869](https://www.rfc-editor.org/rfc/rfc5869).

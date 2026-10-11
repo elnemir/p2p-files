@@ -23,3 +23,6 @@
 
 ## Зафиксированные design decisions 2026-10-10
 По поручению владельца автономно уточнены [completion/Range/ZIP](../wiki/adr/001-download-completion.md), [freeze/expiry](../wiki/adr/002-retention-precedence.md), [export snapshot](../wiki/adr/003-export-snapshot.md), [restore backup](../wiki/adr/004-restore-gate.md), [crypto contexts](../wiki/adr/005-cryptography.md). Это решения текущего цикла, а не восстановленные ответы интервью. Обзор перечисленных выше design-review вопросов: [review](../wiki/design-review.md). Production/остаточные риски не одобрены автоматически.
+
+## Реализация эксплуатационных решений 2026-10-11
+[ADR-006](../wiki/adr/006-operations-recovery.md) фиксирует encrypted logical archive, отдельный неоткатываемый recovery control plane, обязательный pre-backup, runtime generation и explicit reopen. KEK rewrap сохраняет audit identity, restore в свежую БД требует новый master KEK; исторические backups сохраняют исторический KEK. ADMIN доступ к чужим exports/TTL реализован с reason/audit и непрерывным role/reauth guard. Локальные fault/concurrency/browser evidence и границы release приёмки — [development](../wiki/development.md).

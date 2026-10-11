@@ -17,9 +17,10 @@
 | ADMIN privilege loss | Current role/reauth/account epoch during stream and job commit | ADMIN artifact/forensic/export demotion tests |
 | Stale QR/public report | Link change invalidation, private trash tombstones, source-state guards | QR invalidation/report privacy tests |
 | Resource exhaustion | 4 MiB chunks, 8 streams, 4 Argon2 ops, quotas/timeouts/row bounds | Negative tests; sustained load gate 7 |
-| Retained copies | Compensation rows before Put, idempotent cleanup, hold/write lease guards | Cleanup/migration/expiry tests; restore orphan sweep gate 6 |
-| Restore resurrection | Mandatory backup/reconciliation/reopen contract | Not implemented, phase 6 |
-| Audit rewrite by host attacker | HMAC chain detects modification without key; external checkpoints required | Chain test implemented; external checkpoint/incident gate 6 |
+| Retained copies | Compensation rows before Put, idempotent cleanup, hold/write lease guards | Cleanup/migration/expiry tests; restore orphan inventory/quarantine tests |
+| Restore resurrection | Verified pre-backup, generation/session fencing, reconciliation/capability review, explicit reopen | Recovery/fresh DB/drain/rollback PG drills |
+| Backup tamper / KEK budget rollback | Chunk AEAD, verified encrypted descriptor, exact schema, durable wrap reservation, fresh master on empty DB | Local/S3 wire tamper/truncate/key and fresh recovery tests |
+| Audit rewrite by host attacker | HMAC chain detects modification without key; external checkpoints required | Audit+ops tamper/recovery checkpoint/immutable report tests; independent host escrow/security acceptance phase 7 |
 
 ## Примеры и ограничения
 Утёкший recipient URL — bearer capability, PIN является дополнительной защитой; невозможно запретить получателю копировать уже полученные bytes. Переключение hold/epoch прерывает stream на следующем bounded write, уже переданные bytes не отзываются. SMTP/webhook имеют at-least-once delivery, поэтому повтор не маскируется как exactly-once.

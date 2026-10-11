@@ -1,0 +1,63 @@
+import {test,expect,type Page} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {contractObserver} from './contracts';
+const command=promisify(execFile);
+const email=process.env.FILEX_E2E_ADMIN!;const password=process.env.FILEX_E2E_PASSWORD!;
+async function login(page:Page){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:'Администрирование',exact:true})).toBeVisible();}
+async function admin(page:Page){await page.getByRole('button',{name:'Администрирование',exact:true}).click();await expect(page.getByRole('heading',{name:'Эксплуатация и восстановление',exact:true})).toBeVisible();}
+async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'← Все передачи',exact:true});if(await back.isVisible())await back.click();await page.getByRole('button',{name:'Новая передача',exact:true}).click();await page.getByLabel('Название',{exact:true}).fill(title);await page.getByRole('button',{name:'Сохранить название',exact:true}).click();}
+
+test('admin backup restore restart reconciliation and explicit reopening',async({page})=>{
+ test.setTimeout(150000);
+ const project=process.env.FILEX_E2E_PROJECT;
+ if(!project||!/^filex-e2e-[0-9a-f]{10}$/.test(project))throw new Error('Scoped disposable Compose project required');
+ const contracts=await contractObserver();contracts.observe(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await login(page);await draft(page,'Сохранённая передача до восстановления');await admin(page);
+ const ops=page.getByRole('region',{name:'Эксплуатация и восстановление',exact:true});
+ await ops.getByLabel('Причина эксплуатационного действия').fill('Полный браузерный тест резервного копирования и восстановления');
+ await ops.getByRole('button',{name:'Создать резервную копию',exact:true}).click();
+ await expect(ops.getByLabel('Копия для восстановления').locator('option')).toHaveCount(2,{timeout:30000});
+ const source=await ops.getByLabel('Копия для восстановления').locator('option').nth(1).getAttribute('value');expect(source).toBeTruthy();
+ await draft(page,'Поздняя передача для проверки замены БД');await admin(page);
+ await ops.getByLabel('Причина эксплуатационного действия').fill('Восстановление выбранной копии с проверкой предварительного backup');
+ await ops.getByLabel('Копия для восстановления').selectOption(source!);
+ await ops.getByRole('button',{name:'Подготовить восстановление',exact:true}).click();
+ await expect(ops.getByRole('region',{name:'Проверка восстановления'})).toContainText('Ссылки и API-токены');
+ await page.setViewportSize({width:390,height:844});
+ expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+ await page.screenshot({path:'.cache/evidence/operations-restore-mobile.png',fullPage:true});
+ await ops.getByRole('button',{name:'Создать предварительную копию и восстановить',exact:true}).click();
+ await expect.poll(async()=>{const r=await page.request.get('/api/v1/auth/me');return (await r.json()).code},{timeout:30000}).toBe('restart_required');
+ await command('docker',['compose','--project-name',project,'-f','deploy/compose.yaml','restart','api','worker'],{timeout:60000,maxBuffer:1024*1024});
+ await expect.poll(async()=>{try{return (await page.request.get('/api/v1/auth/me')).status()}catch{return 0}},{timeout:30000}).toBe(401);
+ await login(page);
+ await expect(ops.getByText('Ожидает проверки и открытия',{exact:true})).toBeVisible({timeout:15000});
+ await ops.getByLabel('Причина эксплуатационного действия').fill('Проверены ссылки, токены и объекты после восстановления');
+ await ops.getByRole('button',{name:'Сверить восстановленные данные',exact:true}).click();
+ await expect(ops.getByRole('heading',{name:'Сверка завершена',exact:true})).toBeVisible({timeout:30000});
+ await expect(ops.getByRole('button',{name:'Открыть доступ после проверки',exact:true})).toBeDisabled();
+ await ops.getByRole('checkbox',{name:'Я проверил восстановленные ссылки и токены, недоступные файлы и объекты без записей в БД.'}).check();
+ await ops.getByRole('button',{name:'Открыть доступ после проверки',exact:true}).click();
+ await expect(ops.getByText('Доступ открыт',{exact:true})).toBeVisible();
+ expect((await page.request.get('/api/v1/status')).status()).toBe(200);
+ await ops.getByText('Контрольные точки аудита',{exact:true}).click();
+ await ops.getByRole('button',{name:'Зафиксировать контрольную точку',exact:true}).click();
+ await expect(ops.getByRole('button',{name:'Сохранить новую контрольную точку'})).toBeVisible();
+ const anchor=page.waitForEvent('download');await ops.getByRole('button',{name:'Сохранить новую контрольную точку'}).click();await (await anchor).saveAs('.cache/evidence/audit-checkpoint.json');
+ await ops.getByText('Периодические проверки',{exact:true}).click();
+ const auditForm=ops.locator('form').filter({hasText:'Проверка аудита'});await auditForm.locator('input').fill('120');await auditForm.getByRole('button').click();
+ await expect(auditForm.locator('input')).toHaveValue('120');
+ const exports=page.getByRole('region',{name:'Экспорты пользователей',exact:true});await exports.getByRole('button',{name:'Загрузить экспорты',exact:true}).click();
+ await exports.getByLabel('Причина доступа к экспорту').fill('Проверка административного доступа к экспорту пользователя');
+ await expect(exports.getByRole('button',{name:'Скачать с записью в аудит'}).first()).toBeEnabled();
+ const exportFile=page.waitForEvent('download');await exports.getByRole('button',{name:'Скачать с записью в аудит'}).first().click();await (await exportFile).saveAs('.cache/evidence/admin-export.csv');
+ await exports.getByRole('button',{name:'Изменить срок хранения'}).first().click();
+ await page.screenshot({path:'.cache/evidence/operations-reopened-mobile.png',fullPage:true});
+ expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+ const transfers=await (await page.request.get('/api/v1/transfers')).json();expect(transfers.items.some((x:any)=>x.title==='Сохранённая передача до восстановления')).toBe(true);expect(transfers.items.some((x:any)=>x.title==='Поздняя передача для проверки замены БД')).toBe(false);
+ expect(errors).toEqual([]);const result=await contracts.finish();expect(result.count).toBeGreaterThan(15);expect(result.failures).toEqual([]);
+});

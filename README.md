@@ -2,7 +2,7 @@
 
 Приватная передача файлов: tus upload, immutable publish, ссылки с PIN/password, одноразовая выдача файла или ZIP, зашифрованные Local/S3 хранилища, уведомления, отчёты и exports. Интерфейс RU/EN, light/dark/system, адаптивные страницы владельца и получателя.
 
-**Этапы 1–5 закрыты по локальным development gates.** Подробности: [состояние сессии](wiki/session.md), [путь разработки](wiki/roadmap.md), [воспроизведение](wiki/development.md). Эксплуатационные backup/restore и release acceptance — этапы 6–7; production запуск сейчас блокируется.
+**Этапы 1–6 закрыты по локальным development gates.** Добавлены зашифрованные резервные копии Local/S3, обязательный backup перед restore, сверка данных и явное открытие доступа, KEK recovery, инциденты и эксплуатационные UI/CLI. Подробности: [состояние сессии](wiki/session.md), [путь разработки](wiki/roadmap.md), [воспроизведение](wiki/development.md), [восстановление](wiki/operations-recovery.md). Release acceptance — фаза 7; production запуск сейчас блокируется.
 
 ```sh
 npm ci

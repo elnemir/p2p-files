@@ -1,17 +1,17 @@
 package httpapi
 
 import (
-	"crypto/hkdf"
-	"crypto/sha256"
+	"context"
 	"encoding/json"
 	"errors"
-	"filex.local/filex/internal/audit"
 	"filex.local/filex/internal/auth"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/database"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/files"
 	"filex.local/filex/internal/keyring"
+	"filex.local/filex/internal/maintenance"
+	"filex.local/filex/internal/operations"
 	"filex.local/filex/internal/settings"
 	"filex.local/filex/internal/storage"
 	"filex.local/filex/internal/transfer"
@@ -34,10 +34,20 @@ type App struct {
 	streamSlots chan struct{}
 	Files       files.Service
 	Keys        keyring.Ring
+	Gate        *maintenance.Gate
+	Operations  operations.Service
 }
 
 func New(db *pgxpool.Pool, key []byte) (*App, error) {
-	auditKey, e := hkdf.Key(sha256.New, key, nil, "filex/audit/key/v1", 32)
+	unlock, e := maintenance.StartupShared(context.Background(), db)
+	if e != nil {
+		return nil, e
+	}
+	defer unlock()
+	if e := database.CheckKEK(context.Background(), db, key); e != nil {
+		return nil, e
+	}
+	auditKey, e := database.AuditKey(context.Background(), db, key)
 	if e != nil {
 		return nil, e
 	}
@@ -46,8 +56,17 @@ func New(db *pgxpool.Pool, key []byte) (*App, error) {
 		return nil, e
 	}
 	ring := keyring.Ring{DB: db, KEK: key}
-	return &App{streamSlots: make(chan struct{}, 8), DB: db, Auth: a, Key: auditKey, Keys: ring, Files: files.Service{DB: db, Keys: ring, Storage: storage.Registry{DB: db, Keys: ring}}}, nil
+	ops, e := operations.New(context.Background(), db, key)
+	if e != nil {
+		return nil, e
+	}
+	gate, e := maintenance.New(context.Background(), db)
+	if e != nil {
+		return nil, e
+	}
+	return &App{Gate: gate, Operations: ops, streamSlots: make(chan struct{}, 8), DB: db, Auth: a, Key: auditKey, Keys: ring, Files: files.Service{DB: db, Keys: ring, Storage: storage.Registry{DB: db, Keys: ring}}}, nil
 }
+func (a *App) Close() { a.Gate.Close() }
 
 type action func(http.ResponseWriter, *http.Request, auth.Principal, config.Settings) error
 
@@ -74,6 +93,14 @@ func body(w http.ResponseWriter, r *http.Request, v any) error {
 func failure(w http.ResponseWriter, e error) {
 	code, name := 500, "internal_error"
 	switch {
+	case errors.Is(e, maintenance.ErrClosed):
+		code, name = 503, "maintenance"
+	case errors.Is(e, maintenance.ErrRestart):
+		code, name = 503, "restart_required"
+	case errors.Is(e, operations.ErrInvalid):
+		code, name = 400, "invalid_input"
+	case errors.Is(e, operations.ErrConflict) || errors.Is(e, operations.ErrBackup):
+		code, name = 409, "conflict"
 	case errors.Is(e, auth.ErrCredentials):
 		code, name = 401, "unauthenticated"
 	case errors.Is(e, auth.ErrForbidden):
@@ -126,9 +153,24 @@ func (a *App) protect(scope string, admin bool, fn action) http.HandlerFunc {
 			failure(w, auth.ErrForbidden)
 			return
 		}
+		state, e := a.Operations.State(r.Context())
+		if e != nil {
+			failure(w, e)
+			return
+		}
+		if state.Mode != "open" && p.Role != "admin" {
+			failure(w, maintenance.ErrClosed)
+			return
+		}
 		if r.Method != "GET" && r.Method != "HEAD" && r.Method != "OPTIONS" && !bearer {
 			if r.Header.Get("Origin") != c.PublicOrigin || !p.CheckCSRF(r.Header.Get("X-CSRF-Token")) {
 				failure(w, auth.ErrForbidden)
+				return
+			}
+		}
+		if admin && r.Method != "GET" && r.Method != "HEAD" && !strings.HasPrefix(r.URL.Path, "/api/v1/admin/operations/") {
+			if _, e = a.DB.Exec(r.Context(), "UPDATE ops_control SET reconciliation_id=NULL WHERE mode<>'open'"); e != nil {
+				failure(w, e)
 				return
 			}
 		}
@@ -173,6 +215,19 @@ func (a *App) Handler() http.Handler {
 		session, e := a.Auth.Login(r.Context(), input.Email, input.Password, remote, c.SessionTTLSeconds)
 		if e != nil {
 			failure(w, e)
+			return
+		}
+		state, e := a.Operations.State(r.Context())
+		if e != nil {
+			failure(w, e)
+			return
+		}
+		if state.Mode != "open" && session.User.Role != "admin" {
+			if e = a.Auth.Logout(r.Context(), session.User, session.User.SessionID); e != nil {
+				failure(w, e)
+				return
+			}
+			failure(w, maintenance.ErrClosed)
 			return
 		}
 		http.SetCookie(w, &http.Cookie{Name: "filexSession", Value: session.Token, Path: "/", HttpOnly: true, Secure: strings.HasPrefix(c.PublicOrigin, "https://"), SameSite: http.SameSiteStrictMode, Expires: session.Expires, MaxAge: int(c.SessionTTLSeconds)})
@@ -290,14 +345,16 @@ func (a *App) Handler() http.Handler {
 		return nil
 	}))
 	mux.HandleFunc("POST /api/v1/admin/audit/verify", a.protect("admin:audit", true, func(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
-		if e := audit.Verify(r.Context(), a.DB, a.Key); e != nil {
+		if e := a.Operations.CheckAudit(r.Context()); e != nil {
 			return e
 		}
 		return reply(w, 200, map[string]string{"status": "verified"})
 	}))
 	a.treeRoutes(mux)
+	a.operationsRoutes(mux)
 	a.organizationRoutes(mux)
 	a.exportRoutes(mux)
+	a.adminExportRoutes(mux)
 	a.reportRoutes(mux)
 	a.communicationsRoutes(mux)
 	a.maintenanceRoutes(mux)
@@ -307,15 +364,12 @@ func (a *App) Handler() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_ = reply(w, 404, map[string]string{"code": "not_found", "message": "not_found"})
 	})
-	return headers(a.limitStreams(tusProtocol(mux)))
+	return headers(a.recoveryGate(a.limitStreams(tusProtocol(mux))))
 }
 func (a *App) Metrics() http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/", Internal(a.DB))
-	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; version=0.0.4")
-		_, _ = io.WriteString(w, "# TYPE filex_authenticated_requests_total counter\nfilex_authenticated_requests_total "+strconv.FormatUint(a.requests.Load(), 10)+"\n")
-	})
+	mux.Handle("/", Internal(a))
+	mux.HandleFunc("GET /metrics", a.operationsMetrics)
 	return mux
 }
 func (a *App) sessions(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
