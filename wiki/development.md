@@ -77,7 +77,7 @@ curl --fail http://localhost:8090/api/v1/status
 | `make ingress` | PASS: strict CA, TLS versions/redirect/HSTS, proxy spoof/CIDR, Secure cookies и host reset/fencing. `.cache/evidence/phase7-upgrade-ingress.log`. |
 | `make security` | PASS: npm production 0, govulncheck affected symbols/imported packages 0; прежний module-only openpgp advisory сохраняется. `.cache/evidence/phase7-upgrade-security.log`. |
 
-Fixtures завершили scoped cleanup; `docker ps -a --filter name=filex-` не показал оставшихся контейнеров. Логи содержат synthetic fixture evidence и остаются ignored. В CI добавлен `make upgrade-drill` и fetch Git history для pinned baseline; remote результат нового commit подтверждается отдельно в session. Фаза 7 в целом не закрыта.
+Fixtures завершили scoped cleanup; `docker ps -a --filter name=filex-` не показал оставшихся контейнеров. Логи содержат synthetic fixture evidence и остаются ignored. В CI добавлен `make upgrade-drill` и fetch Git history для pinned baseline. Commit `dda4587` опубликован; [CI #38135958275](https://github.com/elnemir/p2p-files/actions/runs/38135958275) completed/success всех gates, включая upgrade. Remote fixture использовал exact clean candidate commit: window 6.251 s, sampled unavailable 5.542 s, 28 samples. Snapshot/log/JSON — `.cache/evidence/phase7-upgrade-ci.json`, `phase7-upgrade-ci.log`, `phase7-upgrade-ci-drill.json`. Эта последующая фиксация publication evidence меняет только документацию. Фаза 7 в целом не закрыта.
 
 ## Исторический итог фаз 1–5 (2026-10-11)
 

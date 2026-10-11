@@ -4,7 +4,7 @@
 Продолжить фазу 7.1: реализовать controlled upgrade/downtime drill после опубликованного HTTPS/network-policy среза. Проверить migration compatibility на startup, drain старого поколения, сохранность данных и явное reopening. Production deployment не запрошен.
 
 ## Status
-Срез controlled upgrade завершён локально: [ADR-008](adr/008-controlled-upgrade.md), [runbook](controlled-upgrade.md). Реализованы общий strict migration plan, startup rejection unknown/checksum/hole, exclusive pending DDL и host upgrade prepare с generation/drain. PASS: make check/security, 36 PG/race tests, 3 Chromium scenarios, TLS и upgrade drills. Реальный SQL prefix 15→16 и rollback проверены отдельно от same-schema Compose replacement. Fixture window 6.489 s, sampled unavailable 5.878 s (29 samples), не SLA/RTO. Готовится отдельный commit/push; remote CI этого среза ещё не запускался. Исторические результаты ниже относятся к опубликованным commits.
+Срез controlled upgrade завершён локально: [ADR-008](adr/008-controlled-upgrade.md), [runbook](controlled-upgrade.md). Реализованы общий strict migration plan, startup rejection unknown/checksum/hole, exclusive pending DDL и host upgrade prepare с generation/drain. PASS: make check/security, 36 PG/race tests, 3 Chromium scenarios, TLS и upgrade drills. Реальный SQL prefix 15→16 и rollback проверены отдельно от same-schema Compose replacement. Fixture window 6.489 s, sampled unavailable 5.878 s (29 samples), не SLA/RTO. Commit `dda45876817cf9e91383b1e531ca915b7f0d5426` отправлен в origin/main, SHA подтверждён. [CI #38135958275](https://github.com/elnemir/p2p-files/actions/runs/38135958275) — completed/success: check/build, PG, security, Chromium, TLS и controlled upgrade. Remote fixture проверил exact clean candidate dda4587; window 6.251 s, sampled unavailable 5.542 s (28 samples). Это evidence implementation commit; последующая публикация этого журнала меняет только документацию. Исторические результаты ниже относятся к опубликованным commits.
 
 **Фазы 1–6 закрыты по локальным development gates.** Фаза 6 реализована и проверена; документация, миграции, контракты и traceability обновлены. В матрице 27 verified/5 partial/0 planned, все 32 MUST сохранены. Оставшиеся partial относятся к release acceptance фазы 7. `APP_ENV=production` по-прежнему отклоняется.
 
@@ -30,7 +30,7 @@
 - Security incident PDF и mobile restore/reopened screenshots 390px просмотрены; clipping/overflow не обнаружены. Scoped fixtures удалили свои контейнеры и volumes; secrets/caches/traces не добавлялись в Git.
 
 ## Next steps
-1. Опубликовать проверенный controlled upgrade/downtime срез и подтвердить remote CI. Затем локальная фаза 7.2: static analysis/SBOM/license/container/secret scans. Фаза 6 и ingress срез опубликованы, оба remote CI — success; CI нового upgrade среза ещё не выполнялся.
+1. Локальная фаза 7.2: static analysis/SBOM/license/container/secret scans. Controlled upgrade срез `dda4587` опубликован, его remote CI — success. Следующие проверки расширяются согласно roadmap; вся release фаза 7 пока открыта.
 2. Actual ACME/DNS/host/provider/escrow/checkpoint/DR acceptance после согласованной инфраструктурной подготовки.
 3. Full Safari/Firefox/mobile browser matrix, manual WCAG, load/DR, SBOM/license/container/secret scans и independent security review; затем release review всех 32 MUST и residual risks с владельцем.
 4. Реальный deployment только по отдельной явной команде пользователя.
@@ -50,7 +50,7 @@
 [Вход](index.md), [roadmap](roadmap.md), [эксплуатация](operations-recovery.md), [development/evidence](development.md), [design review](design-review.md), [матрица](../docs/test-matrix.md), [CLI](../docs/cli.md), [incident runbook](../docs/incident-response.md). Изменены Go cmd/internal/SQL, Next.js components, contracts/scripts, Compose/Dockerfile API и документация. Новые основные пакеты: operations, maintenance; migrations 0014–0016. Чужие изменения не сбрасывались; working tree перед фазой 6 был чистым.
 
 ## Risks / blockers
-Блокировок для локального закрытия фазы 6 нет. Production topology, real SMTP/S3 accounts, full DR/load/a11y/browser/security и внешнее хранение KEK/checkpoints не подтверждены. Архив ≤1 GiB, record ≤64 MiB, inventory ≤1 млн объектов, findings ≤10 тыс.; worker/CLI execution bounds 5/15 минут — не SLA/RPO/RTO. Backup без payload не восстанавливает физически удалённые bytes; потерянный historical KEK не восстанавливается кодом. Исходное интервью отсутствует. R-01–06 не приняты.
+Блокировок для завершённого локального controlled upgrade среза нет. Production topology, real SMTP/S3 accounts, full DR/load/a11y/browser/security и внешнее хранение KEK/checkpoints не подтверждены. Архив ≤1 GiB, record ≤64 MiB, inventory ≤1 млн объектов, findings ≤10 тыс.; worker/CLI execution bounds 5/15 минут — не SLA/RPO/RTO. Backup без payload не восстанавливает физически удалённые bytes; потерянный historical KEK не восстанавливается кодом. Исходное интервью отсутствует. R-01–06 не приняты.
 
 ## Итог публикации фазы 6 и первого среза фазы 7
 - Фаза 6: commit `02c53d9f384f378dd6a279b2d9f7d2e2432b82aa` отправлен в origin/main; local/remote SHA подтверждены. CI #38131827674 — completed/success.
