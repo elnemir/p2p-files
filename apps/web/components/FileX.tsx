@@ -2425,11 +2425,14 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
               <Field title={t("Идентификатор отчёта", "Report identifier")}>
                 <input
                   value={verificationId}
+                  disabled={!loaded}
                   onChange={(e) => setVerificationId(e.target.value)}
                   required
                 />
               </Field>
-              <button disabled={busy}>{t("Проверить", "Verify")}</button>
+              <button disabled={!loaded || busy || !verificationId.trim()}>
+                {t("Проверить", "Verify")}
+              </button>
             </form>
             {verification && (
               <>

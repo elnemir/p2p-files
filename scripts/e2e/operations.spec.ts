@@ -6,15 +6,29 @@ import {promisify} from 'node:util';
 import {contractObserver} from './contracts';
 const command=promisify(execFile);
 const email=process.env.FILEX_E2E_ADMIN!;const password=process.env.FILEX_E2E_PASSWORD!;
-async function login(page:Page){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:'Администрирование',exact:true})).toBeVisible();}
+async function login(page:Page,address=email){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(address);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:address===email?'Администрирование':'Новая передача',exact:true})).toBeVisible();}
 async function admin(page:Page){await page.getByRole('button',{name:'Администрирование',exact:true}).click();await expect(page.getByRole('heading',{name:'Эксплуатация и восстановление',exact:true})).toBeVisible();}
 async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'← Все передачи',exact:true});if(await back.isVisible())await back.click();await page.getByRole('button',{name:'Новая передача',exact:true}).click();await page.getByLabel('Название',{exact:true}).fill(title);await page.getByRole('button',{name:'Сохранить название',exact:true}).click();}
 
-test('admin backup restore restart reconciliation and explicit reopening',async({page})=>{
+test('admin backup restore restart reconciliation and explicit reopening',async({page,browser,baseURL})=>{
  test.setTimeout(150000);
  const project=process.env.FILEX_E2E_PROJECT;
  if(!project||!/^filex-e2e-[0-9a-f]{10}$/.test(project))throw new Error('Scoped disposable Compose project required');
  const contracts=await contractObserver();contracts.observe(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ // Keep fixture and administrator cookies separate; drain capture before closing the owner context.
+ const ownerContext=await browser.newContext({baseURL});let exportId='';
+ try{
+  const owner=await ownerContext.newPage();owner.on('pageerror',e=>errors.push(e.message));
+  const ownerContracts=await contractObserver();ownerContracts.observe(owner);
+  await login(owner,process.env.FILEX_E2E_EMAIL!);
+  await draft(owner,'Данные пользователя для отдельного recovery-сценария');
+  await owner.getByRole('button',{name:'Задачи',exact:true}).click();
+  const created=owner.waitForResponse(response=>new URL(response.url()).pathname==='/api/v1/exports'&&response.request().method()==='POST');
+  await owner.getByRole('button',{name:'+ CSV',exact:true}).click();
+  exportId=(await (await created).json()).id;expect(exportId).toBeTruthy();
+  await expect.poll(async()=>{const response=await owner.request.get('/api/v1/exports');const jobs=await response.json();return jobs.find((job:any)=>job.id===exportId)?.state;},{timeout:30000}).toBe('completed');
+  const observed=await ownerContracts.finish();expect(observed.count).toBeGreaterThan(3);expect(observed.failures).toEqual([]);
+ }finally{await ownerContext.close();}
  await login(page);await draft(page,'Сохранённая передача до восстановления');await admin(page);
  const ops=page.getByRole('region',{name:'Эксплуатация и восстановление',exact:true});
  await ops.getByLabel('Причина эксплуатационного действия').fill('Полный браузерный тест резервного копирования и восстановления');
@@ -53,9 +67,10 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await expect(auditForm.locator('input')).toHaveValue('120');
  const exports=page.getByRole('region',{name:'Экспорты пользователей',exact:true});await exports.getByRole('button',{name:'Загрузить экспорты',exact:true}).click();
  await exports.getByLabel('Причина доступа к экспорту').fill('Проверка административного доступа к экспорту пользователя');
- await expect(exports.getByRole('button',{name:'Скачать с записью в аудит'}).first()).toBeEnabled();
- const exportFile=page.waitForEvent('download');await exports.getByRole('button',{name:'Скачать с записью в аудит'}).first().click();await (await exportFile).saveAs(evidencePath('admin-export.csv'));
- await exports.getByRole('button',{name:'Изменить срок хранения'}).first().click();
+ const exportRow=exports.locator('.list-row').filter({hasText:exportId});
+ await expect(exportRow.getByRole('button',{name:'Скачать с записью в аудит'})).toBeEnabled();
+ const exportFile=page.waitForEvent('download');await exportRow.getByRole('button',{name:'Скачать с записью в аудит'}).click();await (await exportFile).saveAs(evidencePath('admin-export.csv'));
+ await exportRow.getByRole('button',{name:'Изменить срок хранения'}).click();
  await page.screenshot({path:evidencePath('operations-reopened-mobile.png'),fullPage:true});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);

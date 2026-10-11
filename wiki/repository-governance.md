@@ -86,6 +86,8 @@ python3 scripts/github_repository.py audit
 
 Проверено 2026-10-11: [ручной запуск 38161371347](https://github.com/elnemir/p2p-files/actions/runs/38161371347) завершился SUCCESS на `main` / `e70af757c7d501a8e2972c0f906d3e16e2500839`. Все четыре анализа CodeQL 2.27.2 загружены после начала запуска, `results_count=0`, `error` и `warning` пусты; открытых alerts на main нет. Ruleset `24884645` active, bypass actors отсутствуют. Audit `20261011T175300.163216Z` вернул `matchesPolicy=true`, `differences=[]`. Локальный снимок: `.cache/code-scanning/2026-10-11-run-38161371347.json`; повторная проверка нового commit обязательна независимо от этого исторического результата.
 
+После объединения зависимостей [PR #16](https://github.com/elnemir/p2p-files/pull/16) выполнен отдельный [main security run 38167045959](https://github.com/elnemir/p2p-files/actions/runs/38167045959) на `2e1d2e4b17cffb59fec53eca55b96c45b1847e43`: SUCCESS, четыре анализа с тем же SHA, 0 findings, пустые error/warning и 0 open alerts. Локальный readback — `.cache/consolidation/main-codeql.json`. Это подтверждение кодового merge; последующие документационные commits не меняют состав scanner или защищённые thresholds.
+
 ## Примеры и ограничения
 
 - Ошибка имени required job блокирует merge. `check_repository.mjs` проверяет соответствие policy и workflow; переименование должно быть согласовано в обоих файлах и GitHub settings.
