@@ -6,7 +6,9 @@
 Продолжение 2026-10-12: владелец явно запросил commit и push завершённого среза в GitHub. Scope включает реализацию, contracts, тесты, wiki и обновлённые туры.
 
 ## Status
-Реализация, wiki и туры завершены; подготовлен commit/push в `codex/webdav-upload`. Все 13 локальных gates и реальные macOS/GVfs прошли на одном source; перед commit проверено совпадение всех 13 records с неизменёнными файлами, возраст менее часа. Windows ожидает стенда. Production deployment не выполняется.
+Реализация, wiki и туры завершены и отправлены в `origin/codex/webdav-upload`: [42d0e34](https://github.com/elnemir/p2p-files/commit/42d0e347f11310a9f7e600f8aef165f75cc83fd2), `feat(webdav): support native clients and refresh product tours`. Remote SHA подтверждён через `git ls-remote`. Все 13 локальных gates и реальные macOS/GVfs прошли на одном source; перед commit проверено совпадение всех 13 records с неизменёнными файлами, возраст менее часа. Windows ожидает стенда. Main/production не изменялись.
+
+Exact-commit CI проверен отдельно: GitHub Actions не содержит запусков для `42d0e34`. Это ожидаемо для feature push без PR; workflows запускаются на PR/main/manual. CI не объявляется пройденным. PR/merge/manual workflow в этом шаге не выполнялись; команда владельца ограничена commit/push.
 
 Окончательный полный source SHA-256: `768864c97a397db92a18a908948b577e4b3bc32fb7a3388e6110843aceafab18`. Квалификация завершена 2026-10-12 17:39 MSK. Gate records: `.cache/evidence/gates`; логи: `.cache/webdav-native-final-*.log`. Исторические PASS не подставляются под этот hash.
 
@@ -64,7 +66,7 @@ Logs/checksums: `.cache/webdav-native-{macos,linux}.log`, `.cache/webdav-native-
 ## Next steps
 1. На будущем Windows-стенде выполнить подготовленный сценарий с trusted HTTPS; записать Windows/WebClient build, лимиты и exact server source.
 2. При повторении задержки E2E auth/me сопоставить browser trace с upstream/DB и ресурсами. Не увеличивать timeout без диагностики и не считать единичный успешный повтор исправлением причины.
-3. Отправить подготовленный commit в `origin/codex/webdav-upload`, проверить remote SHA и отдельно статус CI. PR пока отсутствует; feature push сам по себе не запускает workflows (триггеры PR/main/manual). Любое новое изменение кода/контрактов/медиа требует актуальных gates.
+3. Следующий этап интеграции — PR или ручной запуск CI на точном SHA; перед merge дождаться обязательных checks. Feature push сам по себе не запускает workflows. Любое новое изменение кода/контрактов/медиа требует актуальных gates.
 4. Внешний release путь продолжить по [плану](implementation-plan.md) и [карточке окружения](environment-acceptance.md).
 
 ## Decisions
