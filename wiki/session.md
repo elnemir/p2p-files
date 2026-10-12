@@ -5,10 +5,14 @@
 
 Продолжение 2026-10-12: владелец явно запросил commit и push завершённого среза в GitHub. Scope включает реализацию, contracts, тесты, wiki и обновлённые туры.
 
+Текущий шаг по новой команде владельца: объединить завершённую WebDAV-ветку с main через PR и обязательные checks, затем синхронизировать локальный main и удалить только объединённую topic-ветку. При fetch обнаружен новый независимый Dependabot PR #22; его не включать с красными gates и несогласованным Node major.
+
 ## Status
 Реализация, wiki и туры завершены и отправлены в `origin/codex/webdav-upload`: [42d0e34](https://github.com/elnemir/p2p-files/commit/42d0e347f11310a9f7e600f8aef165f75cc83fd2), `feat(webdav): support native clients and refresh product tours`. Remote SHA подтверждён через `git ls-remote`. Все 13 локальных gates и реальные macOS/GVfs прошли на одном source; перед commit проверено совпадение всех 13 records с неизменёнными файлами, возраст менее часа. Windows ожидает стенда. Main/production не изменялись.
 
-Exact-commit CI проверен отдельно: GitHub Actions не содержит запусков для `42d0e34`. Это ожидаемо для feature push без PR; workflows запускаются на PR/main/manual. CI не объявляется пройденным. PR/merge/manual workflow в этом шаге не выполнялись; команда владельца ограничена commit/push.
+После первого push GitHub Actions не содержал запусков для `42d0e34`: feature push без PR не является CI-триггером. По новой команде готовится PR из `codex/webdav-upload` в `main`; CI и merge ещё не завершены. Исходный head доставки — `325286bcbfa51e0695df2bbec297232885e999f8`; base — `28ab4f36e15a0b5e052b23e0f058bdda7a1c9d12`. Runtime source после staging — `ab17d1f1a09a0cdc86bbcd8a7841587379299592103ddba68f6fc23019ea05a5`; последующие изменения этого шага пока только Markdown.
+
+Инвентаризация веток: main, WebDAV и `dependabot/docker/deploy/node-26-alpine` ([PR #22](https://github.com/elnemir/p2p-files/pull/22), head `6bb2e372b32d585a07ab16e3bd967351a279f131`). В #22 меняются только два FROM на Node 26; `.nvmrc`, engine/types/policy остаются на 24. [CI 38260976979](https://github.com/elnemir/p2p-files/actions/runs/38260976979) имеет failed repository-policy/checks/supply-chain. Предложение остаётся открытым для отдельной согласованной квалификации; guard не отключается ради merge. Подробнее — [учёт объединения](branch-consolidation.md).
 
 Окончательный полный source SHA-256: `768864c97a397db92a18a908948b577e4b3bc32fb7a3388e6110843aceafab18`. Квалификация завершена 2026-10-12 17:39 MSK. Gate records: `.cache/evidence/gates`; логи: `.cache/webdav-native-final-*.log`. Исторические PASS не подставляются под этот hash.
 
@@ -66,7 +70,7 @@ Logs/checksums: `.cache/webdav-native-{macos,linux}.log`, `.cache/webdav-native-
 ## Next steps
 1. На будущем Windows-стенде выполнить подготовленный сценарий с trusted HTTPS; записать Windows/WebClient build, лимиты и exact server source.
 2. При повторении задержки E2E auth/me сопоставить browser trace с upstream/DB и ресурсами. Не увеличивать timeout без диагностики и не считать единичный успешный повтор исправлением причины.
-3. Следующий этап интеграции — PR или ручной запуск CI на точном SHA; перед merge дождаться обязательных checks. Feature push сам по себе не запускает workflows. Любое новое изменение кода/контрактов/медиа требует актуальных gates.
+3. Дождаться required checks WebDAV PR на точном head, проверить CodeQL findings/conversations, выполнить squash merge и отдельно проверить main CI. Любое новое изменение кода/контрактов/медиа требует актуальных gates.
 4. Внешний release путь продолжить по [плану](implementation-plan.md) и [карточке окружения](environment-acceptance.md).
 
 ## Decisions
