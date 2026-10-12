@@ -558,7 +558,7 @@
       "number": 1,
       "title": "Вход и личный кабинет",
       "time": 0.0,
-      "duration": 17.92,
+      "duration": 17.56,
       "screens": [
         "01-login",
         "02-empty"
@@ -568,8 +568,8 @@
     {
       "number": 2,
       "title": "Черновик и загрузка",
-      "time": 17.92,
-      "duration": 17.12,
+      "time": 17.56,
+      "duration": 16.92,
       "screens": [
         "03-draft",
         "04-files",
@@ -580,8 +580,8 @@
     {
       "number": 3,
       "title": "Проверка и публикация",
-      "time": 35.04,
-      "duration": 18.72,
+      "time": 34.48,
+      "duration": 19.08,
       "screens": [
         "06-access",
         "07-publish-review",
@@ -592,8 +592,8 @@
     {
       "number": 4,
       "title": "Получатель: защищённый доступ",
-      "time": 53.76,
-      "duration": 15.44,
+      "time": 53.56,
+      "duration": 14.24,
       "screens": [
         "09-recipient-pin",
         "10-recipient-files",
@@ -604,8 +604,8 @@
     {
       "number": 5,
       "title": "ZIP и завершённая выдача",
-      "time": 69.2,
-      "duration": 22.0,
+      "time": 67.8,
+      "duration": 20.56,
       "screens": [
         "12-downloaded"
       ],
@@ -614,8 +614,8 @@
     {
       "number": 6,
       "title": "Журнал и отчёт",
-      "time": 91.2,
-      "duration": 16.04,
+      "time": 88.36,
+      "duration": 17.72,
       "screens": [
         "13-reports",
         "14-journal"
@@ -625,8 +625,8 @@
     {
       "number": 7,
       "title": "Публичная проверка отчёта",
-      "time": 107.24,
-      "duration": 18.2,
+      "time": 106.08,
+      "duration": 16.72,
       "screens": [
         "15-verify"
       ],
@@ -635,8 +635,8 @@
     {
       "number": 8,
       "title": "Поиск и сохранённые виды",
-      "time": 125.44,
-      "duration": 16.0,
+      "time": 122.8,
+      "duration": 15.32,
       "screens": [
         "16-search",
         "17-selection"
@@ -646,8 +646,8 @@
     {
       "number": 9,
       "title": "Экспорт и фоновые задачи",
-      "time": 141.44,
-      "duration": 16.68,
+      "time": 138.12,
+      "duration": 16.32,
       "screens": [
         "18-exports",
         "19-exports-mobile"
@@ -657,8 +657,8 @@
     {
       "number": 10,
       "title": "Уведомления и предпочтения",
-      "time": 158.12,
-      "duration": 16.0,
+      "time": 154.44,
+      "duration": 14.72,
       "screens": [
         "20-notifications",
         "21-preferences"
@@ -668,8 +668,8 @@
     {
       "number": 11,
       "title": "Безопасность учётной записи",
-      "time": 174.12,
-      "duration": 15.72,
+      "time": 169.16,
+      "duration": 16.96,
       "screens": [
         "22-account",
         "23-tokens",
@@ -680,8 +680,8 @@
     {
       "number": 12,
       "title": "Тёмная тема и мобильный интерфейс",
-      "time": 189.84,
-      "duration": 14.36,
+      "time": 186.12,
+      "duration": 14.56,
       "screens": [
         "25-dark",
         "26-settings-mobile"
@@ -691,8 +691,8 @@
     {
       "number": 13,
       "title": "Панель администратора",
-      "time": 204.2,
-      "duration": 17.08,
+      "time": 200.68,
+      "duration": 18.28,
       "screens": [
         "27-admin",
         "28-backup"
@@ -702,8 +702,8 @@
     {
       "number": 14,
       "title": "Восстановление: проверка последствий",
-      "time": 221.28,
-      "duration": 17.84,
+      "time": 218.96,
+      "duration": 19.44,
       "screens": [
         "29-restore-review",
         "30-restart"
@@ -713,8 +713,8 @@
     {
       "number": 15,
       "title": "Сверка и явное открытие доступа",
-      "time": 239.12,
-      "duration": 15.28,
+      "time": 238.4,
+      "duration": 16.32,
       "screens": [
         "31-reconcile",
         "32-reopened"
@@ -724,8 +724,8 @@
     {
       "number": 16,
       "title": "Аудит и доступ к экспортам",
-      "time": 254.4,
-      "duration": 16.28,
+      "time": 254.72,
+      "duration": 15.6,
       "screens": [
         "33-checkpoint",
         "34-admin-exports"
@@ -735,8 +735,8 @@
     {
       "number": 17,
       "title": "Хранилища, перенос и ключи",
-      "time": 270.68,
-      "duration": 18.76,
+      "time": 270.32,
+      "duration": 17.8,
       "screens": [
         "35-storage",
         "36-migration",
@@ -747,8 +747,8 @@
     {
       "number": 18,
       "title": "Расследование, SMTP и системные настройки",
-      "time": 289.44,
-      "duration": 17.96,
+      "time": 288.12,
+      "duration": 18.84,
       "screens": [
         "38-forensic",
         "39-smtp",
@@ -760,8 +760,8 @@
     {
       "number": 19,
       "title": "Помощь, языки и статус",
-      "time": 307.4,
-      "duration": 18.52,
+      "time": 306.96,
+      "duration": 17.64,
       "screens": [
         "42-help",
         "43-english-mobile",
@@ -770,8 +770,25 @@
       "narration": "Завершим публичными страницами. Встроенная помощь объясняет передачу, одноразовое скачивание, проверку и восстановление после ошибок. Есть русский и английский интерфейс. Страница статуса показывает доступность сервиса; production-приёмка остаётся отдельной задачей."
     }
   ],
-  "duration": 325.92,
-  "narration": "macOS Milena, synthesized Russian",
+  "duration": 324.6,
+  "narration": "ElevenLabs Liza, synthesized Russian",
   "recording": "Real Chromium interactions, edited pace; no screenshot retouching",
-  "video": "filex-tour.mp4"
+  "video": "filex-tour.mp4",
+  "narrationSource": {
+    "provider": "ElevenLabs",
+    "voiceId": "KzqxCy7zSSePwgb1Cz0Q",
+    "voiceName": "Liza",
+    "modelId": "eleven_multilingual_v2",
+    "voiceSettings": {
+      "speed": 1,
+      "stability": 0.5,
+      "similarity_boost": 0.75,
+      "style": 0,
+      "use_speaker_boost": true
+    },
+    "planSha256": "3abda24ef8d8a02f095776effc52e7e2a1519b480af737404193a1755bcc9de9",
+    "characters": 4647,
+    "acquisition": "Chrome web UI download"
+  },
+  "captionTiming": "Estimated within each chapter from text length and decoded audio duration; not provider character alignment"
 }

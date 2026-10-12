@@ -26,6 +26,9 @@ function screenshotURL(file) {
 document.getElementById('duration').textContent = time(Math.round(data.duration));
 document.getElementById('screenCount').textContent = data.screens.length;
 document.getElementById('chapterCount').textContent = data.chapters.length;
+document.getElementById('narration').textContent = data.narrationSource?.voiceName
+  ? `Синтезированный голос ${data.narrationSource.voiceName}.`
+  : (data.narration || 'Синтезированная русская озвучка.');
 for (const ch of data.chapters) {
   const item = element('li');
   const button = element('button');

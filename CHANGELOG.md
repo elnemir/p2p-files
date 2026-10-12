@@ -5,7 +5,7 @@
 ## Unreleased — этапы 1–6 и техническая реализация фазы 7
 
 ### Added
-- Локальный ElevenLabs TTS generator с лимитом текста, кэшем, character timings и защитой от повторного платного запроса; renderer принимает проверенное внешнее audio offline. Реальный синтез отложен после HTTP 402, опубликованный MP4 остаётся с Milena.
+- Локальный ElevenLabs TTS generator с лимитом текста, кэшем, character timings и защитой от повторного платного запроса; renderer принимает проверенное внешнее audio offline. Отдельный импорт MP3 из Chrome проверяет полный набор глав, исходный текст и audio SHA-256; приблизительные субтитры явно отделены от API character alignment. Статус новой озвучки Liza и API-ограничения — в wiki/session.md.
 - Воспроизводимая настройка GitHub/main/Actions, CODEOWNERS, Issue/PR templates, SECURITY policy, Dependabot для четырёх ecosystems, CodeQL/dependency review, repository validation и общие editor/Git/Node defaults. Применение и CI подтверждаются в session.
 - Скрин-тур по локальному интерфейсу, записанный видеотур с русской озвучкой/субтитрами, автономная галерея и воспроизводимый сценарий на отдельном Compose-стенде. Внешняя приёмка не подменяется демонстрацией.
 - Единая wiki: current state, developer workflow, карта компонентов, configuration/testing reference, backlog с зависимостями и полная внешняя acceptance matrix. Исторические результаты отделены от текущих инструкций.

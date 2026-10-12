@@ -1,5 +1,6 @@
 """Fault tests for billable request deduplication and offline narration integrity."""
 import base64
+import copy
 import json
 import os
 from pathlib import Path
@@ -121,6 +122,62 @@ class NarrationTests(unittest.TestCase):
                 narrate.credentials(path)
             path.chmod(0o600)
             self.assertEqual(narrate.credentials(path)['ELEVENLABS_API_KEY'], 'test-only-key')
+
+    def web_fixture(self):
+        self.output.mkdir()
+        audio = b'synthetic-web-download'
+        (self.output / '01.mp3').write_bytes(audio)
+        journal = {'provider': 'ElevenLabs', 'channel': 'Chrome web UI',
+                   'voiceId': 'TestVoice', 'voiceName': 'Test voice', 'modelId': 'test_model',
+                   'voiceSettings': {'speed': 1}, 'chapters': [{
+                       'number': 1, 'text': self.text, 'textSha256': narrate.digest(self.text.encode()),
+                       'status': 'downloaded', 'file': '01.mp3', 'audioSha256': narrate.digest(audio)}]}
+        (self.output / 'progress.json').write_text(json.dumps(journal))
+        return journal
+
+    def test_web_download_import_is_offline_and_does_not_invent_alignment(self):
+        self.web_fixture()
+        with patch.object(narrate, 'request', side_effect=AssertionError('Web import stays offline')):
+            metadata, sources = narrate.load_web_narration(self.output, self.source)
+        self.assertEqual(sources[1], (self.output / '01.mp3', None))
+        self.assertEqual(metadata['acquisition'], 'Chrome web UI download')
+        self.assertEqual(metadata['characters'], len(self.text))
+        self.assertNotIn('alignment', metadata)
+        self.assertEqual(len(metadata['planSha256']), 64)
+
+    def test_web_download_import_rejects_unfinished_stale_missing_and_unsafe_input(self):
+        original = self.web_fixture()
+        mutations = [
+            ('incomplete', lambda d: d['chapters'][0].update(status='requested')),
+            ('stale', lambda d: d['chapters'][0].update(text='Different text')),
+            ('stale', lambda d: d['chapters'][0].update(textSha256='0' * 64)),
+            ('chapter set', lambda d: d['chapters'].append(copy.deepcopy(d['chapters'][0]))),
+            ('chapter set', lambda d: d.update(chapters=[])),
+            ('audio path', lambda d: d['chapters'][0].update(file='../01.mp3')),
+            ('voice ID', lambda d: d.update(voiceId='../other')),
+            ('Unsupported', lambda d: d.update(channel='unknown')),
+        ]
+        for message, change in mutations:
+            with self.subTest(message=message):
+                journal = copy.deepcopy(original)
+                change(journal)
+                (self.output / 'progress.json').write_text(json.dumps(journal))
+                with self.assertRaisesRegex(ValueError, message):
+                    narrate.load_web_narration(self.output, self.source)
+
+    def test_web_download_import_rejects_corrupt_and_symlink_audio(self):
+        self.web_fixture()
+        audio = self.output / '01.mp3'
+        original = audio.read_bytes()
+        audio.write_bytes(b'corrupt')
+        with self.assertRaisesRegex(ValueError, 'checksum'):
+            narrate.load_web_narration(self.output, self.source)
+        audio.unlink()
+        outside = Path(self.temp.name) / 'outside.mp3'
+        outside.write_bytes(original)
+        audio.symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, 'checksum'):
+            narrate.load_web_narration(self.output, self.source)
 
 
 if __name__ == '__main__':
