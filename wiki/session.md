@@ -1,40 +1,59 @@
 # Session State
 
 ## Task
-Разобрать все открытые Dependabot PR и устранить причины проблем без подавления проверок; пользователь прямо требует фактического исправления.
+Сгенерировать все фразы видеотура FileX голосом ElevenLabs Liza через открытую пользователем вкладку Chrome после отказа API. Завершить локальную сборку видео, сохранить аудио и обновить инструкции. Продолжение: предоставить один самостоятельный видеофайл для просмотра и передачи вне галереи, перенести его в репозиторий, выполнить commit и push. Предыдущая сессия — в [истории](sessions/2026-10-12-before-liza-narration.md).
+
+Текущая команда владельца: объединить ветки. Входной снимок: `main` / `5096726` и `codex/tour-liza` / `5166594`; других удалённых веток и открытых PR нет. Разрешён squash merge через защищённый main с последующей проверкой main и удалением объединённой рабочей ветки.
+
+Операция объединения оформлена в [PR #21](https://github.com/elnemir/p2p-files/pull/21). Это постоянная ссылка на фактический статус, итоговый merge SHA и обязательные checks; при восстановлении сессии сначала прочитать PR и обновить refs через fetch. Предыдущие результаты ниже — проверка исходного тура, не замена PR/main CI. Рабочее дерево перед подготовкой объединения было чистым; основной код и MP4 в этом шаге не менялись.
 
 ## Status
-Исправления и решения по пяти Dependabot PR собраны в [PR #19](https://github.com/elnemir/p2p-files/pull/19). Исходная main — `d8b4e4f0fc1db06c0f7d61e3b963c9c75b31c7bc`, основной commit исправления — `ce84826`. Предыдущая квалификация сохранена в [истории](sessions/2026-10-12-before-dependabot-remediation.md).
+**Завершено локально 2026-10-12:** 19 глав / 4647 символов сгенерированы, скачаны и включены в MP4 длительностью 324,60 s (5:25). Остаток в ElevenLabs: 5324 из первоначальных 9971 кредитов; расход 4647, готовые главы повторно не генерировались. Голос Liza, `KzqxCy7zSSePwgb1Cz0Q`, модель Eleven Multilingual v2.
 
-Локально все 13 gates PASS для неизменного source `bbb995c65af5cd61b18ece6224dd5a1692490b4fa9fc8b318d25a1fe7585bb1d`, включая 45 toolchain tests и 25 browser cases без flaky/skipped. Итог merge и exact-head CI подтверждаются непосредственно в PR #19; отдельный post-merge run — в [main Actions](https://github.com/elnemir/p2p-files/actions?query=branch%3Amain). Скачанные PR/main gate records, browser reports и CodeQL readback сохраняются в ignored `.cache/dependabot-review/`; summary PR содержит окончательные ссылки и commit IDs. Эта запись не превращает незавершённый remote run в PASS.
+Основа — main `5096726741c31ee9d9a9faf70086bc8d942ed514`; рабочая ветка `codex/tour-liza`. **Commit и push выполнены:** [ad00a3d](https://github.com/elnemir/p2p-files/commit/ad00a3d1e60c7af4aa7f03e450d412dd8fc60b32), `feat(tour): publish standalone Liza-narrated video`, затем журнал [f9b3670](https://github.com/elnemir/p2p-files/commit/f9b367057adce8c49f99dda0c4258b7c8ee310d7). При повторной команде «коммит и пуш» дерево было чистым, локальный и удалённый SHA совпали; новых изменений кода или медиа не обнаружено. Этот документационный шаг сохраняет завершившиеся результаты CI. Проверенный source SHA-256 не изменился: `3e179312df400d012e686e129bc88f1ace7961d8e7866dbc030eb328933adcfe`.
+
+**Remote CI завершён успешно для точного commit `f9b367057adce8c49f99dda0c4258b7c8ee310d7`:** [development-checks](https://github.com/elnemir/p2p-files/actions/runs/38218316682) и [security-analysis](https://github.com/elnemir/p2p-files/actions/runs/38218320189). Эти результаты относятся к указанному коммиту, а последующее документирование проверяется отдельно через docs-check; отдельный полный CI для нового документационного коммита не заявляется.
+
+Для передачи и хранения в Git используется [wiki/tour/filex-tour.mp4](tour/filex-tour.mp4): один файл со всеми 19 главами, голосом Liza и вшитыми субтитрами. Временный экспорт перенесён в этот канонический путь с проверкой одинакового SHA-256; полное декодирование ранее выданной копии PASS. Повторных синтеза и перекодирования не было.
 
 ## Completed steps
-- Прочитаны AGENTS и wiki; дерево исходного main чистое.
-- Получены свежие PR #3/#5/#9/#10/#11 и failed logs. Активных Dependabot vulnerability alerts нет.
-- #11: ESLint 10 конфликтует с peer range JSX-a11y 6.10.2; #9 допускает разные major ESLint/config; #5 предлагает Node 25 EOL и падает на image scan; #10 не соответствует Node 24 runtime; #3 ломает OpenSSL apk pins и меняет лицензирование Redis.
-- Найден поддерживаемый `eslint-plugin-jsx-a11y-x` 0.2.0 от ESLint Community с peer ESLint 9/10. Сохранность правил подтверждена 31 behavioral fixture и проверкой прежних настроек.
-- Уточнено: parser реально использует TypeScript 5.9.3, приложение — 7.0.2. Это отдельные корректно разрешённые зависимости, а не доказанный конфликт; граница требует явного описания и проверки.
-- Официальная политика Redis Open Source: 7.2 Extended получает security fixes до 2029-12-01. Node 24 — LTS. Digests обоих runtime уже соответствуют текущим upstream tags.
-
-- Реализованы ESLint 10.12.0 + @eslint/js 10.0.1 + JSX-a11y-x 0.2.0, types 24.19.2; explicit TypeScript API 5.9.3 / app CLI 7.0.2. Добавлены strict install, full peer-tree, policy guards/negative tests, группировка Dependabot и traceability.
-- PR #9 воспроизведён: npm ci exit 0, npm ls --all exit 1. Исправленный installed tree exit 0.
-
-- Все 13 local gates PASS на неизменном source; 25 browser cases, 0 flaky/skipped; 5 images без HIGH/CRITICAL. Подробности и границы в [dependency remediation](dependency-remediation.md).
-- Read-only GitHub audit: matchesPolicy=true, differences=[]; защита main/CodeQL не ослаблена.
+- Прочитаны AGENTS, обязательные wiki и существующие инструменты тура. Предыдущий API-отказ HTTP 402 сохранён как исторический факт; новый API TTS не запускался.
+- В Chrome выбран Liza / Multilingual v2, speed 1, stability 0.5, similarity 0.75, style 0, speaker boost. Для каждой главы проверены текст/голос в player, выполнено обычное Download Audio. Браузерные credentials и внутренние API страницы не извлекались.
+- Все 19 MP3 сохранены в `.cache/tour/elevenlabs-web-Liza/`, полностью декодированы; журнал содержит точные тексты, hashes и происхождение downloads. Исходные аудио суммарно 305,30 s.
+- Подготовлен архив `.cache/tour/elevenlabs-web-Liza/filex-liza-19-chapters.zip`: 19 MP3, тексты, параметры и инструкция offline-сборки; 5 225 272 bytes, ZIP CRC PASS. Секретов/данных аккаунта в архиве нет.
+- Добавлен отдельный `--web-narration-dir`: полный chapter set, text SHA, downloaded status, точное имя файла, отсутствие symlink и audio SHA проверяются до рендера. API alignment validation сохранена; веб-субтитры явно помечены приблизительными.
+- Громкость нормализуется с целью −16 LUFS; limiter после ресэмплинга оставляет AAC headroom с компенсацией задержки. Галерея берёт имя голоса из manifest через textContent. Обновлены MP4, VTT, manifest, HTML/JS, checksums, скрин-тур, план/current-state, changelog и [руководство](tour-maintenance.md).
+- Итоговый MP4: H.264 1440 × 1080 / 25 fps, AAC mono 48 kHz, 19 chapters, 71 VTT cue, 8 698 620 bytes. SHA-256: `56e3d346d1ff8586f901b0e256d38ab954ab6d1ab93bd651359e6664bb5bcf12`. Полное декодирование PASS; audio mean −16,8 dB, decoded peak −1,066 dBFS. Все 50 checksum совпали; 44 PNG не изменены. Просмотрены кадры начала/середины/конца: текст и субтитры читаются.
+- Chrome desktop: воспроизведение, переходы к главам, поиск (5/0), фильтр (4), lightbox/стрелка/Escape и возврат 44 кадров PASS. Для HTTP-перемотки подтверждена необходимость Range: простой http.server даёт seekable=[0,0], scoped loopback server с 206/Content-Range даёт полный диапазон. Ограничение отражено в wiki.
+- До публикации: 11 unit/fault tests PASS; JS syntax check обоих source/generated gallery files PASS; docs-check — 72 Markdown / 32 requirements / без битых ссылок; git diff --check PASS. На этом локальном этапе full release/CI gates не запускались; последующие удалённые результаты приведены ниже.
+- Для отдельной передачи скопирован готовый MP4 в `.cache/exports/FileX-Video-Tour-RU.mp4`, подтверждены SHA-256, 19 chapters, H.264/AAC и полное декодирование. Лог и краткий результат — `.cache/exports/FileX-Video-Tour-RU.decode.log` и `.validation.json`; инструкция самостоятельного просмотра добавлена в [руководство](tour-maintenance.md).
+- По следующей команде владельца файл перенесён из ignored export в `wiki/tour/filex-tour.mp4`. Существующий путь галереи сохранён, бинарный дубль в Git не добавлен; SHA-256 до/после совпал.
+- Перед commit/push `acceptance.py run check` и `run source` PASS на неизменном source SHA выше: базовые lint/race/unit/contracts/docs/repository/build; source/history/worktree secret scan без утечек, HIGH/CRITICAL 0. `scripts/tour/check.mjs` PASS: 50 checksums, 44 screens, 19 chapters, desktop/mobile axe, playback/seeking и семь негативных manifest URL cases. Логи — `.cache/tour-publish/{check,source,gallery}.log`; Node 24.21.0, изолированный Playwright browser. Это профильные проверки медиа/tooling, не повторная локальная квалификация всех 13 release gates.
+- В Git отправлены все 19 относящихся к туру файлов, включая бинарный MP4; ignored raw audio, ключи, logs и ZIP в коммит не добавлялись. После первого push рабочее дерево было чистым, локальный и удалённый head совпали. Main не изменялась; PR/merge и production deploy не выполнялись.
+- При повторной проверке GitHub оба workflow для `f9b3670` имеют `completed/success`. В development-checks успешны checks, repository-policy и supply-chain. В security-analysis успешны все четыре CodeQL language jobs и security-checks; dependency-review штатно skipped для workflow_dispatch, поскольку выполняется только на PR. Новый код, повторный синтез или изменение MP4 для этой записи не потребовались.
 
 ## Next steps
-- При продолжении сначала прочитать итог PR #19 и main Actions: не повторять перенос уже merged изменений и не считать закрытый version PR устранённой CVE без обоснования.
-- Сопровождать зависимости по [политике](dependency-remediation.md): после новых advisories/version proposals повторять установку, граф/behavioral tests, scan и соответствующие gates. Node 26 рассматривать после наступления LTS с синхронным обновлением runtime/CI/types.
-- Дальнейшие development/release задачи: DEV-01 production admission design, DEV-03 license package, DEV-04 сохранение evidence, затем EXT/REL из [плана](implementation-plan.md). Никакая внешняя приёмка не закрывается этим обновлением.
+- При продолжении читать фактический итог [PR #21](https://github.com/elnemir/p2p-files/pull/21) и main Actions: merge выполняется только после exact-head checks/repository-policy/supply-chain/security-checks и CodeQL ruleset. После merge сверить дерево с кандидатом и удалённые refs. Не повторять уже завершённое слияние по устаревшему локальному снимку; исторический manual CI не заменяет PR/main checks.
+- Следующая инженерная работа выбирается из [плана](implementation-plan.md). Для нового изменённого кандидата получать отдельные результаты CI; сохранённые выше PASS не переносятся автоматически. Полная release квалификация и внешняя приёмка остаются отдельными задачами.
+- Для передачи отправить канонический [MP4](tour/filex-tour.mp4); дополнительные файлы не нужны. Галерея остаётся отдельным способом просмотра. Оригинальные MP3 доступны в указанном ZIP и по отдельным файлам 01–19.
+- Для пересборки повторно использовать готовый кэш/ZIP через `--web-narration-dir`; новых платных запросов не нужно.
+- Субъективная оценка звучания/произношения — за слушателем. Если требуются точные субтитры, выполнить отдельно проверенный alignment, не объявляя оценочные тайминги provider timestamps.
+- Последующие изменения проверять по [workflow](development-workflow.md); не переносить PASS текущего source hash на другой кандидат.
 
 ## Decisions
-- Не использовать force/legacy-peer-deps, скрывающие vulnerability ignores, отключение accessibility rules или ослабление scanner thresholds.
-- Сохранить Node 24 LTS и Redis 7.2 Extended BSD; major upgrade не самоцель. Redis 8 не принимать как лицензионное решение владельца.
-- ElevenLabs синтез остаётся отложенным пользователем. Production deployment не выполнять.
+- Объединяется весь подготовленный тур: MP4, галерея, offline web-audio importer, тесты и wiki. Закрытые ранее Dependabot предложения не переносятся повторно; текущий список удалённых веток содержит только main и ветку тура.
+- Пользователь явно разрешил генерацию всего текста через Chrome. Покупки, подписки, права ключа и настройки оплаты не менялись.
+- Веб-скачивание и API-кэш остаются раздельными; неизвестный исход запроса нельзя автоматически повторять. Успешный веб-синтез не означает устранение прежнего API payment_required.
+- Съёмка интерфейса остаётся от 2026-10-11; новая озвучка — 2026-10-12. Production, данные приложения и внешние интеграции не затрагивались.
+- Предыдущий тур Milena сохранён в `.cache/tour/milena-before-web-narration/`.
 
 ## Context
-[Правила](../AGENTS.md), [план](implementation-plan.md), [тесты](testing.md), [лицензии](third-party-review.md), [прежний учёт веток](branch-consolidation.md). Диагностика: ignored `.cache/dependabot-review/`.
+[Тур](screen-tour.md), [генерация/результат/QA](tour-maintenance.md), [правила](../AGENTS.md), [workflow](development-workflow.md). Evidence в `.cache/tour/elevenlabs-web-Liza/`: progress.json, media-qa.json, browser-qa.json, unit-tests.log, render-final.log, video-decode-final.log, completed-elevenlabs.png и три video PNG.
+
+В Chrome оставлены вкладки результата ElevenLabs и готовой галереи; видео стоит на начале и паузе. Локальный preview `http://127.0.0.1:8767/tour/` использует ограниченный каталогом wiki временный `.cache/tour/elevenlabs-web-Liza/serve.py` (exec session 76353). Созданный при проверке сервер 8766 остановлен; ранее существовавший 8765 не затронут.
 
 ## Risks / blockers
-- Источник статуса remote gates — конкретный PR/main run и его artifacts; local PASS и закрытие исходного PR сами по себе не подтверждают remote qualification.
-- Внешняя приёмка фазы 7 и third-party review остаются отдельными неподтверждёнными условиями выпуска.
+- Для выполненной веб-генерации блокеров нет. API TTS ранее возвращал HTTP 402; его автоматизация не подтверждена.
+- Веб-экспорт не содержит character alignment. Субтитры распределены приблизительно внутри глав, субъективное прослушивание всех фраз не заявляется как автоматическая проверка.
+- Это локальная media/tooling квалификация; product/device/a11y acceptance, внешняя фаза 7 и release/production ограничения сохраняются отдельно.
+- `.cache` не входит в Git; raw audio/evidence/ZIP нужно сохранять отдельно, если требуется долговременная воспроизводимость.

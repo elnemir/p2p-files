@@ -111,6 +111,51 @@ def load_audio(directory, chapter, metadata):
     return audio, alignment
 
 
+def load_web_narration(directory, source):
+    """Import explicitly downloaded UI audio without claiming provider alignment."""
+    journal = json.loads((directory / 'progress.json').read_text())
+    if journal.get('provider') != 'ElevenLabs' or journal.get('channel') != 'Chrome web UI':
+        raise ValueError('Unsupported web narration journal')
+    chapters = journal.get('chapters', [])
+    numbers = [ch['number'] for ch in chapters]
+    expected = [ch['number'] for ch in source['chapters']]
+    if (any(type(n) is not int or not 1 <= n <= 999 for n in numbers)
+            or len(numbers) != len(set(numbers)) or set(numbers) != set(expected)):
+        raise ValueError('Web narration chapter set does not match the capture')
+    if not re.fullmatch(r'[A-Za-z0-9]+', journal.get('voiceId', '')):
+        raise ValueError('Invalid web narration voice ID')
+    for field in ('voiceName', 'modelId'):
+        if not isinstance(journal.get(field), str) or not journal[field].strip():
+            raise ValueError(f'Missing web narration {field}')
+    if not isinstance(journal.get('voiceSettings'), dict):
+        raise ValueError('Missing web narration voice settings')
+    entries = {ch['number']: ch for ch in chapters}
+    audio_sources = {}
+    for chapter in source['chapters']:
+        number, text = chapter['number'], chapter['narration']
+        entry = entries[number]
+        if entry.get('status') != 'downloaded':
+            raise ValueError(f'Web narration chapter {number} is incomplete')
+        if entry.get('text') != text or entry.get('textSha256') != digest(text.encode()):
+            raise ValueError(f'Web narration chapter {number} is stale; text changed')
+        if entry.get('file') != f'{number:02}.mp3':
+            raise ValueError(f'Web narration chapter {number} has an invalid audio path')
+        audio = directory / entry['file']
+        if (audio.is_symlink() or not audio.is_file()
+                or audio.stat().st_size == 0
+                or digest(audio.read_bytes()) != entry.get('audioSha256')):
+            raise ValueError(f'Web narration chapter {number} audio checksum mismatch')
+        # UI MP3 downloads contain no verified character timestamps; keep that distinction explicit.
+        audio_sources[number] = (audio, None)
+    metadata = {key: journal[key] for key in ('provider', 'voiceId', 'voiceName', 'modelId', 'voiceSettings')}
+    plan = {**metadata, 'acquisition': 'Chrome web UI download',
+            'texts': [{'number': ch['number'], 'text': ch['narration']} for ch in source['chapters']]}
+    metadata.update(planSha256=digest(json.dumps(plan, sort_keys=True, ensure_ascii=False).encode()),
+                    acquisition=plan['acquisition'],
+                    characters=sum(len(ch['narration']) for ch in source['chapters']))
+    return metadata, audio_sources
+
+
 def generate(source, output, key, voice_id, model, limit, only=None, retry_rejected=False):
     output.mkdir(parents=True, exist_ok=True)
     lock = output / '.generation.lock'

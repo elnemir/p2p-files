@@ -9,7 +9,7 @@ import re
 import shutil
 import subprocess
 
-from narrate import load_audio
+from narrate import load_audio, load_web_narration
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / '.cache/tour/raw'
@@ -116,7 +116,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ffmpeg', default=shutil.which('ffmpeg'))
     parser.add_argument('--voice', default='Milena')
-    parser.add_argument('--narration-dir', type=Path, help='Verified audio/character timings from narrate.py; rendering stays offline')
+    narration_inputs = parser.add_mutually_exclusive_group()
+    narration_inputs.add_argument('--narration-dir', type=Path, help='Verified audio/character timings from narrate.py; rendering stays offline')
+    narration_inputs.add_argument('--web-narration-dir', type=Path, help='Downloaded UI MP3s with progress.json; caption timing is estimated, rendering stays offline')
     parser.add_argument('--font', default='/System/Library/Fonts/Supplemental/Arial.ttf')
     parser.add_argument('--gallery-only', action='store_true')
     args = parser.parse_args()
@@ -128,8 +130,8 @@ def main():
         return
     if not args.ffmpeg or not Path(args.ffmpeg).is_file():
         raise SystemExit('Rendering requires ffmpeg with libx264/libass')
-    if not args.narration_dir and not shutil.which('say'):
-        raise SystemExit('Provide --narration-dir or install macOS say; --gallery-only reuses shipped media')
+    if not (args.narration_dir or args.web_narration_dir) and not shutil.which('say'):
+        raise SystemExit('Provide --narration-dir/--web-narration-dir or install macOS say; --gallery-only reuses shipped media')
     source = json.loads((RAW / 'capture.json').read_text())
     if not source.get('passed') or len(source['chapters']) != 19 or len(source['screens']) != 44:
         raise SystemExit('Capture is incomplete; fix the scenario before rendering')
@@ -141,6 +143,8 @@ def main():
             raise ValueError('Unsupported narration manifest')
         for ch in source['chapters']:
             audio_sources[ch['number']] = load_audio(args.narration_dir, ch, external)
+    elif args.web_narration_dir:
+        external, audio_sources = load_web_narration(args.web_narration_dir, source)
     BUILD.mkdir(parents=True, exist_ok=True)
     subtitles = ['WEBVTT', '']
     metadata = [';FFMETADATA1', 'title=FileX — экскурсия по системе', 'comment=Local synthetic demo; Russian synthesized narration; edited pacing']
@@ -194,9 +198,12 @@ def main():
                    f'pad=1440:1080:0:56:color=0x132f31,'
                    f'drawtext=fontfile={args.font}:textfile={title}:fontcolor=white:fontsize=25:x=28:y=14,'
                    f'ass={ass},tpad=stop_mode=clone:stop_duration=2')
+        # Leave codec headroom after resampling; AAC can overshoot loudnorm's intermediate peak.
+        audio_filter = ('loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,'
+                        'alimiter=limit=0.707946:level=false:latency=true,apad') if external else 'apad'
         run([args.ffmpeg, '-hide_banner', '-loglevel', 'error', '-y', '-ss', f'{ch["start"]:.3f}',
              '-t', f'{original:.3f}', '-i', RAW / ch['video'], '-i', audio,
-             '-vf', filters, '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,apad' if external else 'apad', '-t', f'{duration:.3f}', '-c:v', 'libx264',
+             '-vf', filters, '-af', audio_filter, '-t', f'{duration:.3f}', '-c:v', 'libx264',
              '-preset', 'fast', '-crf', '24', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '96k',
              '-ar', '48000', '-ac', '1', '-movflags', '+faststart', clip])
         clips.append(clip)
@@ -220,7 +227,11 @@ def main():
                   recording='Real Chromium interactions, edited pace; no screenshot retouching', video='filex-tour.mp4')
     if external:
         public['narrationSource'] = {k: external[k] for k in ('provider', 'voiceId', 'voiceName', 'modelId', 'voiceSettings', 'planSha256', 'characters')}
-        public['captionTiming'] = 'Provider character alignment, validated against original narration and decoded audio duration'
+        if args.web_narration_dir:
+            public['narrationSource']['acquisition'] = external['acquisition']
+            public['captionTiming'] = 'Estimated within each chapter from text length and decoded audio duration; not provider character alignment'
+        else:
+            public['captionTiming'] = 'Provider character alignment, validated against original narration and decoded audio duration'
     (OUT / 'manifest.json').write_text(json.dumps(public, ensure_ascii=False, indent=2) + '\n')
     gallery(public)
     markdown(public)
