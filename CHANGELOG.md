@@ -2,6 +2,7 @@
 
 ## Native WebDAV — 2026-10-12
 
+- WebDAV LOCK: upper bound Timeout явно проверяется до преобразования в `int`; сохранён предел 3600 s и добавлены проверки границ 32-bit integer без scanner suppression.
 - Поддержка штатных macOS/Linux DAV backend, инструкции Windows (ожидает стенда); owner draft GET/Range, atomic overwrite, PG LOCK/UNLOCK/If, persisted properties/timestamps.
 - Migration 0017: hidden encrypted stages/lease cleanup и durable locks, guards REST/tus/bulk/publish, bounded metadata. Неизвестная длина PUT без изменения FXP1.
 - Обновлены wiki, 48 кадров/20 глав тура с новой озвученной главой WebDAV.

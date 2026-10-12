@@ -730,7 +730,8 @@
       "scripts/production_config.py",
       "internal/httpapi/webdav.go",
       "internal/httpapi/webdav_xml.go",
-      "internal/httpapi/webdav_properties.go"
+      "internal/httpapi/webdav_properties.go",
+      "internal/httpapi/webdav_locks.go"
     ],
     "tests": [
       {
@@ -782,6 +783,11 @@
         "id": "T-SEC-005-10",
         "path": "internal/httpapi/webdav_native_integration_test.go",
         "name": "TestIntegrationWebDAVNativeMetadataBounds"
+      },
+      {
+        "id": "T-SEC-005-11",
+        "path": "internal/httpapi/webdav_test.go",
+        "name": "TestWebDAVTimeoutBounds"
       }
     ],
     "gap": "Trusted single proxy, IPv4 CIDR, generation fencing, host reset и HTTPS/ACME generator реализованы. Исторический local TLS PASS не заменяет public ACME/DNS/host и independent review: EXT-01/06, wiki/environment-acceptance.md."

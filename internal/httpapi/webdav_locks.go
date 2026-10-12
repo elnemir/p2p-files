@@ -53,7 +53,10 @@ func davTimeout(value string) (int, error) {
 		if strings.HasPrefix(part, "Second-") {
 			n, e := strconv.ParseUint(strings.TrimPrefix(part, "Second-"), 10, 32)
 			if e == nil && n > 0 {
-				return int(min(n, 3600)), nil
+				if n > 3600 {
+					return 3600, nil
+				}
+				return int(n), nil
 			}
 		}
 	}

@@ -107,6 +107,41 @@ func TestWebDAVIfGrammar(t *testing.T) {
 		}
 	}
 }
+
+func TestWebDAVTimeoutBounds(t *testing.T) {
+	for _, tc := range []struct {
+		header string
+		want   int
+	}{
+		{"", 3600},
+		{"Infinite", 3600},
+		{"Second-1", 1},
+		{"Second-3599", 3599},
+		{"Second-3600", 3600},
+		{"Second-3601", 3600},
+		{"Second-2147483647", 3600},
+		{"Second-2147483648", 3600},
+		{"Second-4294967295", 3600},
+		{" Second-60 ", 60},
+		{"Second-0, Second-60", 60},
+		{"Second-4294967296, Second-60", 60},
+	} {
+		t.Run(tc.header, func(t *testing.T) {
+			got, err := davTimeout(tc.header)
+			if err != nil || got != tc.want {
+				t.Fatalf("davTimeout(%q) = %d, %v; want %d", tc.header, got, err, tc.want)
+			}
+		})
+	}
+	for _, header := range []string{"Second-0", "Second--1", "Second-4294967296", "Second-18446744073709551615", "Second-1.5", "Second-", "second-1", "invalid"} {
+		t.Run(header, func(t *testing.T) {
+			if _, err := davTimeout(header); err != davError(400) {
+				t.Fatalf("davTimeout(%q) error = %v; want HTTP 400", header, err)
+			}
+		})
+	}
+}
+
 func FuzzWebDAVIf(f *testing.F) {
 	for _, v := range []string{"", "(<token>)", "(Not <DAV:no-lock>)", "<https://example.test/path> ([\"etag\"])"} {
 		f.Add(v)
