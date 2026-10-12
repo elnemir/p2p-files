@@ -95,7 +95,7 @@ python3 scripts/github_repository.py audit
 - Ошибка имени required job блокирует merge. `check_repository.mjs` проверяет соответствие policy и workflow; переименование должно быть согласовано в обоих файлах и GitHub settings.
 - Новый maintainer: сначала владелец предоставляет write access, затем обновляются CODEOWNERS и число approvals. Не добавлять несуществующую команду/reviewer ради галочки.
 - Emergency incident не означает автоматического обхода правил. Решение об изменении policy остаётся владельцу; GitHub audit/result и причина фиксируются в session.
-- Рекомендации TTS из [предыдущей сессии](sessions/2026-10-11-product-tour.md) не создают API keys или платную подписку. Текущий тур по-прежнему использует Milena.
+- Рекомендации TTS из [предыдущей сессии](sessions/2026-10-11-product-tour.md) не создают API keys или платную подписку. Текущий тур использует Liza, полученную через разрешённую владельцем генерацию в Chrome; исходный Milena и ограничения API описаны в [обслуживании тура](tour-maintenance.md).
 - Репозиторий был public до этой задачи; visibility сохраняется. В корне нет LICENSE: DEV-03 требует правообладателя/условия от владельца. Этот документ и публичность не заменяют license acceptance.
 - Требования выпуска остаются прежними: 14 pending внешних решений, 5 partial MUST и безусловный APP_ENV=production guard. Отдельная GitHub среда production и credentials не создаются до решения о deployment.
 
