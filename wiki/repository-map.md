@@ -13,7 +13,7 @@
 | [cmd/filex-cli](../cmd/filex-cli/) | Доверенная host/container граница, provisioning/settings/операции, JSON stdin |
 | [cmd/filex-verify](../cmd/filex-verify/) | Offline проверка ZIP manifest/signature; payload SHA только с --verify-files |
 | [apps/web/app](../apps/web/app/) | Next.js страницы owner/recipient/help/status/verify; layout/styles |
-| [apps/web/components](../apps/web/components/) | FileX, OperationsPanel и AdminExportsPanel; RU/EN, themes, пользовательские workflows |
+| [apps/web/components](../apps/web/components/) | FileX, WebDAVPanel, OperationsPanel и AdminExportsPanel; RU/EN, themes, пользовательские workflows |
 
 ## Доменные компоненты
 
@@ -23,6 +23,7 @@
 | Typed settings/ingress | [config](../internal/config/), [settings](../internal/settings/), [networkpolicy](../internal/networkpolicy/), httpapi/network.go | config/network unit и network integration, [ingress](production-ingress.md) |
 | Draft/publish/tree/retention | [domain](../internal/domain/), [transfer](../internal/transfer/), httpapi/transfers/tree/organization | repository/retention/closure integration, [core design](core-design.md), [states](state-machines.md) |
 | Upload/storage/download | [files](../internal/files/), [storage](../internal/storage/), httpapi/recipients/transfers/adminfiles/forensic | files/migration/provenance integration, [file delivery](file-delivery.md) |
+| WebDAV upload/credentials/XML | [webdav.go](../internal/httpapi/webdav.go), [tree adapter](../internal/httpapi/webdav_tree.go), [XML](../internal/httpapi/webdav_xml.go), [WebDAVPanel](../apps/web/components/WebDAVPanel.tsx) | PG/race/fault/client/browser tests, [контракт и подключение](webdav-upload.md), [ADR-011](adr/011-native-webdav.md), [native client checks](../scripts/webdav/) |
 | Crypto/ZIP/verifier | [cryptobox](../internal/cryptobox/), [keyring](../internal/keyring/), [bundle](../internal/bundle/), [verify](../internal/verify/) | vectors/tamper/fuzz/Range/rotation, [FXP1](encryption-format.md), [keys](key-management.md) |
 | Reports/artifacts/exports | [reports](../internal/reports/), [artifacts](../internal/artifacts/), [exports](../internal/exports/), httpapi/reports/artifacts/exports/qr | reports/provenance/closure integration, [ADR-003](adr/003-export-snapshot.md) |
 | Notifications/outbound | [communications](../internal/communications/), httpapi/communications, [worker](../internal/worker/) | SMTP TLS/SSRF/replay, communications/websocket integration |
@@ -35,7 +36,7 @@
 
 | Источник | Производный результат / потребитель |
 |---|---|
-| [scripts/build_contracts.py](../scripts/build_contracts.py) | contracts/openapi.json, asyncapi.json, schemas; затем `npm run generate:types` → apps/web/lib/api-schema.ts |
+| [scripts/build_contracts.py](../scripts/build_contracts.py) | contracts/openapi.json, webdav.json, asyncapi.json, schemas; затем `npm run generate:types` → apps/web/lib/api-schema.ts |
 | [contracts/traceability.json](../contracts/traceability.json) | `python3 scripts/traceability.py` → wiki/test-matrix.md |
 | [contracts/release-acceptance.json](../contracts/release-acceptance.json) | Pending/accepted решения reviewer/owner → release readiness; не приложение |
 | [scripts/tour](../scripts/tour/) | Изолированный capture → реальные PNG/видеозаписи → Milena или narrate.py (ElevenLabs cache) → озвученный MP4, manifest, галерея и [скрин-тур](screen-tour.md); [пересъёмка и QA](tour-maintenance.md) |
@@ -43,10 +44,13 @@
 | [deploy](../deploy/), [production_config.py](../scripts/production_config.py) | Пять runtime images, dev Compose и offline production config; no deployment |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |
 | [.github/repository.json](../.github/repository.json), [github_repository.py](../scripts/github_repository.py) | Desired GitHub settings → audit/apply/readback; [правила репозитория](repository-governance.md) |
-| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 25 browser scenarios, 10 Linux baselines; review перед заменой изображений |
+| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 35 browser scenarios, 10 Linux baselines; review перед заменой изображений |
 
 ## Поток изменения и пример
 
 Для исправления export после демоции ADMIN: FR-013/014 → ADR-003 и guards → exports worker + HTTP authorization → migration только при необходимости → PG race/negative case → UI error/retry flow → contracts/types при изменении ответа → wiki/matrix/evidence. Одного изменения кнопки в UI недостаточно, если worker продолжает читать чужие данные.
 
 Сначала продлить существующий механизм и его тест. Новый сервис/очередь/ключевой формат требует отдельного ADR и согласования затронутых инвариантов. Комментарии к коду английские, внутренняя wiki русская; schemas/contract descriptions английские.
+
+## Новые точки native WebDAV
+[webdav_put.go](../internal/httpapi/webdav_put.go) управляет staged swap; [webdav_read.go](../internal/httpapi/webdav_read.go) — owner streaming guards; [conditions](../internal/httpapi/webdav_conditions.go), [locks](../internal/httpapi/webdav_locks.go), [properties](../internal/httpapi/webdav_properties.go) — wire methods. Общие PG guards находятся в [transfer/dav.go](../internal/transfer/dav.go), expiry cleanup — [files/staging.go](../internal/files/staging.go), schema — [0017](../internal/database/migrations/0017_native_webdav.sql). Любое изменение guard проверять также на REST/tus/bulk/publish, а не только DAV route.

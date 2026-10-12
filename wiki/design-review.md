@@ -40,3 +40,16 @@ Network settings используют прежние draft/validate/CAS/audit в
 Container review проверяет фактический image ID, а не название upstream tag. Web runtime не содержит npm/yarn; PostgreSQL entrypoints используют su-exec вместо старого gosu; Redis OS libraries и Traefik Go/x/net обновлены. В scanner allowlist разрешён лишь точный публичный crypto test vector. Сканирование не отключает unfixed findings. Собственные TLS S3 и fault/load fixtures не попадают в runtime images; они не являются production implementations.
 
 Release readiness закрыт при отсутствующем/устаревшем/failed evidence, неполной browser matrix, отсутствии multi-GB/large-export профиля, неполной traceability или отсутствующих human decisions. Скрипт не подтверждает подлинность решения аудитора, не заменяет независимый review и не выполняет publish/deploy. Production startup guard сохранён. Решение владельца от 2026-10-11: внешнее окружение не подготовлено, соответствующие блокеры остаются открытыми.
+
+## Review WebDAV: design и итог реализации
+До реализации зафиксированы [ADR-010](adr/010-webdav-upload.md), затем расширяющий [ADR-011](adr/011-native-webdav.md). Общие PostgreSQL authority, storage/finalize, parent-first transactions, FXP1 и recipient one-time сохранены. Новые domain events/config/env не требуются.
+
+Native review проверил ownership/credential expiry и непрерывный read/write guard; If AND/OR/Not и tagged resources; lock membership Depth 0, descendant locks и REST/tus/bulk/publish guards; scanner failure/unknown-size staging/atomic overwrite; crash cleanup и freeze. Исправлены stale positive If tokens при повторной оценке и сериализованный MOVE status. Из первого среза сохранены Unicode SimpleFold descendants и bounded XML response.
+
+Crypto review: provisional ciphertext неизвестной длины не публикуется, второй проход создаёт новый file ID/salt/subkeys с точной длиной. Никакого plaintext spool или изменения authenticated FXP1 header. ReadGuard продлевает lease при финализации/rewrap; медленная обработка с истёкшим lease завершается conflict, прежний файл остаётся.
+
+Resource review добавил properties budget 32 KiB/256 на ресурс и 4 MiB на draft, 256 active locks и owner XML 4 KiB. PG aggregate проверяется атомарно; XML response ≤8 MiB формируется до status 207. Это устраняет умножение допустимых per-resource sizes на размер дерева. Metadata bound/rollback проверяется отдельным negative test.
+
+Все 15 профильных PG/race tests прошли в предварительной квалификации; mount_webdav и настоящий GVfs выполнили полный цикл, включая server-created GET. Окончательные source-bound результаты — [session](session.md). Windows ожидает стенда; независимый review и принятие остаточных рисков не выполнены.
+
+Дополнительный review воспроизвёл LOCK-null в Depth:0 locked parent: внутренняя операция создания пустого файла удаляла корректный If и возвращала 423. Условие теперь сохраняется; negative→positive regression включён в TestIntegrationWebDAVNativeCollectionLocks. RED: `.cache/webdav-native-lock-null-red.log` (423 вместо 201), исправление не ослабляет проверку чужих credentials или обход REST/tus.

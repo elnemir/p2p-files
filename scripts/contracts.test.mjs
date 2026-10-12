@@ -8,6 +8,7 @@ const ajv=new Ajv({strict:true});addFormats(ajv);
 const event=ajv.compile(await load('contracts/schemas/event-v1.json'));
 const hook=ajv.compile(await load('contracts/schemas/webhook-v1.json'));
 const manifest=ajv.compile(await load('contracts/schemas/manifest-v1.json'));
+const davCredential=ajv.compile(await load('contracts/schemas/webdav-credential-v1.json'));
 const id='00000000-0000-4000-8000-000000000001';
 test('owner events and webhooks exclude recipient correlation',()=>{
  const valid={schemaVersion:1,id:1,kind:'transfer.published',transferId:id,createdAt:'2026-10-11T00:00:00Z',readAt:null};assert.equal(event(valid),true);assert.equal(event({...valid,recipientEmail:'private@example.test'}),false);assert.equal(event({...valid,createdAt:'yesterday'}),false);
@@ -25,4 +26,11 @@ test('every implemented API route is documented and privileged routes require se
 test('binary Range and tus recovery contracts remain explicit',async()=>{
  const api=await load('contracts/openapi.json');for(const path of ['/api/v1/recipient/downloads/{id}/content','/api/v1/artifacts/{id}/content']){assert.ok(api.paths[path].get.responses['206']);assert.ok(api.paths[path].get.responses['416']);assert.equal(api.paths[path].head.responses['200'].content,undefined);}
  const patch=api.paths['/api/v1/uploads/{id}'].patch;assert.ok(patch.responses['412']);assert.ok(patch.responses['409']);assert.ok(patch.requestBody.content['application/offset+octet-stream']);
+});
+test('WebDAV has an explicit non-REST protocol contract and scoped credential schema',async()=>{
+ const api=await load('contracts/openapi.json');const dav=await load('contracts/webdav.json');assert.deepEqual(dav,api['x-webdav']);
+ for(const method of ['OPTIONS','PROPFIND','HEAD','PUT','MKCOL','MOVE','DELETE','PROPPATCH','GET','COPY','LOCK','UNLOCK'])assert.ok(dav.methods[method]);
+ assert.equal(dav.limits.chunkBytes,4194304);assert.equal(dav.limits.maxXMLBytes,65536);assert.equal(dav.limits.maxDepth,1);
+ const valid={id,url:'https://filex.example/api/v1/webdav/'+id+'/',username:'filex',password:'fixture',expiresAt:'2026-10-13T00:00:00Z'};
+ assert.equal(davCredential(valid),true);assert.equal(davCredential({...valid,username:'admin'}),false);assert.equal(davCredential({...valid,secretHash:'private'}),false);
 });

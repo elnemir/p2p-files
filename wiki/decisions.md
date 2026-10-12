@@ -47,3 +47,6 @@ Design вопросы completion, export snapshot, partial delivery и crypto is
 | Хранение release evidence после удаления CI artifacts | DEV-04 + оператор | Локальная .cache и 14 дней CI не являются бессрочным архивом |
 
 Практические карточки — [план](implementation-plan.md). Новые варианты механизма/провайдера можно исследовать локально, но это не назначение чужого аккаунта, утверждение рисков или разрешение внешнего воздействия. Production deployment всегда требует отдельной команды владельца.
+
+## Дополнение владельца: native WebDAV
+Работа с файлами одного owner draft из штатных Windows/macOS/Linux клиентов разрешена прямым запросом 2026-10-12. [ADR-011](adr/011-native-webdav.md) заменяет upload-only ограничения ADR-010; published immutable/recipient one-time, USER/ADMIN, crypto и production boundaries остаются прежними. Владелец подтвердил отсутствие Windows-стенда: сценарий подготовлен, фактический статус — ожидает стенда. [Текущее руководство](webdav-upload.md), [сессия](session.md).

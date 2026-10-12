@@ -115,7 +115,13 @@ func (a *App) organizationRoutes(m *http.ServeMux) {
 		}
 		defer tx.Rollback(context.Background())
 		var parent string
-		if e = tx.QueryRow(r.Context(), "SELECT id::text FROM transfers WHERE id::text=$1 AND owner_id=$2 AND state='draft' FOR UPDATE", r.PathValue("id"), p.ID).Scan(&parent); e != nil {
+		if e = tx.QueryRow(r.Context(), "SELECT id::text FROM transfers WHERE id::text=$1 AND owner_id=$2 AND state='draft' AND NOT frozen FOR UPDATE", r.PathValue("id"), p.ID).Scan(&parent); e != nil {
+			return e
+		}
+		if e = transfer.CheckDAVLocks(r.Context(), tx, parent, key, false); e != nil {
+			return e
+		}
+		if e = transfer.CheckDAVMembership(r.Context(), tx, parent, key); e != nil {
 			return e
 		}
 		var conflict bool

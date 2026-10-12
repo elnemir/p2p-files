@@ -6,6 +6,7 @@ import (
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/transfer"
+	"github.com/jackc/pgx/v5"
 	"net/http"
 	"sort"
 	"strings"
@@ -43,6 +44,10 @@ func (a *App) treeRoutes(m *http.ServeMux) {
 	}))
 }
 func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings, moves []pathMove, folderPath string, remove bool) error {
+	return a.repathChecked(w, r, p, c, moves, folderPath, remove, "", nil, 204)
+}
+
+func (a *App) repathChecked(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings, moves []pathMove, folderPath string, remove bool, prefix string, check func(pgx.Tx) error, status int) error {
 	ctx := r.Context()
 	tx, e := a.DB.Begin(ctx)
 	if e != nil {
@@ -53,19 +58,50 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 	if e = tx.QueryRow(ctx, "SELECT id::text FROM transfers WHERE id::text=$1 AND owner_id=$2 AND state='draft' AND NOT frozen FOR UPDATE", r.PathValue("id"), p.ID).Scan(&parent); e != nil {
 		return e
 	}
+	if check != nil {
+		if e = check(tx); e != nil {
+			return e
+		}
+	}
 	folderID := r.PathValue("folder")
-	prefix := ""
 	if folderID != "" {
 		if e = tx.QueryRow(ctx, "SELECT path FROM draft_folders WHERE id::text=$1 AND transfer_id=$2", folderID, parent).Scan(&prefix); e != nil {
 			return e
 		}
+	}
+	prefixKey := ""
+	prefixSegments := 0
+	if prefix != "" {
+		prefixKey, e = domain.PathKey(prefix, c.MaxPathBytes)
+		if e != nil {
+			return e
+		}
+		prefixSegments = len(strings.Split(prefix, "/"))
 		if !remove {
-			if _, e = domain.PathKey(folderPath, c.MaxPathBytes); e != nil {
+			var targetKey string
+			if targetKey, e = domain.PathKey(folderPath, c.MaxPathBytes); e != nil {
 				return e
 			}
-			if strings.HasPrefix(folderPath, prefix+"/") {
+			if strings.HasPrefix(targetKey, prefixKey+"/") {
 				return auth.ErrInvalid
 			}
+		}
+	}
+	if prefix != "" {
+		if e = transfer.CheckDAVMembership(ctx, tx, parent, prefixKey); e != nil {
+			return e
+		}
+		if e = transfer.CheckDAVLocks(ctx, tx, parent, prefixKey, true); e != nil {
+			return e
+		}
+	}
+	if folderPath != "" {
+		key, err := domain.PathKey(folderPath, c.MaxPathBytes)
+		if err != nil {
+			return err
+		}
+		if e = transfer.CheckDAVLocks(ctx, tx, parent, key, true); e != nil {
+			return e
 		}
 	}
 	type item struct{ id, path, key, table string }
@@ -73,7 +109,7 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 	for _, table := range []string{"files", "draft_folders"} {
 		predicate := ""
 		if table == "files" {
-			predicate = " AND state NOT IN ('cancelled','deleted')"
+			predicate = " AND staged_until IS NULL AND state NOT IN ('cancelled','deleted')"
 		}
 		rows, e := tx.Query(ctx, "SELECT id::text,path,path_key FROM "+table+" WHERE transfer_id=$1"+predicate, parent)
 		if e != nil {
@@ -106,12 +142,17 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 	for i := range items {
 		v := &items[i]
 		target := v.path
-		if folderID != "" && (v.path == prefix || strings.HasPrefix(v.path, prefix+"/")) {
+		if prefixKey != "" && (v.key == prefixKey || strings.HasPrefix(v.key, prefixKey+"/")) {
 			if remove {
 				changed[v.id] = true
 				continue
 			}
-			target = folderPath + strings.TrimPrefix(v.path, prefix)
+			// Match the canonical namespace, then retain the original suffix. Unicode
+			// case folding can change byte length, so byte-prefix slicing is unsafe.
+			target = folderPath
+			if suffix := strings.Join(strings.Split(v.path, "/")[prefixSegments:], "/"); suffix != "" {
+				target += "/" + suffix
+			}
 		}
 		if value, ok := replacements[v.id]; ok && v.table == "files" {
 			target = value
@@ -127,6 +168,20 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 		keys[key] = v.id
 		if target != v.path {
 			changed[v.id] = true
+		}
+		if changed[v.id] {
+			if e = transfer.CheckDAVMembership(ctx, tx, parent, v.key); e != nil {
+				return e
+			}
+			if e = transfer.CheckDAVMembership(ctx, tx, parent, key); e != nil {
+				return e
+			}
+			if e = transfer.CheckDAVLocks(ctx, tx, parent, v.key, true); e != nil {
+				return e
+			}
+			if e = transfer.CheckDAVLocks(ctx, tx, parent, key, true); e != nil {
+				return e
+			}
 		}
 		v.path = target
 		v.key = key
@@ -162,6 +217,15 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 		if !changed[v.id] {
 			continue
 		}
+		if v.table == "files" {
+			var frozen bool
+			if e = tx.QueryRow(ctx, "SELECT frozen FROM files WHERE id=$1 FOR UPDATE", v.id).Scan(&frozen); e != nil {
+				return e
+			}
+			if frozen {
+				return transfer.ErrConflict
+			}
+		}
 		if remove {
 			if v.table == "files" {
 				if _, e = tx.Exec(ctx, "UPDATE files SET state='cancelled',upload_epoch=upload_epoch+1,path_key='#cancelled:'||id::text WHERE id=$1", v.id); e != nil {
@@ -187,6 +251,6 @@ func (a *App) repath(w http.ResponseWriter, r *http.Request, p auth.Principal, c
 	if e = tx.Commit(ctx); e != nil {
 		return e
 	}
-	w.WriteHeader(204)
+	w.WriteHeader(status)
 	return nil
 }

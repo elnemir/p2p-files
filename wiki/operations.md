@@ -15,3 +15,6 @@ Optional расписания: backup (по умолчанию выключен�
 
 ## Ограничения
 Manual restore-test выполняется по runbook, без scheduled reminder. Локальный drill не доказывает production RPO/RTO; такие значения фиксируют измерением на целевой инфраструктуре. TLS/proxy/CIDR, upgrade, локальные load/DR/security gates реализованы; public ACME/host/providers, target DR и независимый review остаются внешней приёмкой [по протоколу](environment-acceptance.md). Production deploy требует отдельного поручения владельца.
+
+## Нативный WebDAV при эксплуатации
+Сначала применить reviewed upgrade 16→17 с backup/drain/reconcile/reopen. Никакой отдельный DAV listener не открывается. Перед публикацией пользователь закрывает файлы и отключает сетевую папку: active locks/live stages дадут conflict. Locks исчезают по TTL/отзыву credential; stages убирает обычный worker после lease expiry, hold сохраняет bytes. Проверять deletion jobs/storage capacity при неуспешных PUT; неизвестная длина требует второго encrypted прохода. [Runbook подключения и Windows pending](webdav-upload.md), [upgrade](controlled-upgrade.md).

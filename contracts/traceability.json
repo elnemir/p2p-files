@@ -7,7 +7,8 @@
     "implementation": [
       "apps/web/components/FileX.tsx",
       "apps/web/app/globals.css",
-      "scripts/e2e/transfers.ts"
+      "scripts/e2e/transfers.ts",
+      "apps/web/components/WebDAVPanel.tsx"
     ],
     "tests": [
       {
@@ -29,6 +30,11 @@
         "id": "T-FR-001-4",
         "path": "scripts/e2e/visual.spec.ts",
         "name": "reviewed public page visual regression"
+      },
+      {
+        "id": "T-FR-001-5",
+        "path": "scripts/e2e/webdav.spec.ts",
+        "name": "WebDAV credential UI uploads into a draft and revokes access"
       }
     ],
     "gap": "Автоматизированы Chromium/Firefox/WebKit и две mobile emulation, RU/EN/themes/keyboard/error/320px/axe/visual. Исторический PASS: wiki/history/development-evidence-2026-10-11.md. Реальные Safari/mobile и manual assistive-technology WCAG: EXT-05, wiki/implementation-plan.md."
@@ -42,7 +48,11 @@
       "internal/files/files.go",
       "internal/files/policy.go",
       "internal/httpapi/transfers.go",
-      "apps/web/components/FileX.tsx"
+      "apps/web/components/FileX.tsx",
+      "internal/httpapi/webdav.go",
+      "internal/files/cancel.go",
+      "internal/httpapi/webdav_put.go",
+      "internal/files/staging.go"
     ],
     "tests": [
       {
@@ -59,6 +69,31 @@
         "id": "T-FR-002-3",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-FR-002-4",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVUploadTreeAndPublish"
+      },
+      {
+        "id": "T-FR-002-5",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVInterruptedAndRevokedWrites"
+      },
+      {
+        "id": "T-FR-002-6",
+        "path": "internal/httpapi/webdav_client_integration_test.go",
+        "name": "TestIntegrationWebDAVRcloneClient"
+      },
+      {
+        "id": "T-FR-002-7",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeOverwriteAndUnknownLength"
+      },
+      {
+        "id": "T-FR-002-8",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeStagingHiddenAndCleanup"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -71,7 +106,11 @@
     "implementation": [
       "internal/httpapi/tree.go",
       "internal/httpapi/organization.go",
-      "apps/web/components/FileX.tsx"
+      "apps/web/components/FileX.tsx",
+      "internal/httpapi/webdav_tree.go",
+      "internal/httpapi/webdav_properties.go",
+      "internal/transfer/dav.go",
+      "internal/worker/bulk.go"
     ],
     "tests": [
       {
@@ -88,6 +127,21 @@
         "id": "T-FR-003-3",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-FR-003-4",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVConcurrentNamesAndFreeze"
+      },
+      {
+        "id": "T-FR-003-5",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativePropertiesAtomic"
+      },
+      {
+        "id": "T-FR-003-6",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeCollectionLocks"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -100,7 +154,8 @@
     "implementation": [
       "internal/transfer/store.go",
       "internal/httpapi/transfers.go",
-      "internal/database/migrations/0010_crypto_maintenance.sql"
+      "internal/database/migrations/0010_crypto_maintenance.sql",
+      "internal/transfer/dav.go"
     ],
     "tests": [
       {
@@ -122,6 +177,16 @@
         "id": "T-FR-004-4",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "authenticated upload resumes, publishes, issues ZIP, renders reports and exports"
+      },
+      {
+        "id": "T-FR-004-5",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeLocksAndConditions"
+      },
+      {
+        "id": "T-FR-004-6",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeStagingHiddenAndCleanup"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -473,7 +538,11 @@
     "implementation": [
       "internal/auth/store.go",
       "internal/auth/password.go",
-      "internal/httpapi/app.go"
+      "internal/httpapi/app.go",
+      "internal/httpapi/webdav.go",
+      "internal/httpapi/webdav_conditions.go",
+      "internal/httpapi/webdav_locks.go",
+      "internal/httpapi/webdav_read.go"
     ],
     "tests": [
       {
@@ -490,6 +559,21 @@
         "id": "T-SEC-001-3",
         "path": "internal/httpapi/websocket_integration_test.go",
         "name": "TestIntegrationWebSocketOriginPrivacyAndRevocation"
+      },
+      {
+        "id": "T-SEC-001-4",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVCredentialsAndBoundaries"
+      },
+      {
+        "id": "T-SEC-001-5",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVCredentialIssuePrivacy"
+      },
+      {
+        "id": "T-SEC-001-6",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeLocksAndConditions"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -537,7 +621,9 @@
       "internal/files/relocate.go",
       "internal/operations/archive.go",
       "internal/operations/keys.go",
-      "internal/database/auditkey.go"
+      "internal/database/auditkey.go",
+      "internal/httpapi/webdav.go",
+      "internal/files/staging.go"
     ],
     "tests": [
       {
@@ -584,6 +670,16 @@
         "id": "T-SEC-003-9",
         "path": "internal/operations/archive_test.go",
         "name": "TestArchiveTamperTruncateWrongKeyAndIncomplete"
+      },
+      {
+        "id": "T-SEC-003-10",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVFinalizationAndStorageFaults"
+      },
+      {
+        "id": "T-SEC-003-11",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeOverwriteAndUnknownLength"
       }
     ],
     "gap": "Encrypted BackupProvider, rewrap/recovery/fresh DEKs и durable budgets проверены локально; host escrow/production acceptance отдельно."
@@ -631,7 +727,10 @@
       "internal/networkpolicy/policy.go",
       "internal/httpapi/network.go",
       "internal/settings/store.go",
-      "scripts/production_config.py"
+      "scripts/production_config.py",
+      "internal/httpapi/webdav.go",
+      "internal/httpapi/webdav_xml.go",
+      "internal/httpapi/webdav_properties.go"
     ],
     "tests": [
       {
@@ -668,6 +767,21 @@
         "id": "T-SEC-005-7",
         "path": "scripts/test-ingress.py",
         "name": "test_generated_tls_ingress"
+      },
+      {
+        "id": "T-SEC-005-8",
+        "path": "internal/httpapi/webdav_test.go",
+        "name": "TestWebDAVPathAndXMLBoundaries"
+      },
+      {
+        "id": "T-SEC-005-9",
+        "path": "internal/httpapi/webdav_integration_test.go",
+        "name": "TestIntegrationWebDAVTransportAndMaintenance"
+      },
+      {
+        "id": "T-SEC-005-10",
+        "path": "internal/httpapi/webdav_native_integration_test.go",
+        "name": "TestIntegrationWebDAVNativeMetadataBounds"
       }
     ],
     "gap": "Trusted single proxy, IPv4 CIDR, generation fencing, host reset и HTTPS/ACME generator реализованы. Исторический local TLS PASS не заменяет public ACME/DNS/host и independent review: EXT-01/06, wiki/environment-acceptance.md."
@@ -920,7 +1034,8 @@
       "scripts/test-upgrade.py",
       "deploy/Dockerfile.postgres",
       "deploy/Dockerfile.redis",
-      "deploy/Dockerfile.traefik"
+      "deploy/Dockerfile.traefik",
+      "internal/database/migrations/0017_native_webdav.sql"
     ],
     "tests": [
       {
@@ -993,7 +1108,9 @@
       "scripts/e2e/contracts.ts",
       "scripts/contract_compatibility.py",
       "apps/web/lib/api-schema.ts",
-      "scripts/check_generated_types.mjs"
+      "scripts/check_generated_types.mjs",
+      "contracts/webdav.json",
+      "contracts/schemas/webdav-credential-v1.json"
     ],
     "tests": [
       {
@@ -1025,6 +1142,11 @@
         "id": "T-NFR-001-6",
         "path": "scripts/test_contract_compatibility.py",
         "name": "test_removal_and_type_changes_fail"
+      },
+      {
+        "id": "T-NFR-001-7",
+        "path": "scripts/contracts.test.mjs",
+        "name": "WebDAV has an explicit non-REST protocol contract and scoped credential schema"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1086,7 +1208,8 @@
       "scripts/check_dependencies.mjs",
       ".github/dependency-policy.json",
       ".npmrc",
-      "eslint.config.mjs"
+      "eslint.config.mjs",
+      "scripts/e2e/webdav.spec.ts"
     ],
     "tests": [
       {
@@ -1177,22 +1300,22 @@
       {
         "id": "T-NFR-003-18",
         "path": "scripts/e2e-contracts.test.mjs",
-        "name": "observer detaches before waiting for in-flight responses"
+        "name": "observer closes the capture boundary before waiting for an in-flight response"
       },
       {
         "id": "T-NFR-003-19",
         "path": "scripts/e2e-contracts.test.mjs",
-        "name": "observer retains asynchronous capture failures without unhandled rejections"
+        "name": "observer retains asynchronous capture failures without replaying the request"
       },
       {
         "id": "T-NFR-003-20",
         "path": "scripts/e2e-contracts.test.mjs",
-        "name": "observer still rejects invalid JSON and contract bodies"
+        "name": "observer still rejects malformed JSON, undocumented statuses and invalid contract bodies"
       },
       {
         "id": "T-NFR-003-21",
         "path": "scripts/e2e-contracts.test.mjs",
-        "name": "observer ignores non-API resources before asking the browser for their response"
+        "name": "observer leaves downloads and non-API resources on their native transport"
       },
       {
         "id": "T-NFR-003-22",
@@ -1208,6 +1331,26 @@
         "id": "T-NFR-003-24",
         "path": "scripts/dependencies.test.mjs",
         "name": "the reviewed dependency set is consistent"
+      },
+      {
+        "id": "T-NFR-003-25",
+        "path": "internal/httpapi/webdav_test.go",
+        "name": "FuzzWebDAVPathAndXML"
+      },
+      {
+        "id": "T-NFR-003-26",
+        "path": "scripts/e2e/contract-capture.spec.ts",
+        "name": "contract capture survives navigation while a real HTTP response is in flight"
+      },
+      {
+        "id": "T-NFR-003-27",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "observer forwards a real response once without redirect, retry or payload override"
+      },
+      {
+        "id": "T-NFR-003-28",
+        "path": "scripts/e2e-contracts.test.mjs",
+        "name": "non-JSON responses retain upstream bytes and are not treated as JSON contracts"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."

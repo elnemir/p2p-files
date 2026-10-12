@@ -30,3 +30,10 @@ Download all атомарно резервирует все оставшиеся
 
 ## Ограничения
 Lifecycle guard проверяется непосредственно при request/commit, а не только scheduler. Поэтому задержка worker не продлевает recipient права. DB state completed означает server-observed coverage, не доказательство сохранения получателем. Restore не отменяет фактическое удаление payload; восстановленные ссылки/API tokens удерживаются закрытым gate до review. [Runbook](operations-recovery.md). Проверяемые transitions связаны с [матрицей](test-matrix.md).
+
+## WebDAV: credentials, stages и locks
+[ADR-011](adr/011-native-webdav.md): credential active → expired/revoked/auth-epoch-invalid. Draft → published немедленно закрывает DAV namespace. Owner GET не создаёт recipient state.
+
+Stage: uploading hidden → finalizing hidden → ready hidden → atomic visible swap (`staged_until=NULL`) либо cancelled + cleanup. При неизвестной длине provisional ciphertext переносится bounded decrypt/re-encrypt в новый stage с точным размером. Lease продлевается guards; crash → expiry → worker cancellation. Freeze блокирует отмену/cleanup до снятия hold. Прежний visible file не меняется при ошибке кандидата.
+
+Lock: absent → active → refreshed/released/expired/revoked. UUID token принимается только с positive matched If и credential владельца lock. Depth 0 папки защищает membership; infinity — subtree. REST/tus/bulk не обходят lock. Publish требует all ready, no active locks, no live stages. Domain enums/AsyncAPI не расширены; staging и lock lifecycle — дополнительные persisted guards.

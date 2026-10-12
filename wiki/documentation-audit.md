@@ -1,44 +1,27 @@
-# Аудит и актуализация документации
+# Аудит актуальности wiki
 
 ## Контекст и проблема
+Срез 2026-10-12: владелец запросил штатные WebDAV клиенты, актуальную базу знаний и обновлённые туры. Upload-only тексты противоречили новым GET/LOCK/overwrite, а обзорные документы всё ещё называли 16 migrations, 9 ADR и 107 HTTP операций. Исторический [аудит переноса](history/documentation-audit-2026-10-11.md) сохранён отдельно.
 
-Дата: 2026-10-11. Запрос: перенести весь комплект из docs в wiki, сверить его с реализованным проектом и подготовить продолжение разработки. Исходный clean HEAD `21aaa00`; прочитаны все 50 Markdown страниц корня/docs/wiki, 9 ADR, актуальные contracts, config/bootstrap, Makefile/CI и связанные generators. Первоначальный [аудит 2026-10-10](history/documentation-audit-2026-10-10.md) сохранён как исторический материал.
-
-До переноса нормативные документы находились отдельно от wiki. Корневой MEMORY описывал начало фазы 7, CONTRIBUTING требовал host Chromium, несколько страниц предлагали ещё реализовать уже прошедшие проверки. Исторические числа и текущие инструкции смешивались. CLI, docs checker, matrix generator и release bundle содержали пути к старому каталогу.
-
-## Решение и карта переноса
-
-Все 20 страниц перенесены без изменения имён в wiki: acceptance-criteria, api-examples, architecture, cli, decisions, encryption-format, hardening, implementation-plan, incident-response, key-management, operations, performance-testing, release-checklist, release-notes, requirements, risk-register, security, state-machines, test-matrix, third-party-review (расширение `.md`). Дублирующий каталог удалён; forwarding copies не создавались.
-
-| Было | Стало / назначение |
+## Сверка baseline → текущая реализация
+| Статус | Результат и основание |
 |---|---|
-| Продуктовые документы в отдельном каталоге | wiki/*.md, единая навигация index |
-| wiki/development.md со смешанной хронологией | Текущая инструкция development + history/development-evidence-2026-10-11.md |
-| wiki/documentation-audit.md о specification-only | Этот актуальный аудит + history/documentation-audit-2026-10-10.md |
-| Предыдущий wiki/session.md | sessions/2026-10-11-phase7.md + новый рабочий session |
-| README/CONTRIBUTING/MEMORY | Короткие актуальные указатели и правила без копирования журнала |
-| Hardcoded tooling paths | check_docs/traceability/release_bundle/CLI используют wiki |
+| Реализовано | Owner draft GET/Range, atomic PUT replacement, unknown-length encrypted rewrap, PG locks/If, persisted properties/timestamps, stages/cleanup; migration 0017, ADR-011 |
+| Изменено | Полностью переписан WebDAV runbook; синхронизированы architecture/core/file delivery/data model/states/security/threat/design review, config/API/operations/recovery/upgrade, testing/map/backlog/current state/index |
+| Добавлено | Скрипты фактической проверки macOS/GVfs и Windows PowerShell; 6 native server tests, If fuzz, guards REST/tus/bulk, explicit resource budgets; 4 кадра и озвученная глава WebDAV |
+| Не подтверждено | Windows ожидает стенда; другие файловые менеджеры/Office, публичный TLS и external release acceptance не заявлены проверенными |
+| Требует доработки | DEV-01/03/04/05 и EXT/REL из плана остаются открыты; 5 partial MUST и 14 внешних решений не закрываются этим срезом |
 
-Поток знаний: requirements/ADR → source contracts → implementation/tests → generated matrix → dated evidence → current state/session → следующие задачи. Контракты остались в contracts, генераторы в scripts, migration/runtime поведение не менялось.
-
-## Сверка baseline → текущее состояние
-
-| Классификация | Что подтверждено / исправлено |
+## Карта сверки документации
+| Группа | Действие |
 |---|---|
-| Реализовано | Фазы 1–6, 9 ADR, 16 migrations, 107 операций; technical phase 7 на 7dce226; 32 requirement IDs сохранены |
-| Изменено | Canonical wiki paths/entrypoints; current state отделён от истории; production guard описан как безусловный кодовый отказ |
-| Добавлено | Карта кода, config reference, developer workflow/шаблон задачи, testing/evidence guide, backlog с зависимостями, external acceptance matrix/шаблон протокола |
-| Не подтверждено | Реальные host/DNS/ACME/SMTP/S3/escrow/DR, устройства/AT, independent review и решения владельца |
-| Требует доработки | DEV-01 production admission, DEV-02 tooling maintenance, DEV-03 license package/текст лицензии владельца, DEV-04 evidence retention |
-
-Ранние расхождения A-01–08 исходного аудита получили traceability, ADR-001–009, state/data/security/crypto/recovery contracts и тесты. A-09 (исходное интервью отсутствует) остаётся ограничением provenance; полнота интервью не заявляется. A-10 (разрозненные источники/неотслеживаемые документы) устранён предыдущими commits и этим каноническим переносом. Старые рекомендации архива не становятся новым backlog автоматически.
-
-## Сохранённые ограничения
-
-Все 32 MUST и 27 verified/5 partial остаются; ни один pending risk/license decision не принят. Замена source paths не подтверждает новый полный runtime acceptance. AGENTS/scripts/CLI меняют source fingerprint, поэтому 13 прежних PASS относятся к историческому кандидату, а не автоматически к текущему diff. Старые gate records сохранены локально в `.cache/evidence/documentation-migration/baseline-gates`.
+| requirements/decisions/ADR | 32 MUST сохранены; новое прямое требование описано как дополнение. ADR-010 помечен историческим, ADR-011 текущий; прежние ADR и бизнес-инварианты сохранены. |
+| architecture/core/design/security/data/state/crypto | Описаны owner-versus-recipient boundary, hidden swap/lease/freeze, parent locks и unchanged FXP1; добавлены размер/CPU/storage trade-offs. |
+| development/config/API/CLI/operations/ingress/upgrade | Новых env/портов нет; migration 16→17 требует baseline prepare и backup. Тестовые команды используют disposable ресурсы; production guard сохранён. CLI интерфейс не изменён. |
+| testing/contracts/matrix/release | 108 REST/tus операций плюс native wire profile, 17 migrations, 11 ADR. Traceability генерируется; source-bound gates не переносятся с прежнего diff. External criteria/risk/license registry не переутверждаются. |
+| overview/backlog/repository/docs audit | Текущее состояние отделено от historical evidence; задачи Windows и release имеют явные входы и критерии. Branch/dependency/governance страницы остаются историей своих GitHub проверок, не новым заявлением CI. |
+| screen-tour/tour-maintenance | Все 48 кадров пересняты, 20 глав/79 cues, единый MP4 Liza; screenshots без ретуши, synthetic data. Видео отдельно от проверки native backend. |
+| history/sessions | Исторические hashes/counts не переписаны; добавлены links к текущему состоянию. |
 
 ## Проверка и продолжение
-
-PASS: 59 Markdown, все 32 requirement statements сохранены дословно, все 20 страниц перенесены, broken links/unreachable wiki pages отсутствуют. Отрицательные пробы подтвердили отказ при прежнем каталоге и orphan wiki page. make check, compatibility, source/secret scan и сборка пяти verifier targets прошли на одном source hash; release notes и checksums bundle сверены. Окончательные записи — [session](session.md). Полные PG/browser/load/DR/image gates в этом документационном шаге не повторялись, исторические PASS не переносятся на новый hash.
-
-Практический следующий шаг — [implementation plan](implementation-plan.md). [Environment acceptance](environment-acceptance.md) содержит все 14 decision IDs и необходимые входы; новая подготовка не выдумывает адреса, секреты, SLA или разрешение production deploy.
+`check_docs.py` обходит все Markdown, локальные ссылки и достижимость страниц; traceability проверяет 32 IDs и существующие implementation/test paths. `build_contracts.py --check` и type generation сверяют wire/schema/types. Тур имеет собственные hashes, просмотр всех кадров, полный decode и browser QA. Окончательные числа/gates/source hashes — [session](session.md); [план](implementation-plan.md) и [внешняя приёмка](environment-acceptance.md) задают продолжение. Code review внутри этой задачи не является независимым security approval.

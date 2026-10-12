@@ -33,13 +33,14 @@ class LocalHTTPS(http.client.HTTPSConnection):
         self.sock = self._context.wrap_socket(stream, server_hostname=self.host)
 
 
-def request(port, context, path, body=None, headers=None):
+def request(port, context, path, body=None, headers=None, method=None):
     conn = LocalHTTPS(port, context)
     values = {'Host': DOMAIN, **(headers or {})}
     if body is not None:
-        values.update({'Content-Type': 'application/json', 'Origin': 'https://' + DOMAIN})
+        values.update({'Content-Type': 'application/octet-stream' if isinstance(body, bytes) else 'application/json', 'Origin': 'https://' + DOMAIN})
     try:
-        conn.request('POST' if body is not None else 'GET', path, body=json.dumps(body) if body is not None else None, headers=values)
+        payload = body if isinstance(body, bytes) else json.dumps(body) if body is not None else None
+        conn.request(method or ('POST' if body is not None else 'GET'), path, body=payload, headers=values)
         response = conn.getresponse()
         return response.status, dict(response.getheaders()), response.read()
     finally:
@@ -182,7 +183,7 @@ def test_generated_tls_ingress():
                 if 'max-age=31536000' not in headers.get('Strict-Transport-Security', '') or headers.get('Referrer-Policy') != 'no-referrer':
                     raise RuntimeError('missing TLS privacy headers')
             credentials = {'email': 'admin@example.test', 'password': password}
-            status, headers, _ = request(https_port, context, '/api/v1/auth/login', credentials, {'X-Forwarded-For': '203.0.113.222', 'X-Forwarded-Proto': 'http'})
+            status, headers, login_body = request(https_port, context, '/api/v1/auth/login', credentials, {'X-Forwarded-For': '203.0.113.222', 'X-Forwarded-Proto': 'http'})
             if status != 200 or 'Secure' not in headers.get('Set-Cookie', ''):
                 raise RuntimeError('trusted HTTPS login/cookie failed: status=' + str(status) + ', secureCookie=' + str('Secure' in headers.get('Set-Cookie', '')))
             # A forged public header cannot move the rate-limit bucket to the spoofed IP.
@@ -191,6 +192,47 @@ def test_generated_tls_ingress():
             count = dc('exec', '-T', 'postgres', 'psql', '-U', 'filex', '-d', 'filex', '-At', '-c', "SELECT count(*) FROM auth_limits WHERE key='" + forged_bucket + "'", capture_output=True).stdout.strip()
             if count != '0':
                 raise RuntimeError('client spoofed rate-limit identity through Traefik')
+            # Open this disposable fixture only after inspecting reconciliation;
+            # then test WebDAV over the real TLS/router/auth boundary.
+            cli('recovery', 'reconcile', value={'reason': 'WebDAV TLS fixture reconciliation'})
+            reconciliation_id = cli('operations', 'status')['state']['reconciliationId']
+            report = cli('recovery', 'report', value={'reconciliationId': reconciliation_id})
+            if not report['passed'] or report['findings']:
+                raise RuntimeError('unexpected WebDAV TLS fixture reconciliation findings')
+            cli('recovery', 'reopen', value={'reconciliationId': reconciliation_id, 'hash': report['hash'], 'reason': 'Reviewed isolated TLS WebDAV fixture', 'acknowledgeCapabilities': True})
+            owner_headers = {'Cookie': headers['Set-Cookie'].split(';', 1)[0], 'X-CSRF-Token': json.loads(login_body)['csrfToken']}
+            status, _, response = request(https_port, context, '/api/v1/transfers', {}, owner_headers)
+            if status != 201:
+                raise RuntimeError('TLS draft creation failed: ' + str(status))
+            transfer_id = json.loads(response)['id']
+            status, _, response = request(https_port, context, '/api/v1/transfers/' + transfer_id + '/webdav-credentials', {'ttlSeconds': 3600}, owner_headers)
+            if status != 201:
+                raise RuntimeError('TLS WebDAV credential creation failed: ' + str(status))
+            credential = json.loads(response)
+            dav_headers = {'Authorization': 'Basic ' + base64.b64encode(('filex:' + credential['password']).encode()).decode()}
+            dav_path = '/api/v1/webdav/' + transfer_id + '/'
+            for method, suffix, body, extra, expected, expected_body in [
+                ('OPTIONS', '', None, {}, 200, None),
+                ('MKCOL', 'documents/', None, {}, 201, None),
+                ('PUT', 'documents/tls.txt', b'encrypted TLS WebDAV fixture', {}, 201, None),
+                ('PROPFIND', 'documents/', None, {'Depth': '1'}, 207, None),
+                ('GET', 'documents/tls.txt', None, {}, 200, b'encrypted TLS WebDAV fixture'),
+                ('HEAD', 'documents/tls.txt', None, {}, 200, b''),
+                ('GET', 'documents/tls.txt', None, {'Range': 'bytes=0-8'}, 206, b'encrypted'),
+                ('PUT', 'documents/tls.txt', b'atomic TLS replacement', {}, 204, None),
+                ('GET', 'documents/tls.txt', None, {}, 200, b'atomic TLS replacement'),
+                ('DELETE', 'documents/', None, {}, 204, None),
+            ]:
+                status, _, response = request(https_port, context, dav_path + suffix, body, {**dav_headers, **extra}, method)
+                if status != expected:
+                    raise RuntimeError('TLS WebDAV ' + method + ' failed: ' + str(status))
+                if expected_body is not None and response != expected_body:
+                    raise RuntimeError('TLS WebDAV ' + method + ' payload mismatch')
+                if method == 'PROPFIND' and b'tls.txt' not in response:
+                    raise RuntimeError('TLS WebDAV file missing from listing')
+            status, _, _ = request(https_port, context, '/api/v1/auth/tokens/' + credential['id'], None, {**owner_headers, 'Origin': 'https://' + DOMAIN}, 'DELETE')
+            if status != 204 or request(https_port, context, dav_path, headers=dav_headers, method='OPTIONS')[0] != 401:
+                raise RuntimeError('TLS WebDAV revocation failed')
             active = cli('settings', 'show')
             active['value']['networkPolicy']['allowedClientCidrs'] = ['192.0.2.0/24']
             cli('settings', 'apply', value={'expectedRevision': active['revision'], 'value': active['value']})
@@ -214,7 +256,7 @@ def test_generated_tls_ingress():
             state = cli('operations', 'status')
             if state['state']['mode'] == 'open':
                 raise RuntimeError('network reset reopened data plane')
-            print('PASS: generated TLS ingress, TLS 1.2 success/TLS 1.1 rejection, CA validation, redirect/HSTS, secure cookies, Host/private routes, proxy spoof rejection, CIDR denial, host reset and restart fencing. Public ACME was not contacted.')
+            print('PASS: generated TLS ingress, TLS 1.2 success/TLS 1.1 rejection, CA validation, redirect/HSTS, secure cookies, Host/private routes, proxy spoof rejection, WebDAV credentials/collection/upload/list/delete/revoke, CIDR denial, host reset and restart fencing. Public ACME was not contacted.')
         finally:
             dc('down', '--volumes', '--remove-orphans')
 

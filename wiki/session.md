@@ -1,59 +1,92 @@
 # Session State
 
 ## Task
-Сгенерировать все фразы видеотура FileX голосом ElevenLabs Liza через открытую пользователем вкладку Chrome после отказа API. Завершить локальную сборку видео, сохранить аудио и обновить инструкции. Продолжение: предоставить один самостоятельный видеофайл для просмотра и передачи вне галереи, перенести его в репозиторий, выполнить commit и push. Предыдущая сессия — в [истории](sessions/2026-10-12-before-liza-narration.md).
+Завершить поддержку штатных WebDAV-клиентов macOS/Linux/Windows, актуализировать wiki, фото- и видеотуры. Windows по прямому решению владельца **ожидает стенда**. Ветка `codex/webdav-upload`, база `28ab4f36e15a0b5e052b23e0f058bdda7a1c9d12`; исходный незакоммиченный срез сохранён: [upload inbox](sessions/2026-10-12-webdav-inbox.md).
 
-Текущая команда владельца: объединить ветки. Входной снимок: `main` / `5096726` и `codex/tour-liza` / `5166594`; других удалённых веток и открытых PR нет. Разрешён squash merge через защищённый main с последующей проверкой main и удалением объединённой рабочей ветки.
-
-Операция объединения оформлена в [PR #21](https://github.com/elnemir/p2p-files/pull/21). Это постоянная ссылка на фактический статус, итоговый merge SHA и обязательные checks; при восстановлении сессии сначала прочитать PR и обновить refs через fetch. Предыдущие результаты ниже — проверка исходного тура, не замена PR/main CI. Рабочее дерево перед подготовкой объединения было чистым; основной код и MP4 в этом шаге не менялись.
+Продолжение 2026-10-12: владелец явно запросил commit и push завершённого среза в GitHub. Scope включает реализацию, contracts, тесты, wiki и обновлённые туры.
 
 ## Status
-**Завершено локально 2026-10-12:** 19 глав / 4647 символов сгенерированы, скачаны и включены в MP4 длительностью 324,60 s (5:25). Остаток в ElevenLabs: 5324 из первоначальных 9971 кредитов; расход 4647, готовые главы повторно не генерировались. Голос Liza, `KzqxCy7zSSePwgb1Cz0Q`, модель Eleven Multilingual v2.
+Реализация, wiki и туры завершены; подготовлен commit/push в `codex/webdav-upload`. Все 13 локальных gates и реальные macOS/GVfs прошли на одном source; перед commit проверено совпадение всех 13 records с неизменёнными файлами, возраст менее часа. Windows ожидает стенда. Production deployment не выполняется.
 
-Основа — main `5096726741c31ee9d9a9faf70086bc8d942ed514`; рабочая ветка `codex/tour-liza`. **Commit и push выполнены:** [ad00a3d](https://github.com/elnemir/p2p-files/commit/ad00a3d1e60c7af4aa7f03e450d412dd8fc60b32), `feat(tour): publish standalone Liza-narrated video`, затем журнал [f9b3670](https://github.com/elnemir/p2p-files/commit/f9b367057adce8c49f99dda0c4258b7c8ee310d7). При повторной команде «коммит и пуш» дерево было чистым, локальный и удалённый SHA совпали; новых изменений кода или медиа не обнаружено. Этот документационный шаг сохраняет завершившиеся результаты CI. Проверенный source SHA-256 не изменился: `3e179312df400d012e686e129bc88f1ace7961d8e7866dbc030eb328933adcfe`.
+Окончательный полный source SHA-256: `768864c97a397db92a18a908948b577e4b3bc32fb7a3388e6110843aceafab18`. Квалификация завершена 2026-10-12 17:39 MSK. Gate records: `.cache/evidence/gates`; логи: `.cache/webdav-native-final-*.log`. Исторические PASS не подставляются под этот hash.
 
-**Remote CI завершён успешно для точного commit `f9b367057adce8c49f99dda0c4258b7c8ee310d7`:** [development-checks](https://github.com/elnemir/p2p-files/actions/runs/38218316682) и [security-analysis](https://github.com/elnemir/p2p-files/actions/runs/38218320189). Эти результаты относятся к указанному коммиту, а последующее документирование проверяется отдельно через docs-check; отдельный полный CI для нового документационного коммита не заявляется.
+## Итоговая локальная квалификация
 
-Для передачи и хранения в Git используется [wiki/tour/filex-tour.mp4](tour/filex-tour.mp4): один файл со всеми 19 главами, голосом Liza и вшитыми субтитрами. Временный экспорт перенесён в этот канонический путь с проверкой одинакового SHA-256; полное декодирование ранее выданной копии PASS. Повторных синтеза и перекодирования не было.
+Все записи ниже — source `768864c97a397db92a18a908948b577e4b3bc32fb7a3388e6110843aceafab18`, 2026-10-12; `sourceUnchanged=true`, exitCode=0.
+
+| Gate | Результат / время | Граница |
+|---|---|---|
+| check | PASS / 39.7 s | gofmt/vet/staticcheck, TS/lint/format, Go race, Node/Python/contract/docs checks и сборки |
+| integration | PASS / 160.3 s | 51/51 TestIntegration, 15 WebDAV, реальный rclone включён; пропусков нет |
+| browser | PASS / 373.1 s | 35/35: Chromium, Firefox, WebKit и два мобильных профиля; skipped/unexpected/flaky=0 в итоговом прогоне |
+| ingress | PASS / 15.7 s | TLS/router/auth boundary: GET bytes, HEAD, Range, overwrite/read, revoke и network negatives |
+| upgrade | PASS / 49.1 s | baseline 28ab4f3/schema 16 → schema 17; backups, downgrade/startup faults, retained session/payload, reopen |
+| fuzz | PASS / 90.2 s | 5 настоящих campaigns по 15 s: path, FXP1, Range, WebDAV XML/path и If |
+| verifier | PASS / 4.8 s | 5 cross-built targets, checksums и локальный unpublished review bundle |
+| images | PASS / 9.3 s | 5 образов, 0 HIGH/CRITICAL; UNKNOWN finding сохранён в inventory |
+| performance | PASS / 38.5 s | smoke 32 MiB/2000 rows; Local→synthetic TLS S3, rotation, crash/retry, DR, one-time ZIP; не release-size |
+| compatibility | PASS / 0.1 s | консервативный compatibility check существующего baseline |
+| licenses | PASS / 3.7 s | inventory/SBOM сформированы; не заменяет решение владельца по лицензиям |
+| dependencies | PASS / 5.8 s | npm audit: 0; govulncheck: 0 reachable/0 imported-package findings, 1 module-level advisory |
+| source | PASS / 3.1 s | Trivy 0 HIGH/CRITICAL; Gitleaks history/worktree: 0 leaks; UNKNOWN сохранён |
+
+Raw records: `.cache/evidence/gates/*.json`, логи `.cache/webdav-native-final-*.log`; не переписывались под новый hash. Нагрузка — локальный smoke, historical 2050 MiB/20000 rows не переносится на этот кандидат. `readiness` ожидаемо BLOCKED: необходимы большой профиль, 14 внешних решений, 5 partial MUST и clean Git; это не ошибка WebDAV и не разрешение production.
+
+Security inventory видимо сохраняет `GO-2026-5932` (UNKNOWN, x/crypto/openpgp): source v0.58.0, два binary locations API v0.58.0 и Traefik v0.57.0. FileX govulncheck не нашёл затронутых импортированных packages/symbols; этот вывод не объявляется binary reachability review стороннего Traefik. Исключения scanner не добавлялись. [Границы third-party review](third-party-review.md).
+
+## Реальные клиенты на том же source
+| Клиент | Результат | Содержимое |
+|---|---|---|
+| macOS 27.0.1 / mount_webdav | PASS: mount, mkdir, upload, server-created GET/read, replace, rename, delete, rmdir, unmount | 5 700 000 bytes; SHA-256 `755a378a57a6e937804d1641edf10af177e820448a519b427863b95e30a51359` |
+| Linux GNOME GVfs 1.54.4-0ubuntu1~24.04.4 / GLib 2.80.0 | PASS: тот же цикл, изолированный Docker/D-Bus backend | 5 600 000 bytes; SHA-256 `d7eb5dff92552706b38c125ae7edf490f519d42a7d51efb4c5b0290a5a7ef3ff` |
+| Windows WebClient | **Ожидает стенда** | PowerShell-сценарий и ручная матрица подготовлены; запуск не выдумывается |
+
+Logs/checksums: `.cache/webdav-native-{macos,linux}.log`, `.cache/webdav-native-clients.json`. Cleanup assertion обоих clients PASS; после прогона временных тестовых контейнеров и WebDAV mounts не осталось. Finder/GNOME desktop clicks и Windows не входят в эти измерения.
 
 ## Completed steps
-- Прочитаны AGENTS, обязательные wiki и существующие инструменты тура. Предыдущий API-отказ HTTP 402 сохранён как исторический факт; новый API TTS не запускался.
-- В Chrome выбран Liza / Multilingual v2, speed 1, stability 0.5, similarity 0.75, style 0, speaker boost. Для каждой главы проверены текст/голос в player, выполнено обычное Download Audio. Браузерные credentials и внутренние API страницы не извлекались.
-- Все 19 MP3 сохранены в `.cache/tour/elevenlabs-web-Liza/`, полностью декодированы; журнал содержит точные тексты, hashes и происхождение downloads. Исходные аудио суммарно 305,30 s.
-- Подготовлен архив `.cache/tour/elevenlabs-web-Liza/filex-liza-19-chapters.zip`: 19 MP3, тексты, параметры и инструкция offline-сборки; 5 225 272 bytes, ZIP CRC PASS. Секретов/данных аккаунта в архиве нет.
-- Добавлен отдельный `--web-narration-dir`: полный chapter set, text SHA, downloaded status, точное имя файла, отсутствие symlink и audio SHA проверяются до рендера. API alignment validation сохранена; веб-субтитры явно помечены приблизительными.
-- Громкость нормализуется с целью −16 LUFS; limiter после ресэмплинга оставляет AAC headroom с компенсацией задержки. Галерея берёт имя голоса из manifest через textContent. Обновлены MP4, VTT, manifest, HTML/JS, checksums, скрин-тур, план/current-state, changelog и [руководство](tour-maintenance.md).
-- Итоговый MP4: H.264 1440 × 1080 / 25 fps, AAC mono 48 kHz, 19 chapters, 71 VTT cue, 8 698 620 bytes. SHA-256: `56e3d346d1ff8586f901b0e256d38ab954ab6d1ab93bd651359e6664bb5bcf12`. Полное декодирование PASS; audio mean −16,8 dB, decoded peak −1,066 dBFS. Все 50 checksum совпали; 44 PNG не изменены. Просмотрены кадры начала/середины/конца: текст и субтитры читаются.
-- Chrome desktop: воспроизведение, переходы к главам, поиск (5/0), фильтр (4), lightbox/стрелка/Escape и возврат 44 кадров PASS. Для HTTP-перемотки подтверждена необходимость Range: простой http.server даёт seekable=[0,0], scoped loopback server с 206/Content-Range даёт полный диапазон. Ограничение отражено в wiki.
-- До публикации: 11 unit/fault tests PASS; JS syntax check обоих source/generated gallery files PASS; docs-check — 72 Markdown / 32 requirements / без битых ссылок; git diff --check PASS. На этом локальном этапе full release/CI gates не запускались; последующие удалённые результаты приведены ниже.
-- Для отдельной передачи скопирован готовый MP4 в `.cache/exports/FileX-Video-Tour-RU.mp4`, подтверждены SHA-256, 19 chapters, H.264/AAC и полное декодирование. Лог и краткий результат — `.cache/exports/FileX-Video-Tour-RU.decode.log` и `.validation.json`; инструкция самостоятельного просмотра добавлена в [руководство](tour-maintenance.md).
-- По следующей команде владельца файл перенесён из ignored export в `wiki/tour/filex-tour.mp4`. Существующий путь галереи сохранён, бинарный дубль в Git не добавлен; SHA-256 до/после совпал.
-- Перед commit/push `acceptance.py run check` и `run source` PASS на неизменном source SHA выше: базовые lint/race/unit/contracts/docs/repository/build; source/history/worktree secret scan без утечек, HIGH/CRITICAL 0. `scripts/tour/check.mjs` PASS: 50 checksums, 44 screens, 19 chapters, desktop/mobile axe, playback/seeking и семь негативных manifest URL cases. Логи — `.cache/tour-publish/{check,source,gallery}.log`; Node 24.21.0, изолированный Playwright browser. Это профильные проверки медиа/tooling, не повторная локальная квалификация всех 13 release gates.
-- В Git отправлены все 19 относящихся к туру файлов, включая бинарный MP4; ignored raw audio, ключи, logs и ZIP в коммит не добавлялись. После первого push рабочее дерево было чистым, локальный и удалённый head совпали. Main не изменялась; PR/merge и production deploy не выполнялись.
-- При повторной проверке GitHub оба workflow для `f9b3670` имеют `completed/success`. В development-checks успешны checks, repository-policy и supply-chain. В security-analysis успешны все четыре CodeQL language jobs и security-checks; dependency-review штатно skipped для workflow_dispatch, поскольку выполняется только на PR. Новый код, повторный синтез или изменение MP4 для этой записи не потребовались.
+- Прочитаны обязательные AGENTS/wiki; до реализации создан [ADR-011](adr/011-native-webdav.md), актуализированы threat/state/architecture/crypto review. Прямой запрос владельца расширяет доступ только к owner draft.
+- Migration 0017 добавляет PG exclusive locks, свойства/времена и hidden encrypted stages. Реализованы GET/HEAD/Range, conditional PUT/atomic overwrite, unknown-length encrypted rewrap, LOCK/UNLOCK/If, PROPPATCH и MOVE с сохранением метаданных.
+- Сохранены immutable publish, recipient one-time, USER/ADMIN privacy, FXP1 и общий recovery/freeze/credential guard. REST/tus/tree/bulk/publish учитывают DAV locks и stages; worker очищает expired stages с учётом hold.
+- Добавлены ограничения XML/namespace/locks/properties, включая aggregate metadata budget; исправлены root-property inheritance, parent-first locks и LOCK-null под locked parent. Последний regression был RED (423 вместо 201), затем GREEN после сохранения родительского If token.
+- Реальные mount_webdav macOS 27.0.1 и Linux GVfs 1.54.4/GLib 2.80.0 повторно прошли полный файловый цикл, multi-chunk hash, чтение server-created fixture и unmount на окончательном source.
+- Подготовлен Windows PowerShell-сценарий, инструкции подключения и матрица приёмки. Ни Windows-клиент, ни Office/KDE/davfs2 не объявлены проверенными.
+- Обновлены канонические wiki, ADR, contracts/types/traceability и changelog. Исторический аудит сохранён отдельно. В credential operation устранено устаревшее название upload-only; генераторы выполнены, generated files вручную не правились.
+- Обновлены 48 скриншотов, 20 глав, 79 cues, единый MP4 5:56 с Liza. Все 48 кадров и ключевые видеокадры просмотрены; gallery/axe/playback, 54 checksum entries и полный video decode PASS. Инструкция в панели больше не привязана к Mac/8090.
+- Новая глава WebDAV ранее синтезирована через Chrome один раз (454 символа); 19 неизменных глав переиспользованы. Последняя пересъёмка и сборка полностью offline относительно ElevenLabs, дополнительных TTS-запросов нет.
+- Устранена потеря API response body при навигации в E2E: один реальный upstream JSON response проверяется до fulfill, без повторов mutations. Binary tus остаётся на браузерном транспорте. Добавлены 6 Node cases и реальный HTTP race test; полная матрица 35 cases прошла на окончательном source. Неповторившаяся задержка WebKit зафиксирована отдельно ниже.
+- TLS fixture обновлён с прежнего GET=403 на точные проверки native GET/HEAD/Range/overwrite; он прошёл отдельно. Upgrade 16→17 прошёл с проверкой pre-DDL backup, отказом старой schema backup после DDL, fresh backup, downgrade и retained payload/session. Все перечисленные gates повторно прошли на окончательном source.
+
+## Media evidence
+Съёмка: `2026-10-12T13:58:18.286Z`, synthetic локальный Compose, Chromium Linux. Application scope SHA-256: `aa0afcdedbd0d1f2dfebca3a2b84fd44598ac4a87dce6cb83f4182ab2c7acd3d`; после съёмки изменён только generated TS comment о названии credential operation, UI/runtime не менялись. Этот scope отличается от полного repository source hash.
+
+[MP4](tour/filex-tour.mp4): 355,96 s, 9 955 451 bytes, H.264 1440×1080/25fps + AAC mono 48kHz. SHA-256: `8457a74f51773997816ef587e6a06f2ca757ab9bf5621e11fa7bf9efc58e133a`. Loudness −16,8 LUFS, LRA 2,9 LU, peak −1,0 dBFS. [Галерея](tour/index.html), [скрин-тур](screen-tour.md), [воспроизведение](tour-maintenance.md). Raw evidence: `.cache/webdav-native-tour-{capture,render,qa,decode,volume}.log`, `.cache/tour/qa/screens-*.png`, `.cache/tour/qa/native-video-*.png`.
 
 ## Next steps
-- При продолжении читать фактический итог [PR #21](https://github.com/elnemir/p2p-files/pull/21) и main Actions: merge выполняется только после exact-head checks/repository-policy/supply-chain/security-checks и CodeQL ruleset. После merge сверить дерево с кандидатом и удалённые refs. Не повторять уже завершённое слияние по устаревшему локальному снимку; исторический manual CI не заменяет PR/main checks.
-- Следующая инженерная работа выбирается из [плана](implementation-plan.md). Для нового изменённого кандидата получать отдельные результаты CI; сохранённые выше PASS не переносятся автоматически. Полная release квалификация и внешняя приёмка остаются отдельными задачами.
-- Для передачи отправить канонический [MP4](tour/filex-tour.mp4); дополнительные файлы не нужны. Галерея остаётся отдельным способом просмотра. Оригинальные MP3 доступны в указанном ZIP и по отдельным файлам 01–19.
-- Для пересборки повторно использовать готовый кэш/ZIP через `--web-narration-dir`; новых платных запросов не нужно.
-- Субъективная оценка звучания/произношения — за слушателем. Если требуются точные субтитры, выполнить отдельно проверенный alignment, не объявляя оценочные тайминги provider timestamps.
-- Последующие изменения проверять по [workflow](development-workflow.md); не переносить PASS текущего source hash на другой кандидат.
+1. На будущем Windows-стенде выполнить подготовленный сценарий с trusted HTTPS; записать Windows/WebClient build, лимиты и exact server source.
+2. При повторении задержки E2E auth/me сопоставить browser trace с upstream/DB и ресурсами. Не увеличивать timeout без диагностики и не считать единичный успешный повтор исправлением причины.
+3. Отправить подготовленный commit в `origin/codex/webdav-upload`, проверить remote SHA и отдельно статус CI. PR пока отсутствует; feature push сам по себе не запускает workflows (триггеры PR/main/manual). Любое новое изменение кода/контрактов/медиа требует актуальных gates.
+4. Внешний release путь продолжить по [плану](implementation-plan.md) и [карточке окружения](environment-acceptance.md).
 
 ## Decisions
-- Объединяется весь подготовленный тур: MP4, галерея, offline web-audio importer, тесты и wiki. Закрытые ранее Dependabot предложения не переносятся повторно; текущий список удалённых веток содержит только main и ветку тура.
-- Пользователь явно разрешил генерацию всего текста через Chrome. Покупки, подписки, права ключа и настройки оплаты не менялись.
-- Веб-скачивание и API-кэш остаются раздельными; неизвестный исход запроса нельзя автоматически повторять. Успешный веб-синтез не означает устранение прежнего API payment_required.
-- Съёмка интерфейса остаётся от 2026-10-11; новая озвучка — 2026-10-12. Production, данные приложения и внешние интеграции не затрагивались.
-- Предыдущий тур Milena сохранён в `.cache/tour/milena-before-web-narration/`.
+- Draft доступ: отдельный Basic credential с TTL/отзывом, только свой owner/transfer. Перед publish закрыть файлы и отключить сетевую папку.
+- PG authoritative, parent-first transactions; административное containment сильнее DAV lock. Redis/in-memory locks не добавлялись.
+- Неизвестный размер PUT требует двух проходов зашифрованных данных; plaintext spool и новые crypto primitives не добавлялись.
+- Windows pending по ответу владельца, HTTP fixtures не заменяют native acceptance. Тур демонстрирует веб-панель, не запуск Windows.
+- Source-bound gates выполняются последовательно: параллельные тяжёлые прогоны ранее приводили к host pressure/timeouts. Assertions, retries и timeout gates ради PASS не ослаблялись.
 
 ## Context
-[Тур](screen-tour.md), [генерация/результат/QA](tour-maintenance.md), [правила](../AGENTS.md), [workflow](development-workflow.md). Evidence в `.cache/tour/elevenlabs-web-Liza/`: progress.json, media-qa.json, browser-qa.json, unit-tests.log, render-final.log, video-decode-final.log, completed-elevenlabs.png и три video PNG.
+[WebDAV](webdav-upload.md), [ADR-011](adr/011-native-webdav.md), [testing](testing.md), [current state](current-state.md), [documentation audit](documentation-audit.md), [tour maintenance](tour-maintenance.md). Продукт: 108 REST/tus operations + WebDAV wire profile, 17 migrations, 11 ADR.
 
-В Chrome оставлены вкладки результата ElevenLabs и готовой галереи; видео стоит на начале и паузе. Локальный preview `http://127.0.0.1:8767/tour/` использует ограниченный каталогом wiki временный `.cache/tour/elevenlabs-web-Liza/serve.py` (exec session 76353). Созданный при проверке сервер 8766 остановлен; ранее существовавший 8765 не затронут.
+## Подготовка доставки
+Remote `main` проверен перед commit: `28ab4f36e15a0b5e052b23e0f058bdda7a1c9d12`; удалённой ветки `codex/webdav-upload` и PR для неё пока нет. Локальный snapshot `.cache/webdav-commit-delivery/pre-stage-source.json` связывает каждое проверенное содержимое с исходным source hash. При staging удалений source hash изменился на `ab17d1f1a09a0cdc86bbcd8a7841587379299592103ddba68f6fc23019ea05a5` из-за 39 уже отсутствующих старых PNG: алгоритм `acceptance.source_hash()` до staging включает их имена с маркером `deleted`, после staging исключает. Побайтовая сверка всех 336 остальных source entries PASS; gate records не переписывались под новый hash. Это изменение Git inventory, а не новый запуск тестов. Readback: `.cache/webdav-commit-delivery/staged-verification.json`. Перед commit повторно проверены 78 Markdown, traceability всех 32 MUST, отсутствие битых ссылок/whitespace и все 54 checksum тура.
 
 ## Risks / blockers
-- Для выполненной веб-генерации блокеров нет. API TTS ранее возвращал HTTP 402; его автоматизация не подтверждена.
-- Веб-экспорт не содержит character alignment. Субтитры распределены приблизительно внутри глав, субъективное прослушивание всех фраз не заявляется как автоматическая проверка.
-- Это локальная media/tooling квалификация; product/device/a11y acceptance, внешняя фаза 7 и release/production ограничения сохраняются отдельно.
-- `.cache` не входит в Git; raw audio/evidence/ZIP нужно сохранять отдельно, если требуется долговременная воспроизводимость.
+- Windows native acceptance ожидает стенда; Office/KDE/davfs2 не квалифицированы.
+- Внешнее окружение не подготовлено, 5 из 32 MUST partial, 14 human decisions pending. APP_ENV=production по-прежнему отклоняется; deploy требует отдельной команды.
+- Performance default profile (32 MiB/2000 rows) — smoke, не release-size measurement и не target SLA.
+- DEV-05 (устаревшие controls открытой recipient page после completed) сохранён как отдельный существующий backlog; сервер запрещает повторную выдачу.
+
+## Диагностика промежуточного прогона
+Ingress/check PASS на окончательном source. Один WebKit operations case встретил незавершённый auth/me после login=200; причина задержки не установлена, trace сохранён приватно. Полный browser gate повторён на новом disposable окружении без изменения source/assertions/timeout/retries и прошёл. Причина промежуточной задержки не установлена; детали в testing.
+
+Повторный полный browser PASS на том же source: 35/35, skipped/unexpected/flaky=0, без изменения timeout/retries/assertions. Ресурсный журнал `.cache/webdav-native-browser-resources.jsonl` завершён; задержка не повторилась, её первопричина не объявляется устранённой. Gate metadata предыдущего отказа и trace сохранены в `.cache/webdav-native-prerun/`. Integration/upgrade/fuzz/security/native затем завершены успешно на том же source.

@@ -22,11 +22,11 @@ const manifest = { title: 'FileX — экскурсия по системе', re
   environment: 'Изолированный локальный Compose; синтетические данные; Chromium Linux',
   baseCommit: (await command('git', ['rev-parse', 'HEAD'])).stdout.trim(),
   viewport: { width: 1440, height: 960 }, screens: [], chapters: [], assertions: [] };
-const applicationFiles = (await command('git', ['ls-files', 'apps', 'cmd', 'internal', 'migrations', 'deploy', 'go.mod', 'go.sum', 'package.json', 'package-lock.json'])).stdout.trim().split('\n');
+const applicationFiles = (await command('git', ['ls-files', '--cached', '--others', '--exclude-standard', 'apps', 'cmd', 'internal', 'migrations', 'deploy', 'go.mod', 'go.sum', 'package.json', 'package-lock.json'])).stdout.trim().split('\n');
 const applicationHash = createHash('sha256');
-for (const name of applicationFiles.sort()) applicationHash.update(name + '\0').update(await readFile(name)).update('\0');
+for (const name of [...new Set(applicationFiles)].sort()) applicationHash.update(name + '\0').update(await readFile(name)).update('\0');
 manifest.applicationSourceSHA256 = applicationHash.digest('hex');
-manifest.applicationSourceScope = 'Sorted git ls-files apps cmd internal migrations deploy go.mod go.sum package.json package-lock.json; path+NUL+bytes+NUL';
+manifest.applicationSourceScope = 'Sorted unique git ls-files --cached --others --exclude-standard apps cmd internal migrations deploy go.mod go.sum package.json package-lock.json; path+NUL+bytes+NUL';
 const sessions = [];
 const errors = [];
 let current;
@@ -130,6 +130,33 @@ try {
     await expect(p.getByText('Север/Планирование/План проекта.csv', { exact: true }).first()).toBeVisible();
     const transfers = await (await p.request.get('/api/v1/transfers')).json();
     transferId = transfers.items.find(v => v.title.startsWith('Айдентика')).id;
+  });
+  await chapter(owner, 'WebDAV: папка на компьютере', 'Для загрузки из файлового менеджера откройте раздел WebDAV. Здесь есть инструкции для Finder, Проводника Windows и GNOME Files. Подтвердите пароль аккаунта и получите отдельный доступ к черновику. До публикации файлы можно читать, заменять и переименовывать. Неудачная замена сохраняет прежний файл. После копирования обновите список в FileX. Перед публикацией закройте файлы и отключите сетевую папку. Проверка на настоящем Windows-стенде ещё ожидается.', async p => {
+    const panel = p.locator('details').filter({ has: p.getByText('Загрузка через WebDAV', { exact: true }) });
+    await p.getByText('Загрузка через WebDAV', { exact: true }).click();
+    await focus(p, panel);
+    for (const [os, title] of [['macos', 'macOS · Finder'], ['windows', 'Windows · Проводник'], ['linux', 'Linux · GNOME Files']]) {
+      await p.getByLabel('Ваш файловый менеджер', { exact: true }).selectOption(os);
+      await shot(p, `webdav-${os}`, title, 'Инструкция подключения одного черновика отдельным паролем. Windows ожидает реального стенда; эта страница показывает настройку, а не изображает проверенный Windows-клиент.', 'WebDAV');
+    }
+    await p.getByLabel('Пароль аккаунта для выдачи доступа', { exact: true }).fill(password);
+    await button(p, 'Создать доступ WebDAV').click();
+    const url = await p.getByLabel('Адрес WebDAV', { exact: true }).inputValue();
+    const secret = await p.getByLabel('Пароль подключения WebDAV', { exact: true }).inputValue();
+    const headers = { Authorization: `Basic ${Buffer.from(`filex:${secret}`).toString('base64')}` };
+    const target = url + encodeURIComponent('Из файлового менеджера.txt');
+    const response = await p.request.put(target, { headers, data: Buffer.from('Синтетический пример WebDAV для тура FileX.\n') });
+    expect(response.status()).toBe(201);
+    await button(p, 'Обновить файлы после WebDAV').click();
+    await expect(p.getByText('Из файлового менеджера.txt', { exact: true }).first()).toBeVisible();
+    await focus(p, p.getByLabel('Поиск файлов', { exact: true }));
+    await shot(p, 'webdav-upload', 'Файл из WebDAV в черновике', 'Настоящий PUT прошёл шифрование и серверную проверку; файл появился в общем дереве. Для основного сценария три исходных документа сохранены, дополнительный пример удалён перед публикацией.', 'WebDAV');
+    expect((await p.request.delete(target, { headers })).status()).toBe(204);
+    await focus(p, panel);
+    await button(p, 'Отозвать доступ WebDAV').click();
+    await button(p, 'Обновить файлы после WebDAV').click();
+    await p.getByText('Загрузка через WebDAV', { exact: true }).click();
+    manifest.assertions.push('WebDAV: scoped credential, real PUT, ready list, DELETE and revocation; password masked throughout recording');
   });
   await chapter(owner, 'Проверка и публикация', 'Перед публикацией выбираем срок доступа и защиту ссылки. В этом примере действует ПИН-код и срок сорок восемь часов. Экран проверки предупреждает: набор станет неизменяемым, а успешная серверная выдача расходует доступ. Публикация сама по себе не подтверждает доставку письма.', async p => {
     await focus(p, heading(p, 'Доступ к передаче'));

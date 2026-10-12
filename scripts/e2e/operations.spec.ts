@@ -15,12 +15,12 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  test.setTimeout(150000);
  const project=process.env.FILEX_E2E_PROJECT;
  if(!project||!/^filex-e2e-[0-9a-f]{10}$/.test(project))throw new Error('Scoped disposable Compose project required');
- const contracts=await contractObserver();contracts.observe(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ const contracts=await contractObserver();await contracts.observe(page);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  // Keep fixture and administrator cookies separate; drain capture before closing the owner context.
  const ownerContext=await browser.newContext({baseURL});let exportId='';
  try{
   const owner=await ownerContext.newPage();owner.on('pageerror',e=>errors.push(e.message));
-  const ownerContracts=await contractObserver();ownerContracts.observe(owner);
+  const ownerContracts=await contractObserver();await ownerContracts.observe(owner);
   await login(owner,process.env.FILEX_E2E_EMAIL!);
   await draft(owner,'Данные пользователя для отдельного recovery-сценария');
   await owner.getByRole('button',{name:'Задачи',exact:true}).click();

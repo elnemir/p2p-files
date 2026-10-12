@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"filex.local/filex/internal/audit"
+	"filex.local/filex/internal/transfer"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -49,8 +50,22 @@ func (w Worker) Bulk(ctx context.Context) error {
 	if e != nil {
 		return e
 	}
+	blocked := false
+	if action == "cancel_upload" {
+		var key string
+		if e = tx.QueryRow(ctx, "SELECT f.path_key,t.frozen OR f.frozen OR f.staged_until IS NOT NULL FROM files f JOIN transfers t ON t.id=f.transfer_id WHERE f.id=$1", id).Scan(&key, &blocked); e != nil {
+			return e
+		}
+		for _, check := range []func() error{func() error { return transfer.CheckDAVLocks(ctx, tx, parent, key, false) }, func() error { return transfer.CheckDAVMembership(ctx, tx, parent, key) }} {
+			if err := check(); errors.Is(err, transfer.ErrLocked) {
+				blocked = true
+			} else if err != nil {
+				return err
+			}
+		}
+	}
 	result := "done"
-	if owner != actor && !admin || action == "cancel_upload" && state != "draft" {
+	if blocked || owner != actor && !admin || action == "cancel_upload" && state != "draft" {
 		result = "conflict"
 	} else {
 		if action == "revoke" {

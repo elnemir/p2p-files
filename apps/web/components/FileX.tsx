@@ -1,6 +1,7 @@
 "use client";
 import OperationsPanel from "./OperationsPanel";
 import AdminExportsPanel from "./AdminExportsPanel";
+import WebDAVPanel from "./WebDAVPanel";
 import {
   useEffect,
   useCallback,
@@ -1010,6 +1011,15 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                 </form>
                 {detail.state === "draft" && (
                   <>
+                    <WebDAVPanel
+                      key={selectedId}
+                      id={selectedId}
+                      t={t}
+                      act={act}
+                      busy={busy}
+                      request={api}
+                      refresh={refresh}
+                    />
                     <div
                       className="dropzone"
                       onDragOver={(e) => e.preventDefault()}

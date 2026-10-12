@@ -33,3 +33,6 @@ Memory ограничена размером chunk для bytes; metadata ZIP/м
 
 ## Воспроизводимость
 [Test vector](../internal/cryptobox/testdata/payload-v1.json) создан Node/OpenSSL независимо от Go implementation. `TestPayloadBinaryVectorAndBindings` проверяет точные bytes, HKDF, header tamper, truncation, extra data и retry identity. [Код](../internal/cryptobox/payload.go). Backward read обещается начиная с этого первого versioned release format; ранние экспериментальные локальные envelopes payload не мигрируются автоматически.
+
+## Неизвестная длина WebDAV
+FXP1 неизменен и аутентифицирует размер. Chunked PUT без length сначала пишет скрытый provisional file с фиксированной длиной 1 TiB. После EOF новый file ID/salt связывает chunks с фактическим размером: bounded decrypt/re-encrypt, затем обычные SHA/MIME/scanner и atomic swap. Provisional ciphertext никогда не публикуется; plaintext временные файлы не создаются. Известный Content-Length/X-Expected-Entity-Length обходится одним проходом. Дополнительные storage/CPU затраты и lease/cleanup — [ADR-011](adr/011-native-webdav.md).
