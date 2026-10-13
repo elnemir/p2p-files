@@ -21,7 +21,7 @@ FileX разрабатывается в [elnemir/p2p-files](https://github.com/e
 | Secrets и сообщения | GitHub secret scanning/push protection плюс существующий Gitleaks worktree/history; приватный канал описан в [SECURITY](../SECURITY.md) |
 | [.github/dependabot.yml](../.github/dependabot.yml) | Еженедельные PR для npm workspaces, Go, Dockerfiles в deploy и GitHub Actions; minor/patch npm/Go сгруппированы, major идут отдельно; автоматического merge нет |
 | Issues / PR | Формы ошибки и задачи требуют контекст, воспроизведение/результат и критерии; PR template связывает проверки, wiki и эксплуатацию |
-| Developer defaults | .nvmrc = Node 24 как CI/runtime; .editorconfig задаёт отступы/UTF-8/LF, .gitattributes различает текст/бинарные media и generated файлы |
+| Developer defaults | .nvmrc = Node 26 как CI/runtime; .editorconfig задаёт отступы/UTF-8/LF, .gitattributes различает текст/бинарные media и generated файлы |
 
 Secret scanning не гарантирует нахождение любого секрета. Сканеры не заменяют review. Dependabot предлагает обновления, но решение о major/лицензиях остаётся в обычном workflow. Внутренние pins скриптов (Playwright image, scanner checksums) и versions внутри RUN не обновляются автоматически Docker Dependabot: DEV-02 должен синхронизировать их и повторить проверки.
 

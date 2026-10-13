@@ -12,6 +12,13 @@ FileX хранит authoritative metadata в PostgreSQL, а зашифрован
 - `security_incidents` и encrypted `security_incident_reports`: состояние расследования и неизменяемые ревизии JSON. PDF строится из конкретного JSON; `X-Content-SHA256` обозначает hash JSON, не PDF. Эти данные входят в backup и не имеют TTL/user purge.
 - ADMIN UI показывает задания, pre-backup, причины ошибок без secrets, инциденты, контрольные точки и результат сверки. Публичный status сообщает только operational/unavailable. Recovery подробности не отправляются владельцам в notifications.
 
+## Проверка конкуренции idle worker / reopen, 2026-10-13
+Во время квалификации Node 26 mobile-WebKit получил `409 conflict` на единственный reopen: generation, свежий passed report/id/hash и acknowledgement совпадали, до/после запроса jobs completed, incidents пусты. Gate остался закрыт; последующий USER login закономерно получил 503. Это не timeout отображения. Точный trace сохранён в `.cache/node26-review/browser-failure-1`, исходный прогон остаётся FAIL.
+
+Детерминированно воспроизведённый механизм: автоматический `Operations.Run` берёт общий runner advisory lock даже без queued/running jobs и выполняет пустой UPDATE. Reopen использует тот же try-lock, поэтому idle tick может дать ложный conflict. Regression PG-тест: SHARE lock на ops_jobs допускает SELECT, но задерживает пустой UPDATE; параллельный idle Run не должен мешать валидному Reopen.
+
+Исправленный минимальный поток: проверить generation → для автоматического Run прочитать наличие queued/running jobs → при пустой очереди вернуть без runner lock/UPDATE; при наличии работы выполнить прежний locked executor. Running jobs должны по-прежнему проходить recovery interrupted; explicit Execute/QueueAndExecute и все Reopen guards остаются прежними. Задание, поставленное после пустой проверки, получает следующий worker tick. Contracts/state machines/crypto не меняются; тест сначала завершился RED с `operation state conflict`, после изменения — GREEN. Второй PG-тест подтвердил queued job, interrupted running job, generation fence и запрет автоматического reopen. Исходный browser trace не содержит PostgreSQL lock timeline; тест отдельно доказывает этот механизм конфликта. Полная повторная квалификация фиксируется в session.
+
 ## Backup: вход → обработка → результат
 1. ADMIN с web session и re-auth не старше 5 минут выбирает включённый, не draining BackupProvider и вводит причину (5…2000 Unicode-символов, минимум 5 после удаления пробелов по краям). Host CLI использует ту же реализацию без дополнительного ADMIN password.
 2. Worker получает один session advisory lock исполнителя операций для этой схемы PostgreSQL. Зафиксированное расписание не создаёт дубликат незавершённого job этого вида.

@@ -1,10 +1,16 @@
 # Dependabot: совместимость и сопровождение зависимостей
 
-## Контекст
+## Текущее изменение: Node 26, 2026-10-13
+
+По явной команде владельца [PR #22](https://github.com/elnemir/p2p-files/pull/22) содержит согласованное обновление. Первоначальная замена двух Docker FROM давала EBADENGINE: root требовал 24.x, а образ исполнял 26.11.1. Теперь `.nvmrc`, engine, CI, builder/runtime и типы согласованы на 26; lockfile обновлён npm. [ADR-012](adr/012-node26-runtime.md) содержит решение до реализации, timeline policy, review архитектуры/угроз/crypto и rollback.
+
+Node 26.11.1 на дату review — Current, LTS с 2026-10-28, EOL 2029-04-30 по [upstream schedule](https://github.com/nodejs/Release/blob/main/schedule.json). Это разрешённый владельцем переход до LTS, а не переименование канала или обход gates. `channel` хранит факт на `reviewedAt`; `ltsFrom` позволяет проверить его. Полные новые результаты публикуются в [session](session.md); история Node 24 ниже не заменяет их. Обновлены только `@types/node` до 26.6.5 и его transitive `undici-types` до 8.9.0; wire contracts/миграции не меняются. Browser gate выявил конфликт idle operations worker с reopen; минимальное исправление и PG RED/GREEN описаны в [recovery](operations-recovery.md). Первичный browser FAIL сохранён; все 13 gates повторены и PASS на source `bb488d14c1db0717c6aa93835f4c84e25a7b9314a5567b7700ee019b16ef8aac`: 53 integration, 35 browser и 57 toolchain tests.
+
+## Контекст первоначального review 2026-10-12
 FileX использует npm для Next.js и инженерных инструментов, Docker runtime, Go modules и GitHub Actions. Цель DEV-02 / NFR-003–004 / OPS-005 — поддерживаемые компоненты и реальные проверки, а не максимальный номер каждой версии. Проверка начата 2026-10-12 от main `d8b4e4f0fc1db06c0f7d61e3b963c9c75b31c7bc`.
 
-## Проблема
-Все пять оставшихся PR — version updates; активных Dependabot alerts на момент проверки нет. Это не отменяет ошибок предложенных комбинаций:
+## Историческая проблема 2026-10-12
+На дату первоначального review все пять оставшихся PR — version updates; активных Dependabot alerts на момент проверки нет. Это не отменяет ошибок предложенных комбинаций:
 
 | PR | Наблюдение | Решение и статус |
 |---|---|---|
@@ -20,6 +26,7 @@ Manifest + lockfile + runtime policy → clean npm ci → peer tree и согл�
 TypeScript CLI приложения 7.0.2 и JavaScript API парсера — разные установки. Текущее дерево использует для parser TypeScript 5.9.3, удовлетворяющий заявленному диапазону `>=4.8.4 <6.1.0`. Один только app manifest не доказывает несовместимость parser. Проверять нужно resolved dependencies в контексте каждого инструмента.
 
 ## Источники и ограничения
+- [Node 26.11.1 release](https://nodejs.org/en/blog/release/v26.11.1), [upstream schedule](https://github.com/nodejs/Release/blob/main/schedule.json): Current на 2026-10-13, LTS с 2026-10-28, EOL 2029-04-30.
 - [Node releases](https://nodejs.org/en/about/previous-releases): Node 24 LTS; Node 25 EOL. Предпочтение LTS не означает вечный запрет нечётных major: upstream меняет модель начиная с 27.
 - [Redis Open Source version management](https://redis.io/docs/latest/operate/oss_and_stack/install/version-mgmt/): 7.2 Extended, EOL 2029-12-01; не путать с Redis Enterprise Software.
 - [Redis security policy](https://github.com/redis/redis/security/policy), [licenses](https://redis.io/legal/licenses/): 7.2 BSD-3-Clause; Redis 8 требует отдельного выбора владельца/reviewer.
@@ -29,13 +36,13 @@ TypeScript CLI приложения 7.0.2 и JavaScript API парсера — �
 
 ## Реализованные проверки и примеры
 
-`npm ci` читает [.npmrc](../.npmrc): `strict-peer-deps=true`, `engine-strict=true`. Web builder копирует тот же файл. Root engine `24.x` требует `nvm install && nvm use` перед установкой; системный Node 26 больше не считается эквивалентной проверкой runtime 24.
+`npm ci` читает [.npmrc](../.npmrc): `strict-peer-deps=true`, `engine-strict=true`. Web builder копирует тот же файл. Root engine `26.x` требует `nvm install && nvm use` перед установкой. Квалификация выполняется на Node 26.11.1; проверки на другом major не эквивалентны.
 
-`npm run check:dependencies` проверяет [политику](../.github/dependency-policy.json), `.nvmrc`, engine, оба Node FROM/digest, Redis series/digest, major Node types и ESLint/config. Затем `npm ls --all` проверяет фактический установленный граф, включая optional peers. При наступлении срока security support gate падает; новый срок нельзя продлевать без upstream evidence. Политика фиксирует Node 24 LTS до 2028-04-30 и Redis 7.2 Extended до 2029-12-01. Node 26 можно планировать после LTS 2026-10-28 с отдельной квалификацией.
+`npm run check:dependencies` проверяет [политику](../.github/dependency-policy.json), `.nvmrc`, engine, оба Node FROM/digest, Redis series/digest, major Node types и ESLint/config. Затем `npm ls --all` проверяет фактический установленный граф, включая optional peers. При наступлении срока security support gate падает; новый срок нельзя продлевать без upstream evidence. Политика фиксирует Node 26 Current на 2026-10-13, LTS с 2026-10-28, support до 2029-04-30; Redis 7.2 Extended до 2029-12-01. Даты проходят календарную проверку; future review, ложный LTS, неизвестный канал и LTS после EOL отвергаются. Наступление LTS сохраняет действительность прежнего Current review, наступление EOL всегда останавливает gate.
 
 Зелёный PR #9 воспроизведён в изолированной папке: `npm ci --ignore-scripts` exit 0, затем `npm ls --all` exit 1 из-за `eslint@9.39.5`, не удовлетворяющего optional peer `@eslint/js@10.0.1`. Поэтому проверки установки/сборки недостаточно. Логи: ignored `.cache/dependabot-review/pr9-npm-ci.log` и `pr9-npm-ls.log`.
 
-`npm run test:toolchain` исполняет 45 тестов: 12 для политики/ошибочных PR и сроков, 31 behavioral a11y fixture (нарушение → error, исправление → отсутствие этой ошибки), сохранность 31 настроенного правила и совместная проверка TypeScript/React Hooks. Fixtures используют настоящий project ESLint config для TSX. Новый preset совпадает с прежним по включённым правилам/явным параметрам; ESLint 10 дополнительно раскрывает defaults в calculated config. Тесты не объявляют полную эквивалентность всех возможных JSX программ и не заменяют browser axe/assistive-technology review.
+`npm run test:toolchain` исполняет 57 тестов: 24 для политики/ошибочных PR и сроков, 31 behavioral a11y fixture (нарушение → error, исправление → отсутствие этой ошибки), сохранность 31 настроенного правила и совместная проверка TypeScript/React Hooks. Fixtures используют настоящий project ESLint config для TSX. Новый preset совпадает с прежним по включённым правилам/явным параметрам; ESLint 10 дополнительно раскрывает defaults в calculated config. Тесты не объявляют полную эквивалентность всех возможных JSX программ и не заменяют browser axe/assistive-technology review.
 
 Root `typescript@5.9.3` теперь явный dev dependency: он поддерживается и parser `>=4.8.4 <6.1.0`, и OpenAPI generator `^5.x`. App `typescript@7.0.2` остаётся отдельной установкой для `tsc`. Guard проверяет resolved версии через контекст parser/generator/app, не только manifest. API schema/type generation не изменены.
 
@@ -43,7 +50,7 @@ Dependabot объединяет ESLint, @eslint/*, typescript-eslint/@typescript
 
 ## Почему Redis 8 и Node 25 не перенесены
 
-Node 25 завершил поддержку 2026-06-01. Предложенный image добавляет четыре HIGH findings: CVE-2026-14456 и CVE-2026-45447 в libcrypto3/libssl3 3.5.6-r0; fixed versions 3.5.8-r0 и 3.5.7-r0. Данные взяты из [CI 38167197809](https://github.com/elnemir/p2p-files/actions/runs/38167197809), artifact `supply-chain-evidence-755285ab145a05443885806d2e66d64dad971619`. Эти CVE не скрываются исключениями: candidate остаётся на другом, поддерживаемом Node 24.21.0, который проверяется заново целиком.
+Node 25 завершил поддержку 2026-06-01. Предложенный image добавляет четыре HIGH findings: CVE-2026-14456 и CVE-2026-45447 в libcrypto3/libssl3 3.5.6-r0; fixed versions 3.5.8-r0 и 3.5.7-r0. Данные взяты из [CI 38167197809](https://github.com/elnemir/p2p-files/actions/runs/38167197809), artifact `supply-chain-evidence-755285ab145a05443885806d2e66d64dad971619`. Эти CVE не скрываются исключениями: кандидат 2026-10-12 оставался на поддерживаемом Node 24.21.0 и был проверен заново целиком. Node 26 проходит отдельную квалификацию 2026-10-13.
 
 Redis runtime — актуальный 7.2.16 из неизменённого digest. Security patches доступны в поддерживаемой BSD ветке. PR #3 является предложением нового major, не доказательством уязвимости 7.2. Локальный Redis 8 review уже устранил старые OpenSSL pins (см. [лицензии](third-party-review.md)), однако функциональная потребность и разрешение на новую лицензию отсутствуют. Решение — сопровождать 7.2 с датой окончания поддержки в CI; переход 8 остаётся отдельным изменением, а не незаметным принятием условий. Текущий image scan обязателен и при сохранении версии.
 

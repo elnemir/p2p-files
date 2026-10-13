@@ -9,7 +9,9 @@ import (
 	"filex.local/filex/internal/database"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/maintenance"
+	"filex.local/filex/internal/operations"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,6 +19,116 @@ import (
 	"testing"
 	"time"
 )
+
+func TestIntegrationIdleOperationsWorkerDoesNotBlockReopen(t *testing.T) {
+	c, _ := testClient(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if e := c.a.Operations.SetMaintenance(ctx, "host_cli", "Test an idle recovery worker"); e != nil {
+		t.Fatal(e)
+	}
+	report, e := c.a.Operations.Reconcile(ctx, "host_cli", "Review before reopening idle service")
+	if e != nil || !report.Passed {
+		t.Fatal("reconcile", e, report.Findings)
+	}
+	blocker, e := c.a.DB.Begin(ctx)
+	if e != nil {
+		t.Fatal(e)
+	}
+	done := make(chan error, 1)
+	finished := true
+	defer func() {
+		if e := blocker.Rollback(context.Background()); e != nil && !errors.Is(e, pgx.ErrTxClosed) {
+			t.Error(e)
+		}
+		cancel()
+		if !finished {
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				t.Error("idle worker did not release its connection")
+			}
+		}
+	}()
+	// SELECT remains available, but an unnecessary idle UPDATE stalls while
+	// holding the runner lock, making the reopen race deterministic.
+	if _, e = blocker.Exec(ctx, "LOCK TABLE ops_jobs IN SHARE MODE"); e != nil {
+		t.Fatal(e)
+	}
+	finished = false
+	go func() { done <- c.a.Operations.Run(ctx) }()
+	for {
+		select {
+		case e = <-done:
+			finished = true
+			if e != nil {
+				t.Fatal("idle worker", e)
+			}
+		default:
+		}
+		var waiting bool
+		if e = c.a.DB.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_locks WHERE relation='ops_jobs'::regclass AND mode='RowExclusiveLock' AND NOT granted)").Scan(&waiting); e != nil {
+			t.Fatal(e)
+		}
+		if finished || waiting {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal("idle worker reached neither completion nor the database barrier")
+		case <-time.After(5 * time.Millisecond):
+		}
+	}
+	if e = c.a.Operations.Reopen(ctx, "host_cli", report.ID, report.Hash, "Explicitly reopen reviewed idle service", true); e != nil {
+		t.Fatal("idle operations worker blocked a valid reopen", e)
+	}
+}
+
+func TestIntegrationOperationsWorkerPreservesPendingAndCrashRecovery(t *testing.T) {
+	c, _ := testClient(t)
+	ctx := context.Background()
+	if e := c.a.Operations.SetMaintenance(ctx, "host_cli", "Verify worker recovery fences"); e != nil {
+		t.Fatal(e)
+	}
+	report, e := c.a.Operations.Reconcile(ctx, "host_cli", "Review before running queued work")
+	if e != nil || !report.Passed {
+		t.Fatal("reconcile", e, report.Findings)
+	}
+	id := operationsJob(t, c, "audit", "", "")
+	if e = c.a.Operations.Reopen(ctx, "host_cli", report.ID, report.Hash, "Reject reopen while a job is queued", true); !errors.Is(e, operations.ErrConflict) {
+		t.Fatal("queued job did not block reopen", e)
+	}
+	if e = c.a.Operations.Run(ctx); e != nil {
+		t.Fatal("run queued job", e)
+	}
+	var state string
+	if e = c.a.DB.QueryRow(ctx, "SELECT state FROM ops_jobs WHERE id=$1", id).Scan(&state); e != nil || state != "completed" {
+		t.Fatal("queued job not completed", e, state)
+	}
+	interrupted := operationsJob(t, c, "audit", "", "")
+	if _, e = c.a.DB.Exec(ctx, "UPDATE ops_jobs SET state='running',started_at=clock_timestamp() WHERE id=$1", interrupted); e != nil {
+		t.Fatal(e)
+	}
+	if e = c.a.Operations.Run(ctx); e != nil {
+		t.Fatal("recover interrupted job", e)
+	}
+	var code *string
+	if e = c.a.DB.QueryRow(ctx, "SELECT state,error_code FROM ops_jobs WHERE id=$1", interrupted).Scan(&state, &code); e != nil || state != "failed" || code == nil || *code != "interrupted" {
+		t.Fatal("interrupted job was skipped or replayed", e, state, code)
+	}
+	current, e := c.a.Operations.State(ctx)
+	if e != nil || current.Mode == "open" {
+		t.Fatal("worker reopened without acknowledgement", e, current.Mode)
+	}
+	stale := c.a.Operations
+	stale.Generation = domain.NewID()
+	if e = stale.Run(ctx); !errors.Is(e, maintenance.ErrRestart) {
+		t.Fatal("idle optimization bypassed the runtime generation fence", e)
+	}
+	if e = c.a.Operations.Reopen(ctx, "host_cli", report.ID, report.Hash, "Explicitly reopen after worker completion", true); e != nil {
+		t.Fatal("reviewed reopen", e)
+	}
+}
 
 func operationsJob(t *testing.T, c apiClient, kind, source, provider string) string {
 	t.Helper()

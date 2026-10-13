@@ -50,3 +50,6 @@ Design вопросы completion, export snapshot, partial delivery и crypto is
 
 ## Дополнение владельца: native WebDAV
 Работа с файлами одного owner draft из штатных Windows/macOS/Linux клиентов разрешена прямым запросом 2026-10-12. [ADR-011](adr/011-native-webdav.md) заменяет upload-only ограничения ADR-010; published immutable/recipient one-time, USER/ADMIN, crypto и production boundaries остаются прежними. Владелец подтвердил отсутствие Windows-стенда: сценарий подготовлен, фактический статус — ожидает стенда. [Текущее руководство](webdav-upload.md), [сессия](session.md).
+
+## Дополнение владельца: Node 26
+2026-10-13 владелец прямо разрешил довести Node 24→26 PR #22 до merge. [ADR-012](adr/012-node26-runtime.md) заменяет прежнее откладывание до LTS: runtime на дату review Current, все manifest/types/CI/images меняются согласованно и получают свежие gates. Это не принятие внешних release risks и не разрешение production deployment.

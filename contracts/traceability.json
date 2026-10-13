@@ -981,6 +981,16 @@
         "id": "T-OPS-003-7",
         "path": "scripts/test-performance.py",
         "name": "test_load_and_recovery"
+      },
+      {
+        "id": "T-OPS-003-8",
+        "path": "internal/httpapi/operations_integration_test.go",
+        "name": "TestIntegrationIdleOperationsWorkerDoesNotBlockReopen"
+      },
+      {
+        "id": "T-OPS-003-9",
+        "path": "internal/httpapi/operations_integration_test.go",
+        "name": "TestIntegrationOperationsWorkerPreservesPendingAndCrashRecovery"
       }
     ],
     "gap": "Локальные restore/fault/crypto drills и Chromium backup→restore→restart→reauth→reconcile→reopen пройдены. Production DR/RPO/RTO acceptance — фаза 7."
@@ -1357,6 +1367,21 @@
         "id": "T-NFR-003-28",
         "path": "scripts/e2e-contracts.test.mjs",
         "name": "non-JSON responses retain upstream bytes and are not treated as JSON contracts"
+      },
+      {
+        "id": "T-NFR-003-29",
+        "path": "scripts/dependencies.test.mjs",
+        "name": "a Current review stays valid when the same line becomes LTS"
+      },
+      {
+        "id": "T-NFR-003-30",
+        "path": "scripts/dependencies.test.mjs",
+        "name": "a new review at the LTS boundary must use the LTS channel"
+      },
+      {
+        "id": "T-NFR-003-31",
+        "path": "scripts/dependencies.test.mjs",
+        "name": "the original Current review cannot outlive Node security support"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."
