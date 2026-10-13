@@ -53,3 +53,6 @@ Design вопросы completion, export snapshot, partial delivery и crypto is
 
 ## Дополнение владельца: Node 26
 2026-10-13 владелец прямо разрешил довести Node 24→26 PR #22 до merge. [ADR-012](adr/012-node26-runtime.md) заменяет прежнее откладывание до LTS: runtime на дату review Current, все manifest/types/CI/images меняются согласованно и получают свежие gates. Это не принятие внешних release risks и не разрешение production deployment.
+
+## Дополнение владельца: white labeling
+2026-10-13: настраиваемый бренд всей установки без заранее заданных assets; [ADR-013](adr/013-white-label.md). Это не организационная tenancy и не переименование технических протоколов.

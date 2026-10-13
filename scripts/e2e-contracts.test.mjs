@@ -13,7 +13,7 @@ function fixture(body = { status: "operational" }, path = "/api/v1/status") {
     dispose: async () => events.push("dispose"),
   };
   const route = {
-    request: () => ({ url: response.url, method: () => "GET" }),
+    request: () => ({ url: response.url, method: () => "GET", headers: () => ({}) }),
     fetch: async (options) => {
       assert.deepEqual(options, { maxRetries: 0, maxRedirects: 0 });
       events.push("fetch");
@@ -108,4 +108,28 @@ test("non-JSON responses retain upstream bytes and are not treated as JSON contr
   await f.run();
   assert.deepEqual(await observer.finish(), { failures: [], count: 0 });
   assert.deepEqual(f.events, ["fetch", "fulfill", "dispose"]);
+});
+
+
+test("conditional branding GET uses native transport without fetching or replaying", async () => {
+  const observer = await contractObserver();
+  const f = fixture(undefined, "/api/v1/branding");
+  f.route.request = () => ({url:f.response.url, method:()=>"GET", headers:()=>({"if-none-match":'"revision"'})});
+  await observer.observe(f.page);
+  await f.run();
+  assert.deepEqual(await observer.finish(), {failures:[], count:0});
+  assert.deepEqual(f.events, ["fallback"]);
+});
+
+test("conditional exception never bypasses other API reads or mutations", async () => {
+  for (const [path, method] of [["/api/v1/status","GET"], ["/api/v1/branding","POST"]]) {
+    const observer = await contractObserver();
+    const f = fixture(undefined, path);
+    f.route.request = () => ({url:f.response.url, method:()=>method, headers:()=>({"if-none-match":'"revision"'})});
+    await observer.observe(f.page);
+    await f.run();
+    const result = await observer.finish();
+    assert.deepEqual(f.events,["fetch","fulfill","dispose"]);
+    assert.equal(result.failures.length,method === "POST" ? 1 : 0);
+  }
 });

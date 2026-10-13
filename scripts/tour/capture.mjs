@@ -81,7 +81,7 @@ async function login(p, email) {
 async function tab(p, name) { await button(p, name).click(); await top(p); }
 async function draft(p, title) {
   await tab(p, 'Передачи');
-  if (await button(p, '← Все передачи').isVisible()) await button(p, '← Все передачи').click();
+  if (await button(p, 'Все передачи').isVisible()) await button(p, 'Все передачи').click();
   await button(p, 'Новая передача').click();
   await p.getByLabel('Название', { exact: true }).fill(title);
   await button(p, 'Сохранить название').click();
@@ -225,7 +225,7 @@ try {
   });
   await chapter(owner, 'Поиск и сохранённые виды', 'Создадим ещё один черновик: так видны разные состояния в рабочем списке. Передачи можно искать по названию и фильтровать по состоянию. Сохранённый вид возвращает к выбранным условиям; массовые действия начинаются с явного выбора строк.', async p => {
     await draft(p, 'Каталог осень · черновик на согласование');
-    await button(p, '← Все передачи').click();
+    await button(p, 'Все передачи').click();
     await p.getByLabel('Поиск по названию', { exact: true }).fill('Север');
     await button(p, 'Найти').click();
     await button(p, 'Сохранить вид').click();

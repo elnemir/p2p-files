@@ -17,6 +17,11 @@ Principal=define('Principal',{'id':U,'email':{'type':'string','format':'email'},
 Session=define('Session',{'csrfToken':S,'user':Principal,'expiresAt':T})
 NetworkPolicy=define('NetworkPolicy',{'trustedProxyCidrs':{'type':'array','maxItems':16,'uniqueItems':True,'items':{'type':'string','description':'Canonical IPv4 /32 for one designated Traefik peer; broad proxy networks are rejected.'}},'allowedClientCidrs':{'type':'array','maxItems':128,'uniqueItems':True,'items':{'type':'string','description':'Canonical IPv4 network CIDR; empty list allows all clients.'}},'requireProxy':B,'requireHttps':B},[])
 Settings=define('Settings',{'networkPolicy':NetworkPolicy,'version':{'const':1},'publicOrigin':S,'sessionTtlSeconds':{'type':'integer','minimum':300,'maximum':604800},'transferMaxTtlSeconds':{'type':'integer','minimum':1,'maximum':31536000},'maxFiles':{'type':'integer','minimum':1,'maximum':100000},'maxPathBytes':{'type':'integer','minimum':1,'maximum':4096},'fileTypeMode':enum('disabled','allow','deny'),'fileTypes':arr(S),'bannerRu':{'type':'string','maxLength':2000},'bannerEn':{'type':'string','maxLength':2000}},['version','transferMaxTtlSeconds','maxFiles','maxPathBytes'])
+BrandColor={'type':'string','pattern':'^#[0-9a-fA-F]{6}$'}
+BrandPalette=define('BrandPalette',{k:BrandColor for k in ['background','foreground','muted','surface','border','accent','onAccent','danger','dangerSurface']})
+BrandAsset={'type':'string','maxLength':174787,'description':'Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained.'}
+Branding=define('Branding',{'productName':{'type':'string','minLength':1,'maxLength':80},'taglineRu':{'type':'string','maxLength':160},'taglineEn':{'type':'string','maxLength':160},'footerText':{'type':'string','maxLength':160},'defaultTheme':enum('light','dark','system'),'iconStyle':enum('outline','rounded','duotone'),'light':BrandPalette,'dark':BrandPalette,'logoLight':BrandAsset,'logoDark':BrandAsset,'favicon':BrandAsset})
+BrandRevision=define('BrandRevision',{'revision':I,'value':Branding})
 FileState=enum('uploading','finalizing','ready','leased','cancelled','rejected','integrity_failed','storage_missing','deleting','deleted')
 TransferState=enum('draft','active','completed','expired','revoked')
 File=define('File',{'id':U,'transferId':S,'path':S,'size':I,'offset':I,'state':FileState,'sha256':null(H)})
@@ -54,6 +59,9 @@ ops={}
 def add(method,path,title,response=None,body=None,code=None,description=''):
  ops[(method,'/api/v1'+path)]={'title':title,'response':response,'body':body,'code':code or (204 if response is None else 200),'description':description}
 add('GET','/status','Read aggregate service status',Status,description='Aggregate database reachability, recovery gate and runtime generation status; no topology, history or component identifiers. Does not prove production readiness.')
+add('GET','/branding','Read public installation branding',BrandRevision,description='Public nonsecret presentation only; no configuration secrets, actor or history. No-store. Revision zero uses built-in defaults. Palette text contrast and image budgets are validated on apply.')
+add('GET','/admin/branding','Read the current branding revision',BrandRevision)
+add('PUT','/admin/branding','Apply a branding revision',BrandRevision,obj({'expectedRevision':I,'value':Branding}),description='Atomic compare-and-swap and audit. Requires current ADMIN cookie session, fresh reauthentication, Origin and CSRF. Invalid input does not change branding; concurrent/stale revisions return 409. Reset by applying built-in defaults as a new revision. Request limit 600 KiB.')
 add('GET','/banner','Read the global announcement',obj({'ru':S,'en':S}))
 add('POST','/auth/login','Sign in with email and password',Session,obj({'email':S,'password':password}),description='Requires exact publicOrigin. Sets HttpOnly SameSite=Strict filexSession cookie. Generic errors and durable per-IP/per-email throttling prevent enumeration. Client IP uses the socket peer unless a configured single Traefik hop supplies valid forwarded headers; network allowlist/proxy/HTTPS guards apply before login. Store csrfToken for unsafe requests.')
 add('GET','/auth/me','Read current principal',Principal)
@@ -161,7 +169,7 @@ add('POST','/bulk/{id}/{action}','Run or cancel a frozen bulk selection',descrip
 # Route metadata is inspected only for scope wiring, never to invent operation semantics.
 sources='\n'.join(p.read_text() for p in (root/'internal/httpapi').glob('*.go') if not p.name.endswith('_test.go'))
 paths={}
-public={'/api/v1/verify-report','/api/v1/status','/api/v1/banner','/api/v1/auth/login','/api/v1/recipient/session','/api/v1/signing-keys/{id}'}
+public={'/api/v1/branding','/api/v1/verify-report','/api/v1/status','/api/v1/banner','/api/v1/auth/login','/api/v1/recipient/session','/api/v1/signing-keys/{id}'}
 for (method,path),v in ops.items():
  admin='/admin/' in path
  ispublic=path in public or '/verify/reports/' in path or method=='OPTIONS'
@@ -217,6 +225,10 @@ for (method,path),v in ops.items():
   op['parameters'].extend([{'name':'format','in':'query','schema':enum('json','pdf'),'description':'Defaults to json.'},{'name':'revision','in':'query','schema':I,'description':'Zero or omitted selects latest revision.'}])
   op['responses']['200']['content']['application/pdf']={'schema':{'type':'string','format':'binary'}}
   op['responses']['200']['headers']={'X-Content-SHA256':{'schema':H,'description':'SHA-256 of the immutable source JSON, including for a PDF response.'}}
+ if path=='/api/v1/branding':
+  op['parameters'].append({'name':'If-None-Match','in':'header','schema':S,'description':'ETag returned by an earlier branding response.'})
+  op['responses']['304']={'description':'Branding is unchanged; no response body.'}
+  op['responses']['200']['headers']={'ETag':{'schema':S}}
  if not op['parameters']:op.pop('parameters')
  paths.setdefault(path,{})[method.lower()]=op
 # Signing API field names are intentionally verified against its implementation.
@@ -232,6 +244,9 @@ for key,address,schema,description in [('owner','/api/v1/events','event-v1','Coo
  asyncapi['components']['messages'][key]={'name':key,'title':key+' notification','summary':description,'payload':{'schemaFormat':'application/schema+json;version=draft-2020-12','schema':{'$ref':'schemas/'+schema+'.json'}}}
  asyncapi['channels'][key]={'address':address,'description':description,'messages':{key:{'$ref':'#/components/messages/'+key}}}
  asyncapi['operations']['send'+key.title()]={'action':'send','channel':{'$ref':'#/channels/'+key},'x-implementation':'implemented','messages':[{'$ref':'#/channels/'+key+'/messages/'+key}]}
+branding_schema=copy.deepcopy(D['Branding'])
+for key in ['light','dark']:branding_schema['properties'][key]=D['BrandPalette']
+outputs['contracts/schemas/branding-v1.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/branding-v1.json',**branding_schema}
 outputs['contracts/asyncapi.json']=asyncapi
 for path,value in outputs.items():
  result=json.dumps(value,ensure_ascii=False,indent=2)+'\n';target=root/path

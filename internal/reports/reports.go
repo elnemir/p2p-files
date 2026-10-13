@@ -8,6 +8,7 @@ import (
 	"errors"
 	"filex.local/filex/internal/artifacts"
 	"filex.local/filex/internal/audit"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/cryptobox"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/keyring"
@@ -175,7 +176,11 @@ func (s Service) Create(ctx context.Context, actor, transferID, kind, locale, ti
 	if e = keyring.RequireActive(ctx, tx, kid); e != nil {
 		return "", "", e
 	}
-	if _, e = tx.Exec(ctx, "INSERT INTO reports(id,owner_id,transfer_id,kind,revision,canonical_hash,key_id,snapshot_envelope,locale,timezone) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", id, actor, transferID, kind, rev, canonicalHash, kid, box, locale, timezone); e != nil {
+	presentation, e := branding.Snapshot(ctx, tx)
+	if e != nil {
+		return "", "", e
+	}
+	if _, e = tx.Exec(ctx, "INSERT INTO reports(id,owner_id,transfer_id,kind,revision,canonical_hash,key_id,snapshot_envelope,locale,timezone,branding) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)", id, actor, transferID, kind, rev, canonicalHash, kid, box, locale, timezone, presentation); e != nil {
 		return "", "", e
 	}
 	if _, e = tx.Exec(ctx, "INSERT INTO report_history(report_id,actor_id,action) VALUES($1,$2,'created')", id, actor); e != nil {
@@ -220,10 +225,22 @@ func (s Service) RenderPending(ctx context.Context) error {
 	if e != nil {
 		return e
 	}
+	var presentation []byte
+	if e = s.DB.QueryRow(ctx, "SELECT branding FROM reports WHERE id=$1", id).Scan(&presentation); e != nil {
+		return e
+	}
+	var brand *branding.Config
+	if len(presentation) > 0 {
+		v, err := branding.DecodeSnapshot(presentation)
+		if err != nil {
+			return err
+		}
+		brand = &v
+	}
 	formats := map[string]string{"json": "application/json", "csv": "text/csv; charset=utf-8", "pdf": "application/pdf"}
 	created := map[string]string{}
 	for format, media := range formats {
-		artifact, err := s.Artifacts.Create(ctx, owner, "report-"+id+"."+format, media, func(w io.Writer) error { return Render(w, raw, hash, format) })
+		artifact, err := s.Artifacts.Create(ctx, owner, "report-"+id+"."+format, media, func(w io.Writer) error { return RenderBranded(w, raw, hash, format, brand) })
 		if err != nil {
 			_, update := s.DB.Exec(ctx, "UPDATE reports SET render_state='failed',render_error='render_failed' WHERE id=$1 AND render_fence=$2", id, fence)
 			if update != nil {

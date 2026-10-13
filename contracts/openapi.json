@@ -46,6 +46,349 @@
         }
       }
     },
+    "/api/v1/branding": {
+      "get": {
+        "operationId": "getBranding",
+        "summary": "Read public installation branding",
+        "description": "Public nonsecret presentation only; no configuration secrets, actor or history. No-store. Revision zero uses built-in defaults. Palette text contrast and image budgets are validated on apply.",
+        "x-implementation": "implemented",
+        "tags": [
+          "branding"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandRevision"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Branding is unchanged; no response body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "ETag returned by an earlier branding response."
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/branding": {
+      "get": {
+        "operationId": "getAdminBranding",
+        "summary": "Read the current branding revision",
+        "description": "Read the current branding revision. ADMIN cookie session with reauthentication within five minutes is required.",
+        "x-implementation": "implemented",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandRevision"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-scope": "admin:settings"
+      },
+      "put": {
+        "operationId": "putAdminBranding",
+        "summary": "Apply a branding revision",
+        "description": "Atomic compare-and-swap and audit. Requires current ADMIN cookie session, fresh reauthentication, Origin and CSRF. Invalid input does not change branding; concurrent/stale revisions return 409. Reset by applying built-in defaults as a new revision. Request limit 600 KiB. ADMIN cookie session with reauthentication within five minutes is required.",
+        "x-implementation": "implemented",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandRevision"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required with cookie authentication; obtained at login. Not required for bearer requests."
+          }
+        ],
+        "x-required-scope": "admin:settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "value": {
+                    "$ref": "#/components/schemas/Branding"
+                  }
+                },
+                "required": [
+                  "expectedRevision",
+                  "value"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/banner": {
       "get": {
         "operationId": "getBanner",
@@ -16323,6 +16666,149 @@
           "transferMaxTtlSeconds",
           "maxFiles",
           "maxPathBytes"
+        ]
+      },
+      "BrandPalette": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "background": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "foreground": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "muted": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "surface": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "border": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "accent": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "onAccent": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "danger": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "dangerSurface": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "required": [
+          "background",
+          "foreground",
+          "muted",
+          "surface",
+          "border",
+          "accent",
+          "onAccent",
+          "danger",
+          "dangerSurface"
+        ]
+      },
+      "Branding": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "taglineRu": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "taglineEn": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "footerText": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "defaultTheme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark",
+              "system"
+            ]
+          },
+          "iconStyle": {
+            "type": "string",
+            "enum": [
+              "outline",
+              "rounded",
+              "duotone"
+            ]
+          },
+          "light": {
+            "$ref": "#/components/schemas/BrandPalette"
+          },
+          "dark": {
+            "$ref": "#/components/schemas/BrandPalette"
+          },
+          "logoLight": {
+            "type": "string",
+            "maxLength": 174787,
+            "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+          },
+          "logoDark": {
+            "type": "string",
+            "maxLength": 174787,
+            "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+          },
+          "favicon": {
+            "type": "string",
+            "maxLength": 174787,
+            "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+          }
+        },
+        "required": [
+          "productName",
+          "taglineRu",
+          "taglineEn",
+          "footerText",
+          "defaultTheme",
+          "iconStyle",
+          "light",
+          "dark",
+          "logoLight",
+          "logoDark",
+          "favicon"
+        ]
+      },
+      "BrandRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "value": {
+            "$ref": "#/components/schemas/Branding"
+          }
+        },
+        "required": [
+          "revision",
+          "value"
         ]
       },
       "File": {

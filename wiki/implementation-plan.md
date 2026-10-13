@@ -76,3 +76,7 @@
 
 ## DEV-06: native WebDAV и следующий внешний шаг
 Реализованы owner draft read/Range, conditional atomic overwrite, durable exclusive locks, properties/timestamps и hidden encrypted staging/cleanup. macOS mount_webdav и Linux GVfs проверяются настоящими backend; Windows **ожидает стенда**, скрипт и приёмка готовы в [руководстве](webdav-upload.md). Дальше: запуск PowerShell на согласованном HTTPS стенде, server-created read, реальные copy/replace/rename/delete и отзыв/hold/publish. Результат связать с Windows build и exact server source. Отсутствующий стенд не закрывается HTTP fixtures. Office/KDE/davfs2 и production deployment не включаются автоматически.
+
+## Настраиваемый брендинг — 2026-10-13
+
+Вертикальный срез: [ADR-013](adr/013-white-label.md), [инструкция и data flow](white-label.md), migration 0018, API/SSR/ADMIN preview, письма/PDF и backup restore. Автоматическая приёмка — negative/concurrency/fault + пять browser profiles; фактический source-bound статус в [session](session.md). Ручная приёмка фирменных изображений и реальных устройств остаётся отдельной от автоматизированной проверки. Внешние release blockers не снимаются этим срезом.

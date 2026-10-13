@@ -45,7 +45,7 @@
 | [.github/dependency-policy.json](../.github/dependency-policy.json), [check_dependencies.mjs](../scripts/check_dependencies.mjs) | Reviewed Node/Redis timeline → engine/types/images/installed graph guard; [ADR-012](adr/012-node26-runtime.md), [negative tests](../scripts/dependencies.test.mjs) |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |
 | [.github/repository.json](../.github/repository.json), [github_repository.py](../scripts/github_repository.py) | Desired GitHub settings → audit/apply/readback; [правила репозитория](repository-governance.md) |
-| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 35 browser scenarios, 10 Linux baselines; review перед заменой изображений |
+| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 40 browser scenarios, 10 Linux baselines; review перед заменой изображений |
 
 ## Поток изменения и пример
 
@@ -55,3 +55,7 @@
 
 ## Новые точки native WebDAV
 [webdav_put.go](../internal/httpapi/webdav_put.go) управляет staged swap; [webdav_read.go](../internal/httpapi/webdav_read.go) — owner streaming guards; [conditions](../internal/httpapi/webdav_conditions.go), [locks](../internal/httpapi/webdav_locks.go), [properties](../internal/httpapi/webdav_properties.go) — wire methods. Общие PG guards находятся в [transfer/dav.go](../internal/transfer/dav.go), expiry cleanup — [files/staging.go](../internal/files/staging.go), schema — [0017](../internal/database/migrations/0017_native_webdav.sql). Любое изменение guard проверять также на REST/tus/bulk/publish, а не только DAV route.
+
+## Брендинг установки
+
+[internal/branding](../internal/branding/) — defaults, validation, revision CAS/audit; [branding API](../internal/httpapi/branding.go) — публичный DTO и ADMIN routes. [BrandingPanel](../apps/web/components/BrandingPanel.tsx) — редактор, [BrandingProvider](../apps/web/components/BrandingProvider.tsx) — runtime context; SSR читает внутренний API. Migration 0018 и reports/communications интегрируют snapshots и письма. Инструкция и границы — [white labeling](white-label.md).

@@ -3,11 +3,14 @@ package reports
 import (
 	"bytes"
 	_ "embed"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
+	"filex.local/filex/internal/branding"
 	"fmt"
 	"github.com/go-pdf/fpdf"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,6 +26,9 @@ func SafeCSV(v string) string {
 	return v
 }
 func Render(w io.Writer, raw []byte, hash, format string) error {
+	return RenderBranded(w, raw, hash, format, nil)
+}
+func RenderBranded(w io.Writer, raw []byte, hash, format string, brand *branding.Config) error {
 	if format == "json" {
 		_, e := w.Write(raw)
 		return e
@@ -94,9 +100,18 @@ func Render(w io.Writer, raw []byte, hash, format string) error {
 	pdf.SetCompression(true)
 	pdf.AddUTF8FontFromBytes("Body", "", font)
 	pdf.SetFont("Body", "", 10)
-	pdf.SetTitle("FileX report", true)
-	pdf.SetAuthor("FileX", false)
+	name := "FileX"
+	if brand != nil {
+		name = brand.ProductName
+	}
+	pdf.SetTitle(name+" report", true)
+	pdf.SetAuthor(name, brand != nil)
 	pdf.AddPage()
+	if brand != nil {
+		if e := brandHeading(pdf, *brand); e != nil {
+			return e
+		}
+	}
 	title := "Отчёт о передаче"
 	filesTitle := "Файлы"
 	journalTitle := "Журнал скачиваний"
@@ -139,7 +154,11 @@ func Render(w io.Writer, raw []byte, hash, format string) error {
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-13)
 		pdf.SetFont("Body", "", 8)
-		pdf.CellFormat(0, 5, fmt.Sprintf("FileX · %s %d", pageLabel, pdf.PageNo()), "", 0, "R", false, 0, "")
+		if brand == nil {
+			pdf.CellFormat(0, 5, fmt.Sprintf("FileX · %s %d", pageLabel, pdf.PageNo()), "", 0, "R", false, 0, "")
+		} else {
+			pdf.MultiCell(0, 4, fmt.Sprintf("%s · %s %d", name, pageLabel, pdf.PageNo()), "", "R", false)
+		}
 	})
 	pdf.MultiCell(0, 6, fmt.Sprintf("%s · #%d\n%s\n%s (%s)", s.ID, s.Revision, s.Title, at.In(loc).Format("2006-01-02 15:04:05"), s.Timezone), "", "L", false)
 	pdf.Ln(4)
@@ -181,4 +200,37 @@ func Render(w io.Writer, raw []byte, hash, format string) error {
 	}
 	_, e = w.Write(out.Bytes())
 	return e
+}
+
+// brandHeading uses only the immutable, normalized public presentation snapshot.
+func brandHeading(pdf *fpdf.Fpdf, c branding.Config) error {
+	if c.LogoLight != "" {
+		raw, e := base64.StdEncoding.Strict().DecodeString(strings.TrimPrefix(c.LogoLight, "data:image/png;base64,"))
+		if e != nil {
+			return e
+		}
+		info := pdf.RegisterImageOptionsReader("branding", fpdf.ImageOptions{ImageType: "PNG"}, bytes.NewReader(raw))
+		if info == nil {
+			return pdf.Error()
+		}
+		w, h := info.Width(), info.Height()
+		scale := min(50/w, 16/h)
+		pdf.ImageOptions("branding", pdf.GetX(), pdf.GetY(), w*scale, h*scale, false, fpdf.ImageOptions{ImageType: "PNG"}, 0, "")
+		pdf.Ln(h*scale + 3)
+	}
+	// PDFs use white paper even when the configured light palette is dark.
+	accent := c.Light.Accent
+	if branding.Contrast(accent, "#ffffff") < 4.5 {
+		accent = "#000000"
+	}
+	color, e := strconv.ParseUint(strings.TrimPrefix(accent, "#"), 16, 32)
+	if e != nil {
+		return e
+	}
+	pdf.SetTextColor(int((color>>16)&255), int((color>>8)&255), int(color&255))
+	pdf.SetFont("Body", "", 14)
+	pdf.MultiCell(0, 7, c.ProductName, "", "L", false)
+	pdf.Ln(3)
+	pdf.SetTextColor(0, 0, 0)
+	return pdf.Error()
 }

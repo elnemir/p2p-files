@@ -34,3 +34,14 @@ test('WebDAV has an explicit non-REST protocol contract and scoped credential sc
  const valid={id,url:'https://filex.example/api/v1/webdav/'+id+'/',username:'filex',password:'fixture',expiresAt:'2026-10-13T00:00:00Z'};
  assert.equal(davCredential(valid),true);assert.equal(davCredential({...valid,username:'admin'}),false);assert.equal(davCredential({...valid,secretHash:'private'}),false);
 });
+test('branding contract is public-only and matches the shared defaults',async()=>{
+ const validate=ajv.compile(await load('contracts/schemas/branding-v1.json'));
+ const value=await load('internal/branding/defaults.json');assert.equal(validate(value),true);
+ assert.equal(validate({...value,productName:''}),false);
+ assert.equal(validate({...value,iconStyle:'external'}),false);
+ assert.equal(validate({...value,light:{...value.light,accent:'url(https://evil.test)'}}),false);
+ assert.equal(validate({...value,smtpPassword:'secret'}),false);
+ const api=await load('contracts/openapi.json');assert.deepEqual(api.paths['/api/v1/branding'].get.security,[]);
+ assert.deepEqual(api.paths['/api/v1/admin/branding'].put.security,[{session:[]}]);
+ assert.equal(api.paths['/api/v1/admin/branding'].put['x-required-scope'],'admin:settings');
+});

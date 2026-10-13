@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"filex.local/filex/internal/audit"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/cryptobox"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/keyring"
@@ -93,6 +94,10 @@ func (s Service) incidentReport(ctx context.Context, tx pgx.Tx, id, reason strin
 	if e := tx.QueryRow(ctx, "SELECT COALESCE(max(revision),0)+1 FROM security_incident_reports WHERE incident_id=$1", id).Scan(&revision); e != nil {
 		return e
 	}
+	presentation, e := branding.Snapshot(ctx, tx)
+	if e != nil {
+		return e
+	}
 	reportID := domain.NewID()
 	raw, e := json.Marshal(map[string]any{"schemaVersion": 1, "id": reportID, "incidentId": id, "revision": revision, "kind": kind, "subject": subject, "severity": severity, "state": state, "reason": reason, "evidence": evidence, "createdAt": time.Now().UTC()})
 	if e != nil {
@@ -109,7 +114,7 @@ func (s Service) incidentReport(ctx context.Context, tx pgx.Tx, id, reason strin
 	if e = keyring.RequireActive(ctx, tx, kid); e != nil {
 		return e
 	}
-	_, e = tx.Exec(ctx, "INSERT INTO security_incident_reports(id,incident_id,revision,key_id,envelope,sha256) VALUES($1,$2,$3,$4,$5,$6)", reportID, id, revision, kid, box, hash(raw))
+	_, e = tx.Exec(ctx, "INSERT INTO security_incident_reports(id,incident_id,revision,key_id,envelope,sha256,branding) VALUES($1,$2,$3,$4,$5,$6,$7)", reportID, id, revision, kid, box, hash(raw), presentation)
 	return e
 }
 func (s Service) IncidentReport(ctx context.Context, id string, revision int) ([]byte, string, error) {

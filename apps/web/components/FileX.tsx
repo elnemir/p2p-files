@@ -1,4 +1,8 @@
 "use client";
+import Brand from "./Brand";
+import Icon, { type IconName } from "./Icon";
+import { useBranding } from "./BrandingProvider";
+import BrandingPanel from "./BrandingPanel";
 import OperationsPanel from "./OperationsPanel";
 import AdminExportsPanel from "./AdminExportsPanel";
 import WebDAVPanel from "./WebDAVPanel";
@@ -135,7 +139,8 @@ async function dropped(
 }
 export default function FileX({ mode = "owner" }: { mode?: Mode }) {
   const [locale, setLocale] = useState("ru");
-  const [theme, setTheme] = useState("system");
+  const { value: branding } = useBranding();
+  const [theme, setTheme] = useState("inherit");
   const [user, setUser] = useState<User | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState("");
@@ -356,7 +361,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
   useEffect(() => {
     const stored = localStorage.getItem("filex.locale") || "ru";
     setLocale(stored);
-    setTheme(localStorage.getItem("filex.theme") || "system");
+    setTheme(localStorage.getItem("filex.theme") || "inherit");
     if (mode === "owner") {
       api<User>("/auth/me")
         .then(async (u) => {
@@ -401,10 +406,13 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
   }, [mode]);
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.theme =
+      theme === "inherit" ? branding.defaultTheme : theme;
+    document.title = `${branding.productName} — ${locale === "en" ? branding.taglineEn : branding.taglineRu}`;
     localStorage.setItem("filex.locale", locale);
-    localStorage.setItem("filex.theme", theme);
-  }, [locale, theme]);
+    if (theme === "inherit") localStorage.removeItem("filex.theme");
+    else localStorage.setItem("filex.theme", theme);
+  }, [locale, theme, branding]);
   useEffect(() => {
     if (!user) return;
     void refreshRef.current().catch(() => undefined);
@@ -440,7 +448,8 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
         "Notification" in window &&
         Notification.permission === "granted"
       )
-        new Notification("FileX", {
+        new Notification(branding.productName, {
+          icon: branding.favicon || undefined,
           body: t("Изменилось состояние передачи", "Transfer status changed"),
           tag: String(event.id),
         });
@@ -466,7 +475,13 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
       socket.close();
       clearInterval(poll);
     };
-  }, [user, preferences.browserEnabled, t]);
+  }, [
+    user,
+    preferences.browserEnabled,
+    t,
+    branding.productName,
+    branding.favicon,
+  ]);
   async function login(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
@@ -634,17 +649,21 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
   return (
     <>
       <header className="site-header">
-        <a className="brand" href="/" aria-label="FileX">
-          File<span>X</span>
-          <span className="brand-dot" />
-        </a>
+        <Brand />
         <nav aria-label={t("Навигация", "Navigation")}>
-          <a href="/help">{t("Помощь", "Help")}</a>
-          <a href="/status">{t("Статус", "Status")}</a>
+          <a href="/help">
+            <Icon name="help" />
+            {t("Помощь", "Help")}
+          </a>
+          <a href="/status">
+            <Icon name="status" />
+            {t("Статус", "Status")}
+          </a>
           <label>
             <span className="sr-only">{t("Язык", "Language")}</span>
             <select
               aria-label={t("Язык", "Language")}
+              disabled={!loaded}
               value={locale}
               onChange={(e) => setLocale(e.target.value)}
             >
@@ -656,9 +675,11 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
             <span className="sr-only">{t("Тема", "Theme")}</span>
             <select
               aria-label={t("Тема", "Theme")}
+              disabled={!loaded}
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
             >
+              <option value="inherit">{t("По умолчанию", "Default")}</option>
               <option value="system">{t("Системная", "System")}</option>
               <option value="light">{t("Светлая", "Light")}</option>
               <option value="dark">{t("Тёмная", "Dark")}</option>
@@ -691,7 +712,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
               aria-label={t("Закрыть сообщение", "Dismiss message")}
               onClick={() => setError("")}
             >
-              ×
+              <Icon name="close" />
             </button>
           </div>
         )}
@@ -702,10 +723,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
           <div className="welcome">
             <section>
               <p className="eyebrow">
-                {t(
-                  "Ваши файлы. Под вашим контролем.",
-                  "Your files. Under your control.",
-                )}
+                {t(branding.taglineRu, branding.taglineEn)}
               </p>
               <h1>
                 {t("Передать.", "Send.")}
@@ -720,7 +738,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
               </p>
             </section>
             <form className="panel login" onSubmit={login}>
-              <h2>{t("Войти в FileX", "Sign in to FileX")}</h2>
+              <h2>{t("Войти в ", "Sign in to ") + branding.productName}</h2>
               <p>
                 {t(
                   "Учётную запись создаёт администратор вашей организации.",
@@ -781,6 +799,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                     setReportDetail(null);
                   }}
                 >
+                  <Icon name={value as IconName} />
                   {label}
                 </button>
               ))}
@@ -888,7 +907,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                             })
                           }
                         >
-                          ×
+                          <Icon name="close" />
                         </button>
                       </span>
                     ))}
@@ -977,7 +996,8 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                     setChosen([]);
                   }}
                 >
-                  ← {t("Все передачи", "All transfers")}
+                  <Icon name="back" />
+                  {t("Все передачи", "All transfers")}
                 </button>
                 <div className="section-title">
                   <h1 className="page-title">
@@ -1213,7 +1233,8 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                   {tree &&
                     folders.map((f) => (
                       <div className="folder-row" key={f.id}>
-                        ▸ {f.path}/
+                        <Icon name="transfers" />
+                        {f.path}/
                         {detail.state === "draft" && (
                           <div className="toolbar">
                             <form
@@ -2334,7 +2355,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
         )}
         {mode === "help" && (
           <article className="help">
-            <p className="eyebrow">FileX</p>
+            <p className="eyebrow">{branding.productName}</p>
             <h1 className="page-title">{t("Помощь", "Help")}</h1>
             <h2>{t("Как передать файлы", "Sending files")}</h2>
             <ol>
@@ -2395,7 +2416,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
         )}
         {mode === "status" && (
           <section className="status-card">
-            <p className="eyebrow">FileX</p>
+            <p className="eyebrow">{branding.productName}</p>
             <h1 className="page-title">
               {t("Состояние сервиса", "Service status")}
             </h1>
@@ -2496,9 +2517,9 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
         )}
       </main>
       <footer>
-        <span>FileX</span>
+        <span>{branding.productName}</span>
         <span>
-          {t("Меньше следов. Больше контроля.", "Fewer traces. More control.")}
+          {branding.footerText || t(branding.taglineRu, branding.taglineEn)}
         </span>
       </footer>
     </>
@@ -2762,6 +2783,7 @@ function Admin({
       >
         {t("Обновить", "Refresh")}
       </button>
+      <BrandingPanel api={api} t={t} busy={busy} />
       <OperationsPanel
         api={api}
         t={t}

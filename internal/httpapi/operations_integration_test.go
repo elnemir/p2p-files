@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"filex.local/filex/internal/audit"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/database"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/maintenance"
@@ -184,6 +185,7 @@ func restartRecoveryClient(t *testing.T, c apiClient) apiClient {
 func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 	c, root := testClient(t)
 	ctx := context.Background()
+	brandBefore := applyBrand(t, c, 0, "Restored brand")
 	backupRoot := t.TempDir()
 	provider, e := c.a.Files.Storage.Provision(ctx, backupRoot, "backups")
 	if e != nil {
@@ -210,6 +212,7 @@ func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 			t.Fatal("plaintext backup leak")
 		}
 	}
+	applyBrand(t, c, brandBefore.Revision, "Later brand")
 	newer := c.draft()
 	c.upload(newer, "after.txt", "newer orphan payload")
 	var object string
@@ -251,6 +254,10 @@ func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 	}
 	if e = c.a.DB.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM transfers WHERE id=$1)", newer).Scan(&exists); e != nil || exists {
 		t.Fatal("new data survived replacement", e)
+	}
+	restoredBrand, err := branding.Current(ctx, c.a.DB)
+	if err != nil || restoredBrand.Value.ProductName != "Restored brand" || restoredBrand.Revision != brandBefore.Revision {
+		t.Fatal("branding restore", err, restoredBrand.Revision)
 	}
 	var pre string
 	if e = c.a.DB.QueryRow(ctx, "SELECT pre_backup_id::text FROM ops_jobs WHERE id=$1", restored).Scan(&pre); e != nil || !domain.ValidID(pre) {
@@ -305,6 +312,7 @@ func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 func TestIntegrationOperationsAuditCheckpoint(t *testing.T) {
 	c, _ := testClient(t)
 	ctx := context.Background()
+	incidentBrand := applyBrand(t, c, 0, "Incident brand")
 	w := c.req("POST", "/api/v1/admin/operations/checkpoints", `{"kind":"regular","reason":"Retain independent audit anchor"}`, nil)
 	if w.Code != 201 {
 		t.Fatal(w.Code, w.Body.String())
@@ -355,6 +363,19 @@ func TestIntegrationOperationsAuditCheckpoint(t *testing.T) {
 	}
 	if e = c.a.Operations.UpdateIncident(ctx, list[0].ID, "resolved", "host_cli", "Reviewed preserved evidence and new checkpoint"); e != nil {
 		t.Fatal(e)
+	}
+
+	applyBrand(t, c, incidentBrand.Revision, "Later brand")
+	var snapshot []byte
+	if e = c.a.DB.QueryRow(ctx, "SELECT branding FROM security_incident_reports WHERE incident_id=$1 AND revision=1", list[0].ID).Scan(&snapshot); e != nil {
+		t.Fatal(e)
+	}
+	preserved, e := branding.DecodeSnapshot(snapshot)
+	if e != nil || preserved.ProductName != incidentBrand.Value.ProductName {
+		t.Fatal("incident presentation changed", e)
+	}
+	if _, e = c.a.DB.Exec(ctx, "UPDATE security_incident_reports SET branding='{}' WHERE incident_id=$1", list[0].ID); e == nil {
+		t.Fatal("incident snapshot mutation accepted")
 	}
 	retained, hash, e := c.a.Operations.IncidentReport(ctx, list[0].ID, 1)
 	if e != nil || hash != digest || !bytes.Equal(retained, raw) {
@@ -708,15 +729,19 @@ func TestIntegrationUpgradePreflightIsReadOnly(t *testing.T) {
 	if e != nil || !plan.Compatible || len(plan.Pending) != 0 {
 		t.Fatal(plan, e)
 	}
-	if _, e = p.Exec(ctx, "DELETE FROM schema_migrations WHERE name='0017_native_webdav.sql'"); e != nil {
+	var latest string
+	if e = p.QueryRow(ctx, "SELECT name FROM schema_migrations ORDER BY name DESC LIMIT 1").Scan(&latest); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = p.Exec(ctx, "DELETE FROM schema_migrations WHERE name=$1", latest); e != nil {
 		t.Fatal(e)
 	}
 	plan, e = database.CheckUpgrade(ctx, p)
-	if e != nil || len(plan.Pending) != 1 {
+	if e != nil || len(plan.Pending) != 1 || plan.Pending[0] != latest {
 		t.Fatal(plan, e)
 	}
 	var exists bool
-	if e = p.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name='0017_native_webdav.sql')").Scan(&exists); e != nil || exists {
+	if e = p.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name=$1)", latest).Scan(&exists); e != nil || exists {
 		t.Fatal("preflight applied migration", e)
 	}
 	if _, e = p.Exec(ctx, "INSERT INTO schema_migrations(name,sha256) VALUES('9999_newer.sql','unknown')"); e != nil {

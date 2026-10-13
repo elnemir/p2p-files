@@ -24,12 +24,13 @@ import (
 )
 
 type SMTPConfig struct {
-	Host     string `json:"host"`
-	Port     int    `json:"port"`
-	TLS      string `json:"tls"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	From     string `json:"from"`
+	Host        string `json:"host"`
+	Port        int    `json:"port"`
+	TLS         string `json:"tls"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	From        string `json:"from"`
+	DisplayName string `json:"-"`
 }
 
 func (c SMTPConfig) Validate() error {
@@ -47,7 +48,7 @@ func sendMailTLS(ctx context.Context, c SMTPConfig, id, to, subject, body string
 		return e
 	}
 	a, e := mail.ParseAddress(to)
-	if e != nil || a.Address != to || strings.ContainsAny(subject, "\r\n") {
+	if e != nil || a.Address != to || strings.ContainsAny(subject+c.DisplayName, "\r\n") {
 		return errors.New("invalid mail envelope")
 	}
 	address := net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
@@ -95,7 +96,13 @@ func sendMailTLS(ctx context.Context, c SMTPConfig, id, to, subject, body string
 		return e
 	}
 	var message bytes.Buffer
-	fmt.Fprintf(&message, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMessage-ID: <%s@filex.local>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", c.From, to, mime.QEncoding.Encode("utf-8", subject), id)
+	from := c.From
+	if c.DisplayName != "" {
+		from = (&mail.Address{Name: c.DisplayName, Address: c.From}).String()
+	}
+	// Base64 keeps a maximum-length Unicode brand within SMTP header line limits.
+	_, domain, _ := strings.Cut(c.From, "@")
+	fmt.Fprintf(&message, "From: %s\r\nTo: %s\r\nSubject: %s\r\nMessage-ID: <%s@%s>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n", from, to, mime.BEncoding.Encode("utf-8", subject), id, domain)
 	q := quotedprintable.NewWriter(&message)
 	if _, e = io.WriteString(q, body); e != nil {
 		return e

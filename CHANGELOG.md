@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — White labeling
+
+- ADMIN-редактор общего бренда: название, RU/EN описания, подпись, светлая/тёмная палитры, default theme, три стиля иконок, логотипы/favicon, preview/apply/reset.
+- Migration 0018, bounded raster normalization, contrast validation, PostgreSQL revision CAS и атомарный audit; публичный DTO и SSR до JavaScript.
+- Бренд в интерфейсах, уведомлениях, SMTP и новых PDF; immutable presentation snapshot сохраняет старые отчёты. Настройки включены в backup/restore.
+- Negative/concurrency/fault и browser coverage; [инструкция](wiki/white-label.md).
+
 ## Node 26 — 2026-10-13
 
 - Согласованный переход на Node 26.11.1 в pinned Docker builder/runtime, `.nvmrc`/CI и npm engine; `@types/node` 26.6.5 с обновлённым npm lockfile.

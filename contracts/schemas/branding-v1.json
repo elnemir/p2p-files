@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filex.invalid/schemas/branding-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "productName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "taglineRu": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "taglineEn": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "footerText": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "defaultTheme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark",
+        "system"
+      ]
+    },
+    "iconStyle": {
+      "type": "string",
+      "enum": [
+        "outline",
+        "rounded",
+        "duotone"
+      ]
+    },
+    "light": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "foreground": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "muted": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "surface": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "border": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "onAccent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "danger": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "dangerSurface": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      },
+      "required": [
+        "background",
+        "foreground",
+        "muted",
+        "surface",
+        "border",
+        "accent",
+        "onAccent",
+        "danger",
+        "dangerSurface"
+      ]
+    },
+    "dark": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "foreground": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "muted": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "surface": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "border": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "onAccent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "danger": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "dangerSurface": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        }
+      },
+      "required": [
+        "background",
+        "foreground",
+        "muted",
+        "surface",
+        "border",
+        "accent",
+        "onAccent",
+        "danger",
+        "dangerSurface"
+      ]
+    },
+    "logoLight": {
+      "type": "string",
+      "maxLength": 174787,
+      "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+    },
+    "logoDark": {
+      "type": "string",
+      "maxLength": 174787,
+      "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+    },
+    "favicon": {
+      "type": "string",
+      "maxLength": 174787,
+      "description": "Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained."
+    }
+  },
+  "required": [
+    "productName",
+    "taglineRu",
+    "taglineEn",
+    "footerText",
+    "defaultTheme",
+    "iconStyle",
+    "light",
+    "dark",
+    "logoLight",
+    "logoDark",
+    "favicon"
+  ]
+}

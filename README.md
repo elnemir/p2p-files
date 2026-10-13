@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/elnemir/p2p-files/actions/workflows/ci.yml/badge.svg)](https://github.com/elnemir/p2p-files/actions/workflows/ci.yml) [![Security](https://github.com/elnemir/p2p-files/actions/workflows/security.yml/badge.svg)](https://github.com/elnemir/p2p-files/actions/workflows/security.yml)
 
-Приватная передача файлов: tus upload, неизменяемая публикация, ссылки с PIN/password, одноразовая выдача файла или ZIP, зашифрованные Local/S3 хранилища, уведомления, отчёты, exports и управляемое восстановление. Интерфейс RU/EN, light/dark/system.
+Приватная передача файлов: tus upload, неизменяемая публикация, ссылки с PIN/password, одноразовая выдача файла или ZIP, зашифрованные Local/S3 хранилища, уведомления, отчёты, exports и управляемое восстановление. Интерфейс RU/EN, light/dark/system; [настраиваемый брендинг](wiki/white-label.md): название, логотипы/favicon, палитры и стили иконок через ADMIN.
 
 Вся документация — в **[wiki](wiki/index.md)**. [Текущее состояние](wiki/current-state.md) отделяет реализованное и проверенное от оставшейся приёмки. Фазы 1–6 и технический набор проверок фазы 7 реализованы; внешнее окружение не подготовлено, production запуск блокируется.
 

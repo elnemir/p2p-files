@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/cryptobox"
 	"filex.local/filex/internal/domain"
@@ -201,7 +202,13 @@ func (s Service) Deliver(ctx context.Context, c config.Settings) error {
 		if e = json.Unmarshal(payload, &p); e != nil {
 			return e
 		}
-		subject, message := Template(event, locale, link, p.Count)
+		brand, brandErr := branding.Current(ctx, s.DB)
+		if brandErr != nil {
+			return brandErr
+		}
+		cfg.DisplayName = brand.Value.ProductName
+		subject, message := BrandedTemplate(event, locale, link, p.Count, brand.Value.ProductName)
+		message += "\n\n" + brand.Value.ProductName
 		send := s.Mail
 		if send == nil {
 			send = SendMail

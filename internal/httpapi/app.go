@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"filex.local/filex/internal/auth"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/database"
 	"filex.local/filex/internal/domain"
@@ -96,6 +97,10 @@ func failure(w http.ResponseWriter, e error) {
 		code, name = 503, "maintenance"
 	case errors.Is(e, maintenance.ErrRestart):
 		code, name = 503, "restart_required"
+	case errors.Is(e, branding.ErrInvalid):
+		code, name = 400, "invalid_input"
+	case errors.Is(e, branding.ErrConflict):
+		code, name = 409, "conflict"
 	case errors.Is(e, operations.ErrInvalid):
 		code, name = 400, "invalid_input"
 	case errors.Is(e, operations.ErrConflict) || errors.Is(e, operations.ErrBackup):
@@ -352,6 +357,7 @@ func (a *App) Handler() http.Handler {
 	}))
 	a.treeRoutes(mux)
 	a.operationsRoutes(mux)
+	a.brandingRoutes(mux)
 	a.organizationRoutes(mux)
 	a.exportRoutes(mux)
 	a.adminExportRoutes(mux)
@@ -371,6 +377,7 @@ func (a *App) Metrics() http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/", Internal(a))
 	mux.HandleFunc("GET /metrics", a.operationsMetrics)
+	mux.Handle("GET /branding", headers(http.HandlerFunc(a.publicBranding)))
 	return mux
 }
 func (a *App) sessions(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {

@@ -36,3 +36,6 @@
 Ресурсные бюджеты: 8 общих stream slots, XML input 64 KiB/depth 16, If 8 KiB, 10 000 namespace nodes, ответ 8 MiB до 207, properties 32 KiB/256 на ресурс и 4 MiB aggregate, 256 active locks с owner XML 4 KiB. PROPPATCH проверяет aggregate в той же parent-locked transaction; oversized update откатывается. Количество узлов и метаданные ограничены независимо, чтобы маленький PROPFIND не создавал неограниченный ответ/объект в памяти.
 
 Негативные/concurrency/fault cases перечислены в [матрице](test-matrix.md). Внутренний review и локальные native clients не заменяют независимый security audit, Windows стенд или external acceptance.
+
+## White labeling
+[ADR-013](adr/013-white-label.md): публичный plain-text DTO; bounded raster decode/re-encode, no SVG/CSS/URL fetch; hex/contrast guards; ADMIN/session/reauth/CSRF + CAS + atomic audit. SSR использует фиксированный operator-configured internal URL, не пользовательский Host. Public assets нельзя считать секретными.

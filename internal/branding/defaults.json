@@ -1,0 +1,19 @@
+{
+  "productName": "FileX",
+  "taglineRu": "Приватная передача файлов",
+  "taglineEn": "Private file transfer",
+  "footerText": "",
+  "defaultTheme": "system",
+  "iconStyle": "outline",
+  "light": {
+    "background": "#f7f8f4", "foreground": "#182422", "muted": "#56635d",
+    "surface": "#edf1e9", "border": "#748174", "accent": "#196342", "onAccent": "#ffffff",
+    "danger": "#782620", "dangerSurface": "#fbe9e6"
+  },
+  "dark": {
+    "background": "#121c18", "foreground": "#e4ece5", "muted": "#a7b7ac",
+    "surface": "#1c2b22", "border": "#778f7e", "accent": "#a5d4ae", "onAccent": "#132016",
+    "danger": "#ffb4ab", "dangerSurface": "#3c1f20"
+  },
+  "logoLight": "", "logoDark": "", "favicon": ""
+}
