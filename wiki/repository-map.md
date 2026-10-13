@@ -42,6 +42,7 @@
 | [scripts/tour](../scripts/tour/) | Изолированный capture → реальные PNG/видеозаписи → Milena или narrate.py (ElevenLabs cache) → озвученный MP4, manifest, галерея и [скрин-тур](screen-tour.md); [пересъёмка и QA](tour-maintenance.md) |
 | [scripts/acceptance.py](../scripts/acceptance.py), [Makefile](../Makefile) | 13 source-bound gates → .cache/evidence/gates; [testing](testing.md) |
 | [deploy](../deploy/), [production_config.py](../scripts/production_config.py) | Пять runtime images, dev Compose и offline production config; no deployment |
+| [.github/dependency-policy.json](../.github/dependency-policy.json), [check_dependencies.mjs](../scripts/check_dependencies.mjs) | Reviewed Node/Redis timeline → engine/types/images/installed graph guard; [ADR-012](adr/012-node26-runtime.md), [negative tests](../scripts/dependencies.test.mjs) |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |
 | [.github/repository.json](../.github/repository.json), [github_repository.py](../scripts/github_repository.py) | Desired GitHub settings → audit/apply/readback; [правила репозитория](repository-governance.md) |
 | [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 35 browser scenarios, 10 Linux baselines; review перед заменой изображений |

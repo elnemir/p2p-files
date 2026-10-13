@@ -1,7 +1,7 @@
 # Текущее состояние FileX
 
 ## Контекст и проверяемая граница
-Срез 2026-10-12: рабочая ветка `codex/webdav-upload`, baseline `28ab4f3`. Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован на `7dce226`. Его измерения сохранены в [истории](history/development-evidence-2026-10-11.md), результаты нового diff — в [session](session.md). Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
+Срез 2026-10-13: native WebDAV merged через [PR #23](https://github.com/elnemir/p2p-files/pull/23), main `1ce65ab`. Согласованный Node 24→26 и исправление idle recovery worker реализованы в [PR #22](https://github.com/elnemir/p2p-files/pull/22); source-bound квалификация — [session](session.md), GitHub delivery status — PR. Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован на `7dce226`. Его измерения сохранены в [истории](history/development-evidence-2026-10-11.md), результаты нового diff — в [session](session.md). Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
 
 ## Реализовано
 - Identity/USER/ADMIN/scopes, settings/audit, tus/tree/publish, Local/S3, one-time Range/ZIP, freeze/forensic, crypto/rotation.
@@ -10,14 +10,15 @@
 - TLS/ACME configuration, ingress policy, controlled upgrade, contracts/types, scanners/fuzz/browser/load/DR и fail-closed release evidence.
 - [Native WebDAV](webdav-upload.md): owner draft чтение, условная атомарная замена, PG locks/If, metadata, encrypted staging/cleanup, инструкции трёх ОС. Publish/recipient semantics сохранены.
 
-Контракт: **108 REST/tus операций + WebDAV wire profile; 17 migrations; 11 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
+Контракт: **108 REST/tus операций + WebDAV wire profile; 17 migrations; 12 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
 
 ## Проверено и не подтверждено
 | Область | Текущая граница | Что ещё требуется |
 |---|---|---|
 | Требования | 32 MUST, 27 verified/5 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
 | Native WebDAV | macOS mount_webdav и настоящий Linux GVfs: полный файловый цикл, multi-chunk hash, server-created GET; 15 профильных HTTP/PG/race tests | Windows **ожидает стенда**; Office/KDE/davfs2 не квалифицированы |
-| Общая регрессия | 13 локальных gates PASS на source из session, 51 integration и 35 browser cases; macOS/GVfs повторно PASS | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике; CI после доставки отдельно |
+| WebDAV regression | 13 локальных gates и PR #23/main CI PASS; 51 integration и 35 browser cases; macOS/GVfs повторно PASS в [исторической квалификации](sessions/2026-10-13-webdav-merged.md) | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике |
+| Node 26 | Runtime/types/CI/policy, clean install и 57 toolchain tests PASS; все 13 local gates, 53 integration и 35 browser PASS на source из [session](session.md) | Exact-head PR #22 checks и отдельный main CI обязательны; это не production acceptance |
 | Фото/видео | [48 кадров, 20 глав, Liza, единый MP4 5:56](screen-tour.md) | Это локальный synthetic Compose, не внешняя приёмка или запись Windows |
 | Release/production | Внешнего окружения нет по ответу владельца; APP_ENV=production отклоняется кодом | 14 решений owner/reviewer, реальные host/providers/escrow/DR/devices/security/licenses |
 

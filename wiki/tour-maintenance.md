@@ -15,7 +15,7 @@ Capture использует синтетические аккаунты/док�
 Сценарий реально выполняет upload/publish/ZIP/QR/PDF/JSON/CSV, backup/restore/restart/reconcile/reopen, public verification и повторный отказ recipient после completed. S3/SMTP/webhooks/provider migration/rotation/forensic показаны как формы без внешних операций. Наблюдение DEV-05 о старом recipient UI после refresh остаётся [backlog](implementation-plan.md).
 
 ## Съёмка
-Нужны Docker, зависимости `npm ci` на поддерживаемом Node 24, Python, свободный локальный 8090. Никакой production:
+Нужны Docker, зависимости `npm ci` на Node 26 из `.nvmrc`, Python, свободный локальный 8090. Никакой production:
 
 ```sh
 python3 scripts/tour/capture.py

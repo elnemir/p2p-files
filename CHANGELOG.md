@@ -1,5 +1,12 @@
 # Changelog
 
+## Node 26 — 2026-10-13
+
+- Согласованный переход на Node 26.11.1 в pinned Docker builder/runtime, `.nvmrc`/CI и npm engine; `@types/node` 26.6.5 с обновлённым npm lockfile.
+- Policy отражает Current на дату review и upstream даты LTS/EOL; guards проверяют календарь, соответствие канала, runtime/types и полный peer graph. Strict install, immutable pins и security gates сохраняются.
+- Устранён воспроизводимый конфликт idle operations worker с корректным reopen: пустой tick больше не захватывает runner lock; PG concurrency/fault tests сохраняют pending/crash/generation guards.
+- Новый runtime получает отдельные source-bound checks; прежние Node 24 результаты сохранены как история. Native WebDAV/windows-pending и туры из PR #23 объединены в main.
+
 ## Native WebDAV — 2026-10-12
 
 - WebDAV LOCK: upper bound Timeout явно проверяется до преобразования в `int`; сохранён предел 3600 s и добавлены проверки границ 32-bit integer без scanner suppression.

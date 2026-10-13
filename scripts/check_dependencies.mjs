@@ -10,6 +10,12 @@ const major = (version) => {
   assert.match(version, /^\d+\.\d+\.\d+$/, `An exact dependency version is required: ${version}`);
   return Number(version.split('.')[0]);
 };
+const calendarDate = (value, label) => {
+  assert.match(value, /^\d{4}-\d{2}-\d{2}$/, `${label}: use YYYY-MM-DD`);
+  const date = new Date(`${value}T00:00:00Z`);
+  assert(Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value, `${label}: invalid calendar date`);
+  return date;
+};
 
 export function readDependencyInputs(directory) {
   const read = (name) => fs.readFileSync(path.join(directory, name), 'utf8');
@@ -27,14 +33,20 @@ export function readDependencyInputs(directory) {
 export function validateDependencyInputs(input, now = new Date()) {
   const {policy, manifest, web, nvmrc, npmrc, dockerWeb, dockerRedis} = input;
   assert.equal(policy.version, 1, 'Unknown dependency policy version');
+  const reviewedAt = calendarDate(policy.reviewedAt, 'Policy review');
+  assert(reviewedAt <= now, 'Policy review cannot be in the future');
   for (const [name, runtime] of [['Node', policy.node], ['Redis', policy.redis]]) {
-    assert.match(runtime.securityUntil, /^\d{4}-\d{2}-\d{2}$/);
-    const end = new Date(`${runtime.securityUntil}T00:00:00Z`);
-    assert.equal(end.toISOString().slice(0, 10), runtime.securityUntil, `${name}: invalid support deadline`);
+    const end = calendarDate(runtime.securityUntil, `${name} support deadline`);
     assert(now < end, `${name}: security support expired; review and qualify a supported runtime`);
     assert.match(runtime.source, /^https:\/\//, `${name}: support policy needs an upstream source`);
   }
-  assert.equal(policy.node.channel, 'LTS', 'Production Node must use a reviewed LTS line');
+  assert(Number.isInteger(policy.node.major) && policy.node.major > 0, 'Node policy needs a positive integer major');
+  const ltsFrom = calendarDate(policy.node.ltsFrom, 'Node LTS start');
+  assert(ltsFrom < new Date(`${policy.node.securityUntil}T00:00:00Z`), 'Node LTS start must precede support expiry');
+  assert(['Current', 'LTS'].includes(policy.node.channel), 'Unknown Node release channel');
+  // Channel is evidence at review time. A Current review stays valid when the
+  // same supported line later becomes LTS; it must never claim LTS prematurely.
+  assert.equal(policy.node.channel, reviewedAt < ltsFrom ? 'Current' : 'LTS', 'Node release channel does not match the review date');
   assert.equal(nvmrc, String(policy.node.major), 'CI Node major differs from runtime policy');
   assert.equal(manifest.engines?.node, `${policy.node.major}.x`, 'Development Node engine differs from CI/runtime');
   assert.equal(major(web.devDependencies['@types/node']), policy.node.major, 'Node types advertise a different runtime major');
@@ -42,7 +54,7 @@ export function validateDependencyInputs(input, now = new Date()) {
   assert.equal(images.length, 2, 'Both web build and runtime images must be pinned');
   assert.equal(images[0], images[1], 'Web build/runtime Node images differ');
   for (const image of images) {
-    assert.match(image, new RegExp(`^node:${policy.node.major}-alpine@sha256:[a-f0-9]{64}$`), 'Node image differs from reviewed LTS line or is unpinned');
+    assert.match(image, new RegExp(`^node:${policy.node.major}-alpine@sha256:[a-f0-9]{64}$`), 'Node image differs from reviewed runtime line or is unpinned');
   }
   const redis = [...dockerRedis.matchAll(/^FROM (redis:[^\s]+)$/gmi)].map((m) => m[1]);
   assert.equal(redis.length, 1, 'Redis must have one pinned runtime base');

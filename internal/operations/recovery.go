@@ -55,6 +55,18 @@ func (s Service) Execute(ctx context.Context, requested string, recoveryKEK []by
 	if state.Generation != s.Generation {
 		return maintenance.ErrRestart
 	}
+	if requested == "" {
+		// An idle poll must not contend with an administrator's explicit reopen.
+		// Running rows still enter the locked executor for crash recovery; a job
+		// queued after this read is picked up by the next worker tick.
+		var pending bool
+		if e = s.DB.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM ops_jobs WHERE state IN ('queued','running'))").Scan(&pending); e != nil {
+			return e
+		}
+		if !pending {
+			return nil
+		}
+	}
 	unlock, e := s.runnerLock(ctx)
 	if errors.Is(e, ErrConflict) {
 		return nil
