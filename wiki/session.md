@@ -4,11 +4,12 @@
 По команде владельца: commit, push и squash merge подготовленного UX USER/ADMIN через PR после зелёных обязательных gates и CI.
 
 ## Status
-Реализация завершена локально в `codex/product-ux`, база `c221369a6dc5d795c836d11ccdaeb39ee97ca3e9`. Подготовлена доставка: проверен scope working tree; все 13 локальных gates завершены. UX commit/PR/CI ещё не создавались.
+Реализация закоммичена (`64ef93fb50c2181029567e0d103bf723a3c3aa1a`) и отправлена в `origin/codex/product-ux`, база `c221369a6dc5d795c836d11ccdaeb39ee97ca3e9`. Доставка проводится через [PR #26](https://github.com/elnemir/p2p-files/pull/26). GitHub хранит актуальные head/merge SHA, exact-candidate checks и итоговую запись доставки в описании PR; перед продолжением необходимо прочитать их. Локальный PASS не подменяет результат CI. Production deployment не входит в эту команду.
 
 Source SHA-256 `509dd43094935c4761e1f398b783361a1f527cb0cc497494c0ff7a48086da93a`: **13/13 gates PASS**, каждый моложе 24 часов; performance 32 MiB / 2000 rows smoke. **62/62 PG/race и 60/60 browser**, без пропусков, browser retries/flaky=0 и без baseline updates. Все gate records подтверждают неизменный source; подробные результаты, диагностика и границы — [evidence](history/product-ux-evidence-2026-10-13.md).
 
 ## Completed steps
+- По явной команде владельца завершены все 13 локальных gates, создан и отправлен UX commit; открыт PR #26. Audit GitHub settings: matchesPolicy=true, differences=[]. Текущие CI и merge подтверждаются GitHub readback, не предположением на момент записи wiki.
 - Выполнен нормативный startup и обзор USER/recipient/ADMIN; добавлены [ADR-015](adr/015-product-ux.md), threat/state/architecture/crypto review и [инструкция UX](product-ux.md).
 - Реализованы sidebar/mobile navigation, иконки бренда, тематические ADMIN разделы и reauth на месте, компактные действия файлов, loading/empty/error и подтверждения удаления/отзыва.
 - Публикация ведёт через загрузку, настройку доступа и review. Presets/slider/точный TTL учитывают активную политику, название сохраняется с прежним message, review закрепляет revision и закрывается после чужого изменения.
@@ -21,8 +22,8 @@ Source SHA-256 `509dd43094935c4761e1f398b783361a1f527cb0cc497494c0ff7a48086da93a
 - Обновлены current state, implementation plan, тематические руководства, testing, changelog, evidence и session. Все 93 Markdown страницы связаны, 32 требования трассируются, whitespace check PASS.
 
 ## Next steps
-- Проверить итоговый diff/docs и создать Conventional Commit. Полный локальный набор gates уже завершён, audit GitHub settings без drift.
-- Push → PR → required functional/security checks на точном candidate → squash merge → отдельная проверка main CI/CodeQL. Результаты доставки сохранять в этой сессии и [evidence](history/product-ux-evidence-2026-10-13.md).
+- При восстановлении сначала прочитать [PR #26](https://github.com/elnemir/p2p-files/pull/26) и его итоговую запись доставки. Если открыт — дождаться зелёных required checks и выполнить уже разрешённый squash merge exact head. Если merged — сверить merge SHA, main CI/CodeQL и fast-forward локального main; не создавать повторную реализацию или PR.
+- Последующие результаты CI/main сохраняются в итоговой записи PR, связанной из этой сессии и [evidence](history/product-ux-evidence-2026-10-13.md). Документационный commit не меняет source fingerprint.
 - Продолжить внешнюю приёмку по [плану](environment-acceptance.md): реальные устройства/AT, SSO tenants, Windows WebDAV и инфраструктура.
 
 ## Decisions
