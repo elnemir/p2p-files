@@ -12,6 +12,7 @@ Bootstrap env нужен для подключения к PG, KEK и listeners. 
 | DATABASE_URL | Обязательный postgres/postgresql URL с user/host/database | Секретный bootstrap; не логировать |
 | MASTER_KEK | Обязательные base64 32 random bytes | Existing DB: только rewrap runbook; случайная замена блокируется sentinel |
 | HTTP_ADDR | 127.0.0.1:8080; dev Compose 0.0.0.0:8080 внутри container | Не публиковать API в обход Traefik |
+| FILEX_BRANDING_API_URL | Только web SSR; Compose http://api:9090/branding, локально http://127.0.0.1:9090/branding | Фиксированный внутренний endpoint, не URL из запроса; [брендинг](white-label.md) |
 | INTERNAL_ADDR | 127.0.0.1:9090; dev Compose 0.0.0.0:9090 внутри container | Отдельный listener, public proxy его не маршрутизирует |
 | DEV_PAYLOAD_ROOT / DEV_ARTIFACT_ROOT / DEV_BACKUP_ROOT | Optional auto-provision только APP_ENV=development; Compose /data/payload, /data/artifacts, /data/backups | Разные purposes/volumes; в production generator DEV_* отсутствуют |
 | POSTGRES_PASSWORD | Вход Compose для PG и DATABASE_URL | init-dev.py создаёт случайное значение, это не typed application setting |
@@ -53,6 +54,10 @@ Redis URL не является bootstrap setting приложения: теку
 | networkPolicy | ≤16 canonical IPv4 /32 trusted peers; ≤128 client CIDRs; requireHttps требует requireProxy и HTTPS origin |
 
 Читать active revision → сохранить полный value → draft/validate → CAS apply с expectedRevision. Rollback применяет прежнюю validated revision, не переписывает историю. Смена origin/network policy закрывает gate, меняет generation и требует restart/reconcile/reopen. Пустой client allowlist разрешает все IP, сохраняя proxy/HTTPS guards. Полный [ingress runbook](production-ingress.md).
+
+## Брендинг установки
+
+Имя, логотипы/favicon, палитры, defaultTheme и iconStyle хранятся отдельно от Settings v1 в `branding_revisions`. ADMIN preview/apply/reset использует CAS и audit. Полный поток и ограничения — [white labeling](white-label.md). Migration 0018 также фиксирует оформление новых PDF; логическое backup/restore переносит эти данные.
 
 ## Отдельные настройки и секреты
 

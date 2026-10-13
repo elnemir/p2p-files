@@ -20,3 +20,6 @@ Forensic: admin plaintext/ZIP with re-auth/reason/audit, raw ciphertext only on 
 
 ## Scoped WebDAV и доступ владельца
 Отдельный digest-only credential действует только для указанного draft, с TTL/отзывом/auth epoch и теми же transport/network/recovery gates. Его пароль не сохраняется в UI storage и не равен паролю аккаунта. PG locks/If защищают также REST/tus/bulk; отзыв/freeze сильнее lock. Owner draft GET не создаёт recipient journal/consume, после publish закрывается. Атомарный encrypted staging сохраняет прежний ready file при ошибке. [Threat model](threat-model.md), [ограничения и реальные клиенты](webdav-upload.md).
+
+## Публичный брендинг
+Название/описания/палитры/логотипы намеренно публичны; secrets и сведения об ADMIN в DTO отсутствуют. Запись доступна только текущей ADMIN session со свежим reauth и Origin/CSRF, повторно проверяемыми внутри CAS/audit transaction. Растровые assets ограничены до decode и нормализуются; URL/SVG/HTML/CSS/JS не принимаются. [ADR-013](adr/013-white-label.md) фиксирует threat/architecture/crypto review, [white-label](white-label.md) — поля, ограничения и эксплуатацию. Обновление бренда не меняет security/privacy/one-time/report JSON invariants.

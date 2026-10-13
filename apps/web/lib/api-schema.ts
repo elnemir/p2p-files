@@ -19,6 +19,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/branding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read public installation branding
+     * @description Public nonsecret presentation only; no configuration secrets, actor or history. No-store. Revision zero uses built-in defaults. Palette text contrast and image budgets are validated on apply.
+     */
+    get: operations["getBranding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/branding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read the current branding revision
+     * @description Read the current branding revision. ADMIN cookie session with reauthentication within five minutes is required.
+     */
+    get: operations["getAdminBranding"];
+    /**
+     * Apply a branding revision
+     * @description Atomic compare-and-swap and audit. Requires current ADMIN cookie session, fresh reauthentication, Origin and CSRF. Invalid input does not change branding; concurrent/stale revisions return 409. Reset by applying built-in defaults as a new revision. Request limit 600 KiB. ADMIN cookie session with reauthentication within five minutes is required.
+     */
+    put: operations["putAdminBranding"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/banner": {
     parameters: {
       query?: never;
@@ -1957,6 +2001,39 @@ export interface components {
       bannerRu?: string;
       bannerEn?: string;
     };
+    BrandPalette: {
+      background: string;
+      foreground: string;
+      muted: string;
+      surface: string;
+      border: string;
+      accent: string;
+      onAccent: string;
+      danger: string;
+      dangerSurface: string;
+    };
+    Branding: {
+      productName: string;
+      taglineRu: string;
+      taglineEn: string;
+      footerText: string;
+      /** @enum {string} */
+      defaultTheme: "light" | "dark" | "system";
+      /** @enum {string} */
+      iconStyle: "outline" | "rounded" | "duotone";
+      light: components["schemas"]["BrandPalette"];
+      dark: components["schemas"]["BrandPalette"];
+      /** @description Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained. */
+      logoLight: string;
+      /** @description Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained. */
+      logoDark: string;
+      /** @description Empty or a PNG/JPEG base64 data URL. Input and normalized PNG each at most 128 KiB; logos at most 1024x512 and favicon at most 256x256. Server decodes and re-encodes to PNG; URLs, SVG and metadata are not retained. */
+      favicon: string;
+    };
+    BrandRevision: {
+      revision: number;
+      value: components["schemas"]["Branding"];
+    };
     File: {
       /** Format: uuid */
       id: string;
@@ -2411,6 +2488,269 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Status"];
+        };
+      };
+    };
+  };
+  getBranding: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description ETag returned by an earlier branding response. */
+        "If-None-Match"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          ETag?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrandRevision"];
+        };
+      };
+      /** @description Branding is unchanged; no response body. */
+      304: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getAdminBranding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrandRevision"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  putAdminBranding: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication. */
+        Origin?: string;
+        /** @description Required with cookie authentication; obtained at login. Not required for bearer requests. */
+        "X-CSRF-Token"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          expectedRevision: number;
+          value: components["schemas"]["Branding"];
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BrandRevision"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
         };
       };
     };

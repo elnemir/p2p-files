@@ -34,6 +34,8 @@ test('reviewed public page visual regression',async({page})=>{
   for(const [locale,theme] of [['ru','light'],['en','dark']]) {
     await page.getByLabel(/Язык|Language/).selectOption(locale);
     await page.getByLabel(/Тема|Theme/).selectOption(theme);
+    await expect(page.locator('html')).toHaveAttribute('data-theme',theme);
+    await expect(page.locator('html')).toHaveAttribute('lang',locale);
     await expect(page).toHaveScreenshot(`help-${locale}-${theme}.png`,{fullPage:true,animations:'disabled',maxDiffPixelRatio:0.001});
   }
 });

@@ -29,6 +29,8 @@ test('public pages, locale and internal route isolation',async({page,request})=>
  try{
   await page.goto(`/verify#report=${reportId}`,{waitUntil:'commit'});
   await expect(page.getByLabel('Идентификатор отчёта',{exact:true})).toBeDisabled();
+  await expect(page.getByLabel('Тема',{exact:true})).toBeDisabled();
+  await expect(page.getByLabel('Язык',{exact:true})).toBeDisabled();
   await expect(page.getByRole('button',{name:'Проверить',exact:true})).toBeDisabled();
  }finally{releaseScripts();}
  await expect(page.getByLabel('Идентификатор отчёта',{exact:true})).toHaveValue(reportId);

@@ -43,7 +43,7 @@ Dev Traefik публикует loopback HTTP :8090. HTTPS/ACME profile гене�
 
 ## API и trust boundaries
 
-REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 108 операций плюс [WebDAV wire profile](../contracts/webdav.json) в `x-webdav`: нестандартные HTTP методы/XML не маскируются под JSON REST. Generator/codegen/route coverage проверяются CI. Browser и WebDAV идут через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
+REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 111 операций плюс [WebDAV wire profile](../contracts/webdav.json) в `x-webdav`: нестандартные HTTP методы/XML не маскируются под JSON REST. Generator/codegen/route coverage проверяются CI. Browser и WebDAV идут через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
 
 ADMIN имеет аудируемые forensic/recovery полномочия, но обычные owner-scoped endpoints не превращаются в cross-owner routes. Host CLI доверен в границе host/container, без дополнительного password, сохраняя pre-backup/schema/key/reopen guards. [Threat model](threat-model.md), [security](security.md).
 
@@ -52,3 +52,7 @@ ADMIN имеет аудируемые forensic/recovery полномочия, н
 Две параллельные acquire одного файла дают одну reservation и conflict второй. После полной coverage и DB commit повторная выдача запрещена. Сбой после передачи bytes до commit может потребовать повтор bytes: сервер не доказывает fsync на устройстве получателя. Уже доставленное нельзя отозвать; физический secure erase не обещается. Atomic PG состояние не отменяет отказ внешнего хранилища; retention/compensation/reconciliation сохраняют эту границу.
 
 [Текущий статус](current-state.md) и [план приёмки](environment-acceptance.md) отделяют local fixture evidence от внешних guarantees. Новый production допуск, реальные providers и residual risks ещё не приняты.
+
+## Брендинг
+
+[ADR-013](adr/013-white-label.md) вводит отдельный PG authority для оформления установки. ADMIN CAS+audit → публичный DTO → внутренний SSR и browser context. [Инструкция](white-label.md) описывает assets/контраст и fallback. Snapshot оформления отчёта сохраняется в transaction создания отдельно от canonical JSON; SMTP использует текущий бренд при попытке отправки. Это presentation configuration без tenant/routing/crypto изменений.

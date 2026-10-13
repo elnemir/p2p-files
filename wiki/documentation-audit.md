@@ -25,3 +25,7 @@
 
 ## Проверка и продолжение
 `check_docs.py` обходит все Markdown, локальные ссылки и достижимость страниц; traceability проверяет 32 IDs и существующие implementation/test paths. `build_contracts.py --check` и type generation сверяют wire/schema/types. Тур имеет собственные hashes, просмотр всех кадров, полный decode и browser QA. Окончательные числа/gates/source hashes — [session](session.md); [план](implementation-plan.md) и [внешняя приёмка](environment-acceptance.md) задают продолжение. Code review внутри этой задачи не является независимым security approval.
+
+## Дополнение: white labeling, 2026-10-13
+
+Предыдущая таблица фиксирует аудит native WebDAV и его исторические числа. Новый срез: 111 API operations, 18 migrations, ADR-013; [инструкция](white-label.md), architecture/configuration/repository map, controlled upgrade/recovery, testing, requirements/threat/states/review, changelog/matrix/session синхронизированы. Добавлен FILEX_BRANDING_API_URL только для SSR web. Технические названия протоколов и исторические документы/медиа не переименовываются. Текущие результаты квалификации не выводятся из предыдущего PASS — см. [session](session.md).

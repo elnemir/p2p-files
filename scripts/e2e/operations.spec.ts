@@ -9,7 +9,7 @@ const command=promisify(execFile);
 const email=process.env.FILEX_E2E_ADMIN!;const password=process.env.FILEX_E2E_PASSWORD!;
 async function login(page:Page,address=email){await page.goto('/');await page.getByLabel('Email',{exact:true}).fill(address);await page.getByLabel('Пароль',{exact:true}).fill(password);await page.getByRole('button',{name:'Войти',exact:true}).click();await expect(page.getByRole('button',{name:address===email?'Администрирование':'Новая передача',exact:true})).toBeVisible();}
 async function admin(page:Page){await page.getByRole('button',{name:'Администрирование',exact:true}).click();await expect(page.getByRole('heading',{name:'Эксплуатация и восстановление',exact:true})).toBeVisible();}
-async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'← Все передачи',exact:true});if(await back.isVisible())await back.click();return createDraft(page,title);}
+async function draft(page:Page,title:string){await page.getByRole('button',{name:'Передачи',exact:true}).click();const back=page.getByRole('button',{name:'Все передачи',exact:true});if(await back.isVisible())await back.click();return createDraft(page,title);}
 
 test('admin backup restore restart reconciliation and explicit reopening',async({page,browser,baseURL})=>{
  test.setTimeout(150000);
@@ -44,7 +44,7 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await page.setViewportSize({width:390,height:844});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
- await page.screenshot({path:evidencePath('operations-restore-mobile.png'),fullPage:true});
+ await page.screenshot({path:evidencePath('operations-restore-mobile.png'),fullPage:true,scale:'css'});
  await ops.getByRole('button',{name:'Создать предварительную копию и восстановить',exact:true}).click();
  await expect.poll(async()=>{const r=await page.request.get('/api/v1/auth/me');return (await r.json()).code},{timeout:30000}).toBe('restart_required');
  await command('docker',['compose','--project-name',project,'-f','deploy/compose.yaml','restart','api','worker'],{timeout:60000,maxBuffer:1024*1024});
@@ -72,7 +72,7 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await expect(exportRow.getByRole('button',{name:'Скачать с записью в аудит'})).toBeEnabled();
  const exportFile=page.waitForEvent('download');await exportRow.getByRole('button',{name:'Скачать с записью в аудит'}).click();await (await exportFile).saveAs(evidencePath('admin-export.csv'));
  await exportRow.getByRole('button',{name:'Изменить срок хранения'}).click();
- await page.screenshot({path:evidencePath('operations-reopened-mobile.png'),fullPage:true});
+ await page.screenshot({path:evidencePath('operations-reopened-mobile.png'),fullPage:true,scale:'css'});
  expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze()).violations).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
  const transfers=await (await page.request.get('/api/v1/transfers')).json();expect(transfers.items.find((x:any)=>x.id===savedId)).toMatchObject({title:'Сохранённая передача до восстановления',state:'draft'});expect(transfers.items.some((x:any)=>x.id===laterId)).toBe(false);

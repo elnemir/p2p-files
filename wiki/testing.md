@@ -6,17 +6,17 @@
 
 ## Базовые и целевые команды
 
-Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях: теперь браузерный набор содержит 6 случаев на профиль (30 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
+Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях: после native WebDAV и branding браузерный набор содержит 8 случаев на профиль (40 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
 
 | Команда | Что проверяет | Требования / ограничение |
 |---|---|---|
 | make check | gofmt/vet/staticcheck, TS strict/ESLint/Prettier, Go race, contract/generator/Python negative tests, docs/traceability, Go/Next builds | Go/Node/Python; без тестового DB URL PG tests пропускаются |
-| make integration-docker | Все TestIntegration* с race на disposable PostgreSQL; 51 top-level tests (один требует FILEX_RCLONE_PATH) | Docker; каждый test получает отдельную schema, cleanup своего container |
+| make integration-docker | Все TestIntegration* с race на disposable PostgreSQL; 56 top-level tests (один требует FILEX_RCLONE_PATH) | Docker; каждый test получает отдельную schema, cleanup своего container |
 | make test-integration | Те же тесты через FILEX_TEST_DATABASE_URL | Только специально выделенная тестовая БД; URL обязателен |
 | make security | npm audit и govulncheck | Network; source reachable findings отдельно от module-only advisories |
-| make e2e | 5 Linux browser/emulation profiles × 7 scenarios = 35; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
+| make e2e | 5 Linux browser/emulation profiles × 8 scenarios = 40; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
 | make ingress | Настоящий Traefik/test CA, TLS, Host/forwarded/CIDR/secure cookie/reset/private endpoints | Isolated project/random ports, public ACME не вызывается |
-| make upgrade-drill | Разные images baseline 28ab4f3/candidate, backup/drain/0017/fault/reopen/one-time | Git history; Compose additive 16→17 с точным ledger/hash и отказом downgrade; PG suite также проверяет prefix/faults |
+| make upgrade-drill | Разные images baseline 28ab4f3/candidate, backup/drain/0017+0018/fault/reopen/one-time | Git history; Compose additive 16→18 с точным ledger/hash и отказом downgrade; PG suite также проверяет prefix/faults |
 | make fuzz | Пять кампаний PathKey/FXP1/Range/WebDAV XML + path/If | Default 15 s на кампанию плюс compile; Go seeds/unit сами по себе не fuzz campaign |
 | make performance | 32 MiB/2000 rows, load/fault/DR/ZIP hash/resources | Только disposable локальный project; не release-size profile |
 | make supply-chain | Source/history/worktree secrets, licenses, пять image scans и SBOM | Docker/network; HIGH/CRITICAL fail incl. unfixed |
@@ -127,3 +127,9 @@ TLS ingress fixture актуализирован под ADR-011: старое о
 
 ## Idle worker / reopen при Node 26 qualification
 Первичный mobile-WebKit trace получил reopen=409 при свежем passed report и завершённых jobs; следующий login=503 — результат оставшегося закрытого gate. PG regression использует SHARE lock на ops_jobs: разрешает чтение, задерживает пустой UPDATE и воспроизводит удержание runner lock idle worker. До изменения тест RED, после предварительного чтения queued/running — GREEN; второй тест сохраняет queued/crash/generation/explicit-reopen guards. [Подробный поток и ограничения вывода](operations-recovery.md). Browser assertions, retries=0 и timeout не ослаблялись; итоговый source требует полной матрицы заново.
+
+## Брендинг
+
+`TestIntegrationBranding*` проверяют права/CSRF/reauth, CAS гонку, audit fault rollback, immutable report snapshot и SMTP. Recovery и audit checkpoint cases дополнительно проверяют branding restore и snapshot инцидента. `branding.spec.ts` покрывает preview/apply/reset/conflict, assets, SSR без JavaScript, публичные страницы и 320px/axe. Подробности — [white labeling](white-label.md); результаты текущего diff — [session](session.md).
+
+Conditional `GET /api/v1/branding` с `If-None-Match` проходит native HTTP в browser harness: WebKit не поддерживает `route.fulfill(304)`. Новый branding сценарий явно сверяет ETag, 304/пустое тело и 200/полный DTO при stale validator. Первичное чтение по-прежнему валидируется contract observer. Unit regression запрещает распространение исключения на другие routes или mutations; запросы не повторяются и статус не подменяется.

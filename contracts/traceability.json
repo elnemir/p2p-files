@@ -8,7 +8,11 @@
       "apps/web/components/FileX.tsx",
       "apps/web/app/globals.css",
       "scripts/e2e/transfers.ts",
-      "apps/web/components/WebDAVPanel.tsx"
+      "apps/web/components/WebDAVPanel.tsx",
+      "internal/branding/branding.go",
+      "internal/branding/store.go",
+      "apps/web/components/BrandingPanel.tsx",
+      "apps/web/components/BrandingProvider.tsx"
     ],
     "tests": [
       {
@@ -35,6 +39,16 @@
         "id": "T-FR-001-5",
         "path": "scripts/e2e/webdav.spec.ts",
         "name": "WebDAV credential UI uploads into a draft and revokes access"
+      },
+      {
+        "id": "T-FR-001-6",
+        "path": "internal/branding/branding_test.go",
+        "name": "TestBrandingValidation"
+      },
+      {
+        "id": "T-FR-001-7",
+        "path": "scripts/e2e/branding.spec.ts",
+        "name": "installation branding preview CAS publication SSR themes assets and reset"
       }
     ],
     "gap": "Автоматизированы Chromium/Firefox/WebKit и две mobile emulation, RU/EN/themes/keyboard/error/320px/axe/visual. Исторический PASS: wiki/history/development-evidence-2026-10-11.md. Реальные Safari/mobile и manual assistive-technology WCAG: EXT-05, wiki/implementation-plan.md."
@@ -356,6 +370,16 @@
         "id": "T-FR-010-5",
         "path": "internal/communications/transports_test.go",
         "name": "TestWebhookGuards"
+      },
+      {
+        "id": "T-FR-010-6",
+        "path": "internal/communications/transports_test.go",
+        "name": "TestBrandedTemplatesPreserveCapabilities"
+      },
+      {
+        "id": "T-FR-010-7",
+        "path": "internal/httpapi/branding_integration_test.go",
+        "name": "TestIntegrationBrandingReportsAndMail"
       }
     ],
     "gap": "SMTP/S3 fixtures локальные; delivery в реальный внешний mailbox проверяется при подключении провайдера."
@@ -419,6 +443,16 @@
         "id": "T-FR-012-4",
         "path": "scripts/e2e/flow.spec.ts",
         "name": "public pages, locale and internal route isolation"
+      },
+      {
+        "id": "T-FR-012-5",
+        "path": "internal/httpapi/branding_integration_test.go",
+        "name": "TestIntegrationBrandingReportsAndMail"
+      },
+      {
+        "id": "T-FR-012-6",
+        "path": "internal/reports/branding_test.go",
+        "name": "TestBrandedPDFRasterAndLegacyJSON"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -574,6 +608,11 @@
         "id": "T-SEC-001-6",
         "path": "internal/httpapi/webdav_native_integration_test.go",
         "name": "TestIntegrationWebDAVNativeLocksAndConditions"
+      },
+      {
+        "id": "T-SEC-001-7",
+        "path": "internal/httpapi/branding_integration_test.go",
+        "name": "TestIntegrationBrandingAuthorizationAndValidation"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -788,6 +827,11 @@
         "id": "T-SEC-005-11",
         "path": "internal/httpapi/webdav_test.go",
         "name": "TestWebDAVTimeoutBounds"
+      },
+      {
+        "id": "T-SEC-005-12",
+        "path": "internal/branding/branding_test.go",
+        "name": "TestBrandingRasterBoundsAndNormalization"
       }
     ],
     "gap": "Trusted single proxy, IPv4 CIDR, generation fencing, host reset и HTTPS/ACME generator реализованы. Исторический local TLS PASS не заменяет public ACME/DNS/host и independent review: EXT-01/06, wiki/environment-acceptance.md."
@@ -874,6 +918,11 @@
         "id": "T-OPS-001-4",
         "path": "scripts/test-performance.py",
         "name": "test_load_and_recovery"
+      },
+      {
+        "id": "T-OPS-001-5",
+        "path": "internal/httpapi/branding_integration_test.go",
+        "name": "TestIntegrationBrandingCASAndAuditRollback"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1163,6 +1212,11 @@
         "id": "T-NFR-001-7",
         "path": "scripts/contracts.test.mjs",
         "name": "WebDAV has an explicit non-REST protocol contract and scoped credential schema"
+      },
+      {
+        "id": "T-NFR-001-8",
+        "path": "scripts/contracts.test.mjs",
+        "name": "branding contract is public-only and matches the shared defaults"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."

@@ -131,7 +131,7 @@ func davTransport(r *http.Request, c config.Settings) bool {
 
 func (a *App) webDAV(w http.ResponseWriter, r *http.Request) {
 	w = davResponse{w}
-	w.Header().Set("WWW-Authenticate", `Basic realm="FileX WebDAV", charset="UTF-8"`)
+	w.Header().Set("WWW-Authenticate", `Basic realm="WebDAV", charset="UTF-8"`)
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Allow", davAllow)
 	e := a.serveWebDAV(w, r)
@@ -145,7 +145,7 @@ func (a *App) webDAV(w http.ResponseWriter, r *http.Request) {
 	case errors.As(e, &status):
 		http.Error(w, http.StatusText(int(status)), int(status))
 	case errors.Is(e, auth.ErrCredentials):
-		w.Header().Set("WWW-Authenticate", `Basic realm="FileX WebDAV", charset="UTF-8"`)
+		w.Header().Set("WWW-Authenticate", `Basic realm="WebDAV", charset="UTF-8"`)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 	default:
 		failure(w, e)

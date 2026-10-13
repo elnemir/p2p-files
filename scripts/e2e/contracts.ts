@@ -60,7 +60,10 @@ export async function contractObserver() {
     const handler = async (route: Route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
-      if (finished || path.endsWith("/content") || /^\/api\/v1\/uploads\/[^/]+$/.test(path) || !path.startsWith("/api/v1/")) {
+      // WebKit cannot fulfill a routed 304. Conditional branding reads keep native HTTP;
+      // the branding scenario verifies ETag, 304/no-body, and stale-validator 200 explicitly.
+      const conditionalBranding = path === "/api/v1/branding" && request.method() === "GET" && request.headers()["if-none-match"] !== undefined;
+      if (finished || conditionalBranding || path.endsWith("/content") || /^\/api\/v1\/uploads\/[^/]+$/.test(path) || !path.startsWith("/api/v1/")) {
         await route.fallback();
         return;
       }

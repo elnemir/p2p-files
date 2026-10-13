@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"encoding/xml"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/transfer"
 	"io"
 	"net/http"
@@ -131,7 +132,7 @@ func davPropertyValue(name xml.Name, n davNode, namesOnly bool) (davProperty, bo
 	case "displayname":
 		p.Value = path.Base(n.Path)
 		if n.Path == "" {
-			p.Value = "FileX"
+			p.Value = "Files"
 		}
 	case "resourcetype":
 		if n.Directory {
@@ -310,6 +311,10 @@ func (d davAccess) propfind(w http.ResponseWriter, r *http.Request, name string)
 	if e != nil {
 		return e
 	}
+	brand, e := branding.Current(r.Context(), d.app.DB)
+	if e != nil {
+		return e
+	}
 	all := root == nil || len(root.Children) == 1 && root.Children[0].Name.Local != "prop"
 	return davEncodeXML(w, func(encoder *xml.Encoder) error {
 		for _, n := range sortedDAVNodes(selected) {
@@ -333,6 +338,9 @@ func (d davAccess) propfind(w http.ResponseWriter, r *http.Request, name string)
 			found, missing := []davProperty{}, []davProperty{}
 			for _, name := range requested {
 				p, ok := davPropertyValue(name, n, namesOnly)
+				if !namesOnly && n.Path == "" && name.Space == "DAV:" && name.Local == "displayname" {
+					p.Value = brand.Value.ProductName
+				}
 				if ok {
 					found = append(found, p)
 				} else {

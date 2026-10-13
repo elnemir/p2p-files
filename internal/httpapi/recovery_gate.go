@@ -33,7 +33,7 @@ func (a *App) recoveryGate(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		control := strings.HasPrefix(r.URL.Path, "/api/v1/admin/") || r.URL.Path == "/api/v1/auth/login" || r.URL.Path == "/api/v1/auth/me" || r.URL.Path == "/api/v1/auth/logout" || r.URL.Path == "/api/v1/auth/reauth"
+		control := r.URL.Path == "/api/v1/branding" || strings.HasPrefix(r.URL.Path, "/api/v1/admin/") || r.URL.Path == "/api/v1/auth/login" || r.URL.Path == "/api/v1/auth/me" || r.URL.Path == "/api/v1/auth/logout" || r.URL.Path == "/api/v1/auth/reauth"
 		ctx, release, e := a.Gate.Acquire(r.Context(), control)
 		if e != nil {
 			failure(w, e)

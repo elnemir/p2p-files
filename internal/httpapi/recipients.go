@@ -412,7 +412,7 @@ func (a *App) downloadContent(w http.ResponseWriter, r *http.Request, p recipien
 	w.Header().Set("Content-Type", "application/octet-stream")
 	name := path.Base(d.File.Path)
 	if d.Kind == "zip" {
-		name = "FileX.zip"
+		name = "transfer.zip"
 		w.Header().Set("Content-Type", "application/zip")
 	}
 	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))

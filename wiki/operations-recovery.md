@@ -73,3 +73,7 @@ TTL можно изменить только у completed, ready, ещё не и
 
 ## WebDAV после обновления и восстановления
 Migration 0017 включена в schema fingerprint backup. Backup схемы 16 проверен до обновления. После migration команда verify тоже требует совпадения schema fingerprint и отклоняет его на схеме 17; для recovery нужен matching-schema стенд, прямого импорта нет. Restore/reopen сохраняют прежние правила проверки ссылок/API tokens; DAV lock не отменяет recovery gate, а восстановленные locks оцениваются по credential/auth epoch/expiry. Заброшенный stage не публикуется, cleanup учитывает freeze. Owner должен заново подключить папку после generation/restart. [Upgrade](controlled-upgrade.md), [WebDAV](webdav-upload.md).
+
+## Брендинг в backup/restore
+
+Migration 0018 добавляет branding revisions и report presentation snapshots в schema discovery. Restore возвращает активный бренд вместе с прикладными данными; incident control plane по-прежнему сохраняется отдельно. Существующий matching-schema guard действует и для 0018: копия схемы 17 не импортируется напрямую в 18. PG recovery test проверяет смену бренда до/после backup и возврат сохранённой ревизии. [White labeling](white-label.md), текущий статус — [session](session.md).

@@ -37,3 +37,6 @@ Lifecycle guard проверяется непосредственно при req
 Stage: uploading hidden → finalizing hidden → ready hidden → atomic visible swap (`staged_until=NULL`) либо cancelled + cleanup. При неизвестной длине provisional ciphertext переносится bounded decrypt/re-encrypt в новый stage с точным размером. Lease продлевается guards; crash → expiry → worker cancellation. Freeze блокирует отмену/cleanup до снятия hold. Прежний visible file не меняется при ошибке кандидата.
 
 Lock: absent → active → refreshed/released/expired/revoked. UUID token принимается только с positive matched If и credential владельца lock. Depth 0 папки защищает membership; infinity — subtree. REST/tus/bulk не обходят lock. Publish требует all ready, no active locks, no live stages. Domain enums/AsyncAPI не расширены; staging и lock lifecycle — дополнительные persisted guards.
+
+## Branding revision и preview
+[ADR-013](adr/013-white-label.md): локальный editing/preview → saving → committed либо editing/conflict. PG N→N+1 при expectedRevision и ADMIN guard; invalid/audit failure откатывают всю transaction. Reset — новая ревизия; report presentation immutable.

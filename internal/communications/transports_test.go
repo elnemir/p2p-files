@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/netip"
+	"strings"
 	"testing"
 	"time"
 )
@@ -69,6 +70,25 @@ func TestQuietHoursDSTAndTemplates(t *testing.T) {
 		title, body := Template("transfer.published", locale, "https://test/#token=private", 1)
 		if title == "" || body == "" {
 			t.Fatal("missing template")
+		}
+	}
+}
+
+func TestBrandedTemplatesPreserveCapabilities(t *testing.T) {
+	link := "https://example.test/receive#token=FileX-fixture"
+	for _, locale := range []string{"ru", "en"} {
+		for _, kind := range []string{"transfer.published", "transfer.expiring", "transfer.expired", "download.completed", "digest", "other"} {
+			subject, body := BrandedTemplate(kind, locale, link, 3, "North Share")
+			if kind == "transfer.published" {
+				if !strings.Contains(body, link) {
+					t.Fatal("brand substitution modified capability")
+				}
+			} else if strings.Contains(subject+body, "FileX") {
+				t.Fatal("vendor copy remains", locale, kind)
+			}
+			if kind == "digest" && (!strings.Contains(subject+body, "North Share") || !strings.Contains(body, "3")) {
+				t.Fatal("branded digest missing", locale)
+			}
 		}
 	}
 }

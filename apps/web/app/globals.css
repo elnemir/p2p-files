@@ -909,3 +909,203 @@ footer {
 .site-header nav {
   min-width: 0;
 }
+
+/* Brand tokens are supplied by the same authoritative revision for SSR and hydration. */
+:root {
+  --danger: #782620;
+  --danger-surface: #fbe9e6;
+}
+.error {
+  background: var(--danger-surface);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.status-dot {
+  background: var(--danger);
+}
+.brand {
+  min-width: 0;
+  max-width: 320px;
+  align-items: center;
+}
+.brand-name {
+  white-space: normal;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  letter-spacing: -0.04em;
+}
+.brand > span:first-child {
+  font-weight: 700;
+}
+.brand-logo {
+  max-width: 240px;
+  max-height: 56px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.brand-logo-dark {
+  display: none;
+}
+:root[data-theme="dark"] .brand-logo-light {
+  display: none;
+}
+:root[data-theme="dark"] .brand-logo-dark {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .brand-logo-light {
+    display: none;
+  }
+  :root[data-theme="system"] .brand-logo-dark {
+    display: block;
+  }
+}
+.app-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  vertical-align: -4px;
+  margin-right: 7px;
+}
+.branding-panel {
+  scroll-margin-top: 20px;
+}
+.branding-panel fieldset {
+  min-width: 0;
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.branding-panel legend {
+  font-weight: 600;
+  padding: 0 7px;
+}
+.branding-panel h3 {
+  overflow-wrap: anywhere;
+}
+.brand-assets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.brand-asset {
+  min-width: 0;
+}
+.asset-thumbnail {
+  display: block;
+  max-width: 100%;
+  max-height: 80px;
+  object-fit: contain;
+  margin: 12px 0;
+}
+.brand-palettes,
+.brand-previews {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.color-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 96px;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.color-field input[type="color"] {
+  width: 44px;
+  padding: 4px;
+}
+.color-field input {
+  width: 100%;
+}
+.color-field label {
+  overflow-wrap: anywhere;
+}
+.brand-preview {
+  background: var(--bg);
+  color: var(--fg);
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preview-logo {
+  max-width: 100%;
+  max-height: 60px;
+  object-fit: contain;
+}
+.preview-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+.preview-button {
+  display: inline-block;
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 10px 14px;
+}
+.preview-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 0 8px;
+}
+.brand-save {
+  margin-top: 24px;
+}
+.branding-panel input[type="file"] {
+  width: 100%;
+}
+.site-header nav {
+  min-width: 0;
+}
+footer > span,
+.login h2 {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+@media (max-width: 800px) {
+  .brand-assets,
+  .brand-palettes,
+  .brand-previews {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .site-header {
+    flex-direction: column;
+  }
+  .site-header nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .site-header nav > a {
+    display: inline-flex;
+    align-items: center;
+  }
+  .brand {
+    max-width: 100%;
+  }
+  .brand-logo {
+    max-width: min(240px, 100%);
+  }
+  .branding-panel fieldset {
+    padding: 12px;
+  }
+  .color-field {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .color-field input:not([type="color"]) {
+    grid-column: 1/-1;
+  }
+  .brand-preview {
+    padding: 16px;
+  }
+}

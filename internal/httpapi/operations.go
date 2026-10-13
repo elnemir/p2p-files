@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"filex.local/filex/internal/auth"
+	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/reports"
 	"net/http"
@@ -157,7 +159,25 @@ func (a *App) operationsRoutes(m *http.ServeMux) {
 		if format == "pdf" {
 			w.Header().Set("Content-Type", "application/pdf")
 			w.Header().Set("Content-Disposition", `attachment; filename="security-report.pdf"`)
-			return reports.SecurityPDF(w, raw, digest)
+			var record struct {
+				ID string `json:"id"`
+			}
+			if e = json.Unmarshal(raw, &record); e != nil {
+				return e
+			}
+			var presentation []byte
+			if e = a.DB.QueryRow(r.Context(), "SELECT branding FROM security_incident_reports WHERE id=$1", record.ID).Scan(&presentation); e != nil {
+				return e
+			}
+			var brand *branding.Config
+			if len(presentation) > 0 {
+				v, err := branding.DecodeSnapshot(presentation)
+				if err != nil {
+					return err
+				}
+				brand = &v
+			}
+			return reports.SecurityPDFBranded(w, raw, digest, brand)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, e = w.Write(raw)

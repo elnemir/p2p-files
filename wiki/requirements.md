@@ -45,3 +45,6 @@
 - **NFR-002**: JSON camelCase, enum snake_case, RFC3339 UTC API, IANA timezone UI, PDF locale preferences, CSV UTF-8 no BOM/comma/RFC4180/formula injection protection.
 - **NFR-003**: tests unit/integration/E2E/race/fuzz/fault/visual/a11y, dependency/container/secret/license scans, SBOM, release checklist, requirement→test matrix.
 - **NFR-004**: proprietary code; no unapproved copyleft, no critical/high security findings at release, no production deployment without explicit authorization.
+
+## Дополнение владельца: white labeling
+2026-10-13 разрешён настраиваемый общий брендинг установки: название, логотип/favicon, две палитры, стиль иконок, ADMIN preview/apply/reset и согласованное отображение в UI/письмах/новых PDF. [ADR-013](adr/013-white-label.md). Расширяет FR-001/010/012/016, сохраняет исходные 32 MUST и strict contracts.

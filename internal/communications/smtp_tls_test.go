@@ -6,9 +6,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/mail"
 	"net/textproto"
 	"strconv"
 	"strings"
@@ -92,14 +94,28 @@ func TestSMTPTLSDeliveryAndCertificateValidation(t *testing.T) {
 				}
 			}()
 			port, _ := strconv.Atoi(strings.Split(l.Addr().String(), ":")[1])
-			c := SMTPConfig{Host: "127.0.0.1", Port: port, TLS: mode, Username: "fixture", Password: "fixture", From: "a@example.test"}
-			e = sendMailTLS(context.Background(), c, "stable-event-id", "b@example.test", "Тест FileX", "UTF-8 body", &tls.Config{RootCAs: root, ServerName: "127.0.0.1", MinVersion: tls.VersionTLS12})
+			c := SMTPConfig{Host: "127.0.0.1", Port: port, TLS: mode, Username: "fixture", Password: "fixture", From: "a@example.test", DisplayName: "North Share"}
+			subject := "События " + strings.Repeat("😀", 80)
+			e = sendMailTLS(context.Background(), c, "stable-event-id", "b@example.test", subject, "UTF-8 body", &tls.Config{RootCAs: root, ServerName: "127.0.0.1", MinVersion: tls.VersionTLS12})
 			if e != nil {
 				t.Fatal(e)
 			}
 			select {
 			case message := <-received:
-				if !strings.Contains(message, "Message-ID: <stable-event-id@filex.local>") || !strings.Contains(message, "UTF-8 body") {
+				parsed, err := mail.ReadMessage(strings.NewReader(message))
+				if err != nil {
+					t.Fatal(err)
+				}
+				decoded, err := new(mime.WordDecoder).DecodeHeader(parsed.Header.Get("Subject"))
+				if err != nil || decoded != subject {
+					t.Fatal("subject changed", err)
+				}
+				for _, line := range strings.Split(strings.SplitN(message, "\n\n", 2)[0], "\n") {
+					if len(line) > 998 {
+						t.Fatal("MIME header exceeds SMTP line limit")
+					}
+				}
+				if !strings.Contains(message, "Message-ID: <stable-event-id@example.test>") || !strings.Contains(message, "UTF-8 body") || !strings.Contains(message, `From: "North Share" <a@example.test>`) {
 					t.Fatal("invalid MIME message")
 				}
 			case <-time.After(5 * time.Second):
@@ -126,7 +142,7 @@ func TestSMTPTLSDeliveryAndCertificateValidation(t *testing.T) {
 			conn.(*tls.Conn).Handshake()
 		}
 	}()
-	if e = SendMail(context.Background(), SMTPConfig{Host: "127.0.0.1", Port: l.Addr().(*net.TCPAddr).Port, TLS: "smtps", From: "a@example.test"}, "id", "b@example.test", "subject", "body"); e == nil {
+	if e = SendMail(context.Background(), SMTPConfig{Host: "127.0.0.1", Port: l.Addr().(*net.TCPAddr).Port, TLS: "smtps", From: "a@example.test", DisplayName: "North Share"}, "id", "b@example.test", "subject", "body"); e == nil {
 		t.Fatal("untrusted SMTP certificate accepted")
 	}
 	<-done

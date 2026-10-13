@@ -1,5 +1,6 @@
 "use client";
 
+import { useBranding } from "./BrandingProvider";
 import { useState } from "react";
 import type { Schema } from "../lib/api-types";
 
@@ -22,17 +23,20 @@ export default function WebDAVPanel({
     useState<Schema<"WebDAVCredential"> | null>(null);
   const [visible, setVisible] = useState(false);
   const [client, setClient] = useState("macos");
+  const { value: brand } = useBranding();
+  const branded = (ru: string, en: string) =>
+    t(ru, en).replaceAll("FileX", brand.productName);
   return (
     <details className="panel compact">
       <summary>{t("Загрузка через WebDAV", "Upload with WebDAV")}</summary>
       <p>
-        {t(
+        {branded(
           "Подключите файловый менеджер к этому черновику и скопируйте файлы. После загрузки обновите список и опубликуйте передачу в FileX. Доступ закроется после публикации.",
           "Connect a file manager to this draft and copy your files. Refresh the list, then publish the transfer in FileX. Publication closes WebDAV access.",
         )}
       </p>
       <p>
-        {t(
+        {branded(
           "До публикации можно читать, добавлять, заменять и переименовывать файлы. Если новая загрузка оборвётся, прежний файл сохранится. Перед публикацией закройте открытые файлы и отключите сетевую папку. Для возобновления больших загрузок используйте браузер.",
           "Before publication you can read, add, replace and rename files. An interrupted replacement preserves the old file. Close open files and disconnect the network folder before publishing. Use the browser for resumable large uploads.",
         )}
@@ -54,7 +58,7 @@ export default function WebDAVPanel({
       <ol aria-label={t("Подключение WebDAV", "WebDAV connection")}>
         {client === "macos" && (
           <li>
-            {t(
+            {branded(
               "Finder → Переход → Подключение к серверу (⌘K). Вставьте адрес WebDAV из этой панели.",
               "Finder → Go → Connect to Server (⌘K). Paste the WebDAV address from this panel.",
             )}
@@ -62,7 +66,7 @@ export default function WebDAVPanel({
         )}
         {client === "windows" && (
           <li>
-            {t(
+            {branded(
               "Проводник → Этот компьютер → Добавить сетевое расположение. Укажите адрес WebDAV по HTTPS. Требуется служба WebClient и доверенный сертификат сервера.",
               "File Explorer → This PC → Add a network location. Enter the HTTPS WebDAV address. The WebClient service and a trusted server certificate are required.",
             )}
@@ -70,20 +74,20 @@ export default function WebDAVPanel({
         )}
         {client === "linux" && (
           <li>
-            {t(
+            {branded(
               "GNOME Files → Другие места → Подключиться к серверу. Используйте davs:// вместо https:// в адресе; для локального HTTP — dav://. Нужен пакет gvfs-backends.",
               "GNOME Files → Other Locations → Connect to Server. Replace https:// with davs://; for local HTTP use dav://. The gvfs-backends package is required.",
             )}
           </li>
         )}
         <li>
-          {t(
+          {branded(
             "Войдите как filex с паролем подключения. Скопируйте файлы в папку черновика.",
             "Sign in as filex with the connection password. Copy files into the draft folder.",
           )}
         </li>
         <li>
-          {t(
+          {branded(
             "Обновите список в FileX, проверьте готовность файлов, отключите папку и опубликуйте передачу.",
             "Refresh the list in FileX, check that the files are ready, disconnect the folder and publish the transfer.",
           )}
@@ -91,7 +95,7 @@ export default function WebDAVPanel({
       </ol>
       {client === "windows" && (
         <p>
-          {t(
+          {branded(
             "Фактическая проверка Windows ожидает тестового стенда. Системный WebClient может ограничивать размер файла; для больших файлов используйте браузер с возобновлением загрузки.",
             "Windows validation is awaiting a test machine. WebClient may limit file sizes; use the resumable browser upload for large files.",
           )}
@@ -119,7 +123,7 @@ export default function WebDAVPanel({
         >
           <label className="field">
             <span>
-              {t(
+              {branded(
                 "Пароль аккаунта для выдачи доступа",
                 "Account password to issue access",
               )}
@@ -148,7 +152,7 @@ export default function WebDAVPanel({
       {credential && (
         <div>
           <p role="status">
-            {t(
+            {branded(
               "Сохраните пароль подключения: он показывается один раз. Отозвать доступ также можно в настройках API-токенов.",
               "Save the connection password: it is shown only once. You can also revoke access in API token settings.",
             )}
@@ -200,7 +204,7 @@ export default function WebDAVPanel({
         </div>
       )}
       <p>
-        {t(
+        {branded(
           "Используйте адрес из этой панели, имя filex и отдельный пароль подключения. Пароль аккаунта нужен только для выдачи доступа в FileX. Для удалённого подключения требуется HTTPS.",
           "Use the address from this panel, username filex and the separate connection password. Your account password is only needed to issue access in FileX. Remote connections require HTTPS.",
         )}

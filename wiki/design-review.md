@@ -53,3 +53,9 @@ Resource review добавил properties budget 32 KiB/256 на ресурс и
 Все 15 профильных PG/race tests прошли в предварительной квалификации; mount_webdav и настоящий GVfs выполнили полный цикл, включая server-created GET. Окончательные source-bound результаты — [session](session.md). Windows ожидает стенда; независимый review и принятие остаточных рисков не выполнены.
 
 Дополнительный review воспроизвёл LOCK-null в Depth:0 locked parent: внутренняя операция создания пустого файла удаляла корректный If и возвращала 423. Условие теперь сохраняется; negative→positive regression включён в TestIntegrationWebDAVNativeCollectionLocks. RED: `.cache/webdav-native-lock-null-red.log` (423 вместо 201), исправление не ослабляет проверку чужих credentials или обход REST/tus.
+
+## Review white labeling до реализации
+[ADR-013](adr/013-white-label.md) сохраняет PG authority, существующий audited CAS pattern, recovery и privacy. Отдельный branding store не меняет strict Settings v1. Snapshot presentation хранится отдельно от canonical report JSON; old PDF/crypto/hash semantics сохранены. Backup включает additive table/columns автоматически. AsyncAPI не расширяется; проверки реализации будут записаны в session.
+
+### Дополнительная квалификация white label
+Максимальное Unicode имя проверено через STARTTLS/SMTPS fixture: B-encoded subject декодируется без изменений и остаётся в SMTP line limit (Q-encoding для 80 четырёхбайтовых символов воспроизводимо превышал его). Conditional HTTP проверяется native в WebKit, где routing fixture не умеет fulfill 304; исключение ограничено branding GET с If-None-Match и сопровождается явными 304/stale-200 assertions, без replay или подмены ответа.
