@@ -59,3 +59,12 @@ Resource review добавил properties budget 32 KiB/256 на ресурс и
 
 ### Дополнительная квалификация white label
 Максимальное Unicode имя проверено через STARTTLS/SMTPS fixture: B-encoded subject декодируется без изменений и остаётся в SMTP line limit (Q-encoding для 80 четырёхбайтовых символов воспроизводимо превышал его). Conditional HTTP проверяется native в WebKit, где routing fixture не умеет fulfill 304; исключение ограничено branding GET с If-None-Match и сопровождается явными 304/stale-200 assertions, без replay или подмены ответа.
+
+## Review внешней identity authority
+[ADR-014](adr/014-federated-auth.md): сохранены PG authority, локальные roles/disabled/epochs, keyring primitives/AAD format, recovery gate и recipient semantics. Устранение format mismatch AAD проверено PG tests; Google login отделён от fresh step-up, Entra directory email trust задаётся явно с domain allowlist. Review не является независимой внешней security acceptance. Итог тестов — [session](session.md).
+
+### Review реализации внешнего входа
+
+Повторный code review проверил границы: роли/disabled/auth_epoch остаются в PG; внешние claims не повышают привилегии; email collision не связывает аккаунты; связывание требует fresh current actor. State, nonce, PKCE/request ID и browser binding разделены, complete атомарно потребляет flow вместе с audit/session. Обычный OIDC login без auth_time не является fresh reauth. Raw tokens/assertions/passwords не сохраняются в конфигурации или audit. LDAP bind выполняется только после проверенного TLS и поиска одного объекта. Outbound HTTP ограничен origin/IP/размером/временем; redirects запрещены.
+
+Проверены operational связи: provider update отзывает pending flows и provider sessions, restore очищает flows, configuration rotation включает provider secrets, reconcile понимает оба новых AAD. Обнаруженное чтение ключа через второе pool connection внутри completion transaction исправлено; 16 конкурентных запросов завершаются без pool starvation. Подробные source-bound результаты — [session](session.md). Это внутренний engineering review, не подмена независимой внешней security приёмки.

@@ -3,6 +3,8 @@ import Brand from "./Brand";
 import Icon, { type IconName } from "./Icon";
 import { useBranding } from "./BrandingProvider";
 import BrandingPanel from "./BrandingPanel";
+import IdentityLogin, { IdentityCompletion } from "./IdentityLogin";
+import IdentityProvidersPanel from "./IdentityProvidersPanel";
 import OperationsPanel from "./OperationsPanel";
 import AdminExportsPanel from "./AdminExportsPanel";
 import WebDAVPanel from "./WebDAVPanel";
@@ -719,6 +721,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
         {mode === "owner" && !loaded && (
           <p>{t("Проверяем сеанс…", "Checking session…")}</p>
         )}
+        {mode === "owner" && <IdentityCompletion api={api} t={t} />}
         {mode === "owner" && loaded && !user && (
           <div className="welcome">
             <section>
@@ -765,6 +768,7 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
                 {busy ? t("Входим…", "Signing in…") : t("Войти", "Sign in")}
               </button>
             </form>
+            <IdentityLogin api={api} t={t} />
           </div>
         )}
         {mode === "owner" && user && (
@@ -2574,8 +2578,15 @@ function AccountSettings({
           </button>
         </form>
       </section>
+      <IdentityLogin api={api} t={t} account />
       <section className="panel">
         <h2>{t("Изменить пароль", "Change password")}</h2>
+        <p>
+          {t(
+            "Изменение пароля доступно аккаунтам с локальным паролем. Для внешнего аккаунта используйте повторный вход через провайдер выше.",
+            "Password changes require an existing local password. External accounts can reauthenticate using the provider above.",
+          )}
+        </p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -2784,6 +2795,7 @@ function Admin({
         {t("Обновить", "Refresh")}
       </button>
       <BrandingPanel api={api} t={t} busy={busy} />
+      <IdentityProvidersPanel api={api} t={t} busy={busy} />
       <OperationsPanel
         api={api}
         t={t}

@@ -6,7 +6,7 @@
 
 ## Базовые и целевые команды
 
-Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях: после native WebDAV и branding браузерный набор содержит 8 случаев на профиль (40 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
+Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях: после native WebDAV, branding и SSO браузерный набор содержит 9 случаев на профиль (45 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
 
 | Команда | Что проверяет | Требования / ограничение |
 |---|---|---|
@@ -14,9 +14,9 @@
 | make integration-docker | Все TestIntegration* с race на disposable PostgreSQL; 56 top-level tests (один требует FILEX_RCLONE_PATH) | Docker; каждый test получает отдельную schema, cleanup своего container |
 | make test-integration | Те же тесты через FILEX_TEST_DATABASE_URL | Только специально выделенная тестовая БД; URL обязателен |
 | make security | npm audit и govulncheck | Network; source reachable findings отдельно от module-only advisories |
-| make e2e | 5 Linux browser/emulation profiles × 8 scenarios = 40; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
+| make e2e | 5 Linux browser/emulation profiles × 9 scenarios = 45; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
 | make ingress | Настоящий Traefik/test CA, TLS, Host/forwarded/CIDR/secure cookie/reset/private endpoints | Isolated project/random ports, public ACME не вызывается |
-| make upgrade-drill | Разные images baseline 28ab4f3/candidate, backup/drain/0017+0018/fault/reopen/one-time | Git history; Compose additive 16→18 с точным ledger/hash и отказом downgrade; PG suite также проверяет prefix/faults |
+| make upgrade-drill | Разные images baseline 28ab4f3/candidate, backup/drain/0017+0018+0019/fault/reopen/one-time | Git history; Compose additive 16→19 с точным ledger/hash и отказом downgrade; PG suite также проверяет prefix/faults |
 | make fuzz | Пять кампаний PathKey/FXP1/Range/WebDAV XML + path/If | Default 15 s на кампанию плюс compile; Go seeds/unit сами по себе не fuzz campaign |
 | make performance | 32 MiB/2000 rows, load/fault/DR/ZIP hash/resources | Только disposable локальный project; не release-size profile |
 | make supply-chain | Source/history/worktree secrets, licenses, пять image scans и SBOM | Docker/network; HIGH/CRITICAL fail incl. unfixed |
@@ -133,3 +133,7 @@ TLS ingress fixture актуализирован под ADR-011: старое о
 `TestIntegrationBranding*` проверяют права/CSRF/reauth, CAS гонку, audit fault rollback, immutable report snapshot и SMTP. Recovery и audit checkpoint cases дополнительно проверяют branding restore и snapshot инцидента. `branding.spec.ts` покрывает preview/apply/reset/conflict, assets, SSR без JavaScript, публичные страницы и 320px/axe. Подробности — [white labeling](white-label.md); результаты текущего diff — [session](session.md).
 
 Conditional `GET /api/v1/branding` с `If-None-Match` проходит native HTTP в browser harness: WebKit не поддерживает `route.fulfill(304)`. Новый branding сценарий явно сверяет ETag, 304/пустое тело и 200/полный DTO при stale validator. Первичное чтение по-прежнему валидируется contract observer. Unit regression запрещает распространение исключения на другие routes или mutations; запросы не повторяются и статус не подменяется.
+
+## Federated identity regression
+
+[SSO](federated-auth.md) проверяется на подписанных локальных OIDC/SAML fixtures и настоящем TLS/StartTLS LDAP BER обмене. PG/race тесты проверяют JIT USER, отсутствие email auto-link, 16 одновременных завершений одной flow, expiry, actor revoke, provider CAS/revoke, audit rollback, восстановление и ротацию configuration DEK. Browser `identity.spec.ts` проходит реальный SP→IdP form POST→ACS→browser-bound completion, регистрацию, повторную авторизацию, replay rejection и ADMIN disable. Подменяется только внешний тестовый IdP, API FileX работает настоящий. Проверки не подтверждают конфигурацию конкретной организации Keycloak, Entra ID, Google Workspace или AD.

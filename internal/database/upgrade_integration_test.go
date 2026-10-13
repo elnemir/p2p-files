@@ -73,7 +73,7 @@ func TestIntegrationMigrationPrefixAndStartupRejection(t *testing.T) {
 	ctx := context.Background()
 	db := migrationDB(t)
 	plan, e := CheckUpgrade(ctx, db)
-	if e != nil || !plan.Compatible || plan.Applied != 0 || len(plan.Pending) != 18 {
+	if e != nil || !plan.Compatible || plan.Applied != 0 || len(plan.Pending) != 19 {
 		t.Fatal("fresh plan", plan, e)
 	}
 	var ledger bool
@@ -85,6 +85,7 @@ func TestIntegrationMigrationPrefixAndStartupRejection(t *testing.T) {
 	delete(source, "migrations/0016_administrative_exports.sql")
 	delete(source, "migrations/0017_native_webdav.sql")
 	delete(source, "migrations/0018_branding.sql")
+	delete(source, "migrations/0019_federated_auth.sql")
 	if e = migrate(ctx, db, source); e != nil {
 		t.Fatal(e)
 	}
@@ -109,7 +110,7 @@ func TestIntegrationMigrationPrefixAndStartupRejection(t *testing.T) {
 		t.Fatal("upgrade fence", after, e)
 	}
 	plan, e = CheckUpgrade(ctx, db)
-	if e != nil || plan.Applied != 18 || len(plan.Pending) != 0 {
+	if e != nil || plan.Applied != 19 || len(plan.Pending) != 0 {
 		t.Fatal(plan, e)
 	}
 	if e = Migrate(ctx, db); e != nil {
@@ -149,8 +150,8 @@ func TestIntegrationMigrationDrainAndAtomicFailure(t *testing.T) {
 		t.Fatal(e)
 	}
 	source := migrationSource(t)
-	source["migrations/0019_test_only.sql"] = &fstest.MapFile{Data: []byte("CREATE TABLE upgrade_probe(id int PRIMARY KEY); INSERT INTO upgrade_probe VALUES(1)")}
-	source["migrations/0020_test_only.sql"] = &fstest.MapFile{Data: []byte("INSERT INTO upgrade_missing_relation VALUES(1)")}
+	source["migrations/0020_test_only.sql"] = &fstest.MapFile{Data: []byte("CREATE TABLE upgrade_probe(id int PRIMARY KEY); INSERT INTO upgrade_probe VALUES(1)")}
+	source["migrations/0021_test_only.sql"] = &fstest.MapFile{Data: []byte("INSERT INTO upgrade_missing_relation VALUES(1)")}
 	if _, e := db.Exec(ctx, "UPDATE ops_control SET mode='maintenance'"); e != nil {
 		t.Fatal(e)
 	}
@@ -180,14 +181,14 @@ func TestIntegrationMigrationDrainAndAtomicFailure(t *testing.T) {
 		t.Fatal("partial DDL survived rollback", e)
 	}
 	plan, e := CheckUpgrade(ctx, db)
-	if e != nil || plan.Applied != 18 || len(plan.Pending) != 0 {
+	if e != nil || plan.Applied != 19 || len(plan.Pending) != 0 {
 		t.Fatal("partial migration ledger survived", plan, e)
 	}
 	after, _ := maintenance.Read(ctx, db)
 	if after.Generation != before.Generation || after.Mode != "maintenance" {
 		t.Fatal("failed migration changed gate", after)
 	}
-	delete(source, "migrations/0020_test_only.sql")
+	delete(source, "migrations/0021_test_only.sql")
 	if e = migrate(ctx, db, source); e != nil {
 		t.Fatal("migration retry failed", e)
 	}

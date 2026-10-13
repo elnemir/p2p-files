@@ -72,6 +72,23 @@ add('GET','/auth/history','List own login history',arr(obj({'occurredAt':T,'succ
 add('GET','/auth/tokens','List own API token metadata',arr(obj({'id':U,'scopes':arr(S),'expiresAt':T,'revokedAt':null(T)})))
 add('POST','/auth/tokens','Create a scoped API token',obj({'id':U,'token':S}),obj({'scopes':arr(S),'ttlSeconds':{'type':'integer','minimum':60,'maximum':2592000}}),201,'Cookie session and fresh reauthentication required; token is returned once. No privileged ADMIN scopes may be minted.')
 add('DELETE','/auth/tokens/{id}','Revoke an owned API token')
+IdentityProtocol=enum('oidc','saml','ldap')
+IdentityPurpose=enum('login','link','reauth')
+IdentityConfig=define('IdentityConfig',{'trustEmail':B,'hostedDomain':S,'name':{'type':'string','minLength':1,'maxLength':80},'protocol':IdentityProtocol,'enabled':B,'allowRegistration':B,'allowedEmailDomains':arr(S),'privateCidrs':arr(S),'caPem':S,'issuer':S,'clientId':S,'extraOrigins':arr(S),'metadataXml':S,'emailAttribute':S,'ldapUrl':S,'baseDn':S,'bindDn':S,'loginAttribute':S,'subjectAttribute':S})
+IdentityProvider=define('IdentityProvider',{'id':U,'revision':I,'config':IdentityConfig,'hasSecret':B})
+IdentityPublic=define('IdentityPublic',{'id':U,'name':S,'protocol':IdentityProtocol,'allowRegistration':B})
+IdentityInput=define('IdentityInput',{'expectedRevision':I,'config':IdentityConfig,'secret':{'type':'string','maxLength':4096,'writeOnly':True,'description':'Omitted preserves the encrypted secret; empty explicitly clears it.'}},['expectedRevision','config'])
+add('GET','/auth/providers','List enabled external login providers',arr(IdentityPublic))
+add('GET','/admin/identity-providers','List identity provider configurations without secrets',arr(IdentityProvider))
+add('POST','/admin/identity-providers','Create an identity provider',IdentityProvider,IdentityInput,201)
+add('PUT','/admin/identity-providers/{id}','Update an identity provider by revision',IdentityProvider,IdentityInput,description='Current ADMIN cookie and fresh reauthentication, CAS and audit. Authority fields cannot change; update revokes provider sessions and pending flows. No implicit email linking or external role mapping.')
+add('POST','/auth/providers/{id}/start','Start a browser-bound SSO flow',obj({'url':S}),obj({'purpose':IdentityPurpose}),description='Exact Origin. Link requires current cookie and fresh reauthentication; reauth requires current cookie. Returns IdP authorization URL, sets a short-lived HttpOnly browser-binding cookie. State, nonce and PKCE are persisted in PostgreSQL. Login does not require a session.')
+add('GET','/auth/providers/{id}/callback','Validate an OIDC authorization response',code=303,description='Code/state query; validates issuer, audience, signature, nonce, PKCE, verified email and fresh auth_time. Redirects only to configured origin root; the browser must complete the flow.')
+add('POST','/auth/providers/{id}/saml','Validate a SAML POST response',code=303,description='Bounded SAMLResponse and RelayState form fields. Signed SP-initiated responses only; no Origin requirement for this cross-site endpoint. Redirects only to configured origin root, then browser binding is checked at completion.')
+add('GET','/auth/providers/{id}/metadata','Read SAML service provider metadata','binary')
+add('POST','/auth/complete','Atomically complete browser-bound external authentication',Session,obj({'state':S}),description='Exact Origin plus HttpOnly flow cookie. One-use pending identity, current provider revision, local role/disabled/epoch and original session for link/reauth checked in transaction. Returns a new local session and CSRF token. No automatic linking by email.')
+add('POST','/auth/providers/{id}/ldap','Authenticate against a TLS LDAP directory',Session,obj({'username':{'type':'string','minLength':1,'maxLength':254},'password':{'type':'string','minLength':1,'maxLength':1024},'purpose':IdentityPurpose}),description='Exact Origin, rate limits, service search and nonempty user bind. Stable directory subject identifies the account; registration only if enabled, with USER role. Link/reauth require the original current cookie session.')
+add('GET','/auth/identities','List external identities linked to the current account',arr(obj({'providerId':U,'name':S,'protocol':IdentityProtocol,'enabled':B})))
 add('POST','/admin/users','Provision an account',ID,obj({'email':S,'password':password,'role':enum('user','admin')}),201)
 add('GET','/admin/settings','List configuration revisions',arr(obj({'revision':I,'active':B,'validated':B,'value':Settings})))
 add('POST','/admin/settings','Create a typed configuration draft',obj({'revision':I}),Settings,201)
@@ -172,7 +189,7 @@ paths={}
 public={'/api/v1/branding','/api/v1/verify-report','/api/v1/status','/api/v1/banner','/api/v1/auth/login','/api/v1/recipient/session','/api/v1/signing-keys/{id}'}
 for (method,path),v in ops.items():
  admin='/admin/' in path
- ispublic=path in public or '/verify/reports/' in path or method=='OPTIONS'
+ ispublic=path in public or path.startswith('/api/v1/auth/providers') or path=='/api/v1/auth/complete' or '/verify/reports/' in path or method=='OPTIONS'
  recipient='/recipient/' in path and not path.endswith('/session')
  secure=[] if ispublic else ([{'recipient':[]}] if recipient else ([{'session':[]}] if admin or path=='/api/v1/events' or '/artifacts/' in path else [{'session':[]},{'bearer':[]}]))
  if '/artifacts/' in path and path.endswith('/content'):secure=[{'session':[],'artifact':[]}]
@@ -203,6 +220,16 @@ for (method,path),v in ops.items():
    op['responses'][code]['headers']={'Accept-Ranges':{'schema':{'const':'bytes'}},'Content-Length':{'schema':I},'Content-Disposition':{'schema':S}}
    op['responses']['206']['headers']={'Content-Range':{'schema':S},'Content-Length':{'schema':I},'Accept-Ranges':{'schema':{'const':'bytes'}}}
  elif isinstance(v['response'],dict):op['responses'][code]['content']={'application/json':{'schema':v['response']}}
+ if path.endswith('/callback'):
+  op['parameters'] += [{'name':x,'in':'query','required':True,'schema':S} for x in ['code','state']]
+ if path.endswith('/saml'):
+  op['parameters']=[p for p in op['parameters'] if p['name']!='Origin']
+  op['requestBody']={'required':True,'content':{'application/x-www-form-urlencoded':{'schema':obj({'SAMLResponse':S,'RelayState':S})}}}
+ if path.endswith('/metadata'):
+  op['responses']['200']['content']={'application/samlmetadata+xml':{'schema':S}}
+ if path.startswith('/api/v1/auth/providers') or path=='/api/v1/auth/complete':
+  for errorCode in ['401','403','409']:
+   op['responses'][errorCode]={'description':'Authentication rejected without private details','content':{'application/json':{'schema':Error}}}
  if not ispublic:
   for code,desc in [('401','Missing, expired or revoked authentication'),('403','Origin, CSRF, role, reauthentication, ownership or scope rejected'),('404','Resource unavailable'),('409','State, offset, revision, lease or key changed')]:op['responses'][code]={'description':desc,'content':{'application/json':{'schema':Error}}}
  for code,desc in [('400','Invalid input'),('429','Rate or concurrency limit; retry later'),('500','Fail-closed internal failure without private details'),('503','Maintenance or runtime restart required')]:op['responses'][code]={'description':desc,'content':{'application/json':{'schema':Error}}}
@@ -246,6 +273,8 @@ for key,address,schema,description in [('owner','/api/v1/events','event-v1','Coo
  asyncapi['operations']['send'+key.title()]={'action':'send','channel':{'$ref':'#/channels/'+key},'x-implementation':'implemented','messages':[{'$ref':'#/channels/'+key+'/messages/'+key}]}
 branding_schema=copy.deepcopy(D['Branding'])
 for key in ['light','dark']:branding_schema['properties'][key]=D['BrandPalette']
+identity_schema=copy.deepcopy(D['IdentityConfig'])
+outputs['contracts/schemas/identity-provider-v1.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/identity-provider-v1.json',**identity_schema}
 outputs['contracts/schemas/branding-v1.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/branding-v1.json',**branding_schema}
 outputs['contracts/asyncapi.json']=asyncapi
 for path,value in outputs.items():

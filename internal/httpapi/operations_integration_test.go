@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"filex.local/filex/internal/audit"
+	"filex.local/filex/internal/auth"
 	"filex.local/filex/internal/branding"
 	"filex.local/filex/internal/database"
 	"filex.local/filex/internal/domain"
@@ -186,6 +187,8 @@ func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 	c, root := testClient(t)
 	ctx := context.Background()
 	brandBefore := applyBrand(t, c, 0, "Restored brand")
+	identityStore, identityProvider, _ := identityFixture(t, c)
+	identityState, identityBinding := verifiedIdentityFlow(t, identityStore, identityProvider, auth.Principal{}, "login", "backup-subject", "backup@example.test")
 	backupRoot := t.TempDir()
 	provider, e := c.a.Files.Storage.Provision(ctx, backupRoot, "backups")
 	if e != nil {
@@ -258,6 +261,13 @@ func TestIntegrationRecoveryBackupFaultAndReopen(t *testing.T) {
 	restoredBrand, err := branding.Current(ctx, c.a.DB)
 	if err != nil || restoredBrand.Value.ProductName != "Restored brand" || restoredBrand.Revision != brandBefore.Revision {
 		t.Fatal("branding restore", err, restoredBrand.Revision)
+	}
+	restoredIdentity, identityErr := identityStore.Get(ctx, identityProvider.ID)
+	if identityErr != nil || !restoredIdentity.HasSecret || restoredIdentity.Revision != identityProvider.Revision {
+		t.Fatal("identity provider restore", identityErr)
+	}
+	if _, identityErr = identityStore.Complete(ctx, identityState, identityBinding, "http://localhost:8090", 600); identityErr == nil {
+		t.Fatal("identity flow survived restore")
 	}
 	var pre string
 	if e = c.a.DB.QueryRow(ctx, "SELECT pre_backup_id::text FROM ops_jobs WHERE id=$1", restored).Scan(&pre); e != nil || !domain.ValidID(pre) {

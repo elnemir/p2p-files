@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — SAML/OIDC/LDAP
+
+- ADMIN-настройки внешних identity providers, USER-only регистрация при первом входе, явная привязка и повторная авторизация.
+- Migration 0019: PostgreSQL CAS/replay guards, encrypted provider secrets и browser-bound SSO flows; отзыв provider sessions при обновлении конфигурации.
+- OIDC code/PKCE/nonce/signature, SAML signed SP-initiated responses, LDAP TLS/service-search/user-bind. Локальные роли/disabled и ADMIN fallback сохранены.
+- [Инструкции Keycloak, Entra ID/AD, Google Workspace и generic IdP/LDAP](wiki/federated-auth.md); внешняя приёмка tenants отдельно от локальных fixtures.
+
 ## Unreleased — White labeling
 
 - ADMIN-редактор общего бренда: название, RU/EN описания, подпись, светлая/тёмная палитры, default theme, три стиля иконок, логотипы/favicon, preview/apply/reset.

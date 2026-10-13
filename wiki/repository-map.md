@@ -45,7 +45,7 @@
 | [.github/dependency-policy.json](../.github/dependency-policy.json), [check_dependencies.mjs](../scripts/check_dependencies.mjs) | Reviewed Node/Redis timeline → engine/types/images/installed graph guard; [ADR-012](adr/012-node26-runtime.md), [negative tests](../scripts/dependencies.test.mjs) |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |
 | [.github/repository.json](../.github/repository.json), [github_repository.py](../scripts/github_repository.py) | Desired GitHub settings → audit/apply/readback; [правила репозитория](repository-governance.md) |
-| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 40 browser scenarios, 10 Linux baselines; review перед заменой изображений |
+| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 45 browser scenarios, 10 Linux baselines; review перед заменой изображений |
 
 ## Поток изменения и пример
 
@@ -59,3 +59,6 @@
 ## Брендинг установки
 
 [internal/branding](../internal/branding/) — defaults, validation, revision CAS/audit; [branding API](../internal/httpapi/branding.go) — публичный DTO и ADMIN routes. [BrandingPanel](../apps/web/components/BrandingPanel.tsx) — редактор, [BrandingProvider](../apps/web/components/BrandingProvider.tsx) — runtime context; SSR читает внутренний API. Migration 0018 и reports/communications интегрируют snapshots и письма. Инструкция и границы — [white labeling](white-label.md).
+
+## SAML/OIDC/LDAP
+[internal/identity](../internal/identity/) — config, encrypted provider/flow store, protocol adapters, bounded outbound TLS. [HTTP routes](../internal/httpapi/identity.go), [IdentityLogin](../apps/web/components/IdentityLogin.tsx), [ADMIN editor](../apps/web/components/IdentityProvidersPanel.tsx). [0019](../internal/database/migrations/0019_federated_auth.sql), [browser fixture](../scripts/identity-fixture/main.go), [browser test](../scripts/e2e/identity.spec.ts); [инструкция](federated-auth.md).

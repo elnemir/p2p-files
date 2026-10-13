@@ -23,3 +23,6 @@ Forensic: admin plaintext/ZIP with re-auth/reason/audit, raw ciphertext only on 
 
 ## Публичный брендинг
 Название/описания/палитры/логотипы намеренно публичны; secrets и сведения об ADMIN в DTO отсутствуют. Запись доступна только текущей ADMIN session со свежим reauth и Origin/CSRF, повторно проверяемыми внутри CAS/audit transaction. Растровые assets ограничены до decode и нормализуются; URL/SVG/HTML/CSS/JS не принимаются. [ADR-013](adr/013-white-label.md) фиксирует threat/architecture/crypto review, [white-label](white-label.md) — поля, ограничения и эксплуатацию. Обновление бренда не меняет security/privacy/one-time/report JSON invariants.
+
+## Корпоративная identity
+[Внешний вход](federated-auth.md) не доверяет email как идентификатору/основанию auto-link и не импортирует роли. OIDC/SAML signatures и LDAP TLS проверяются до локальной session; stale/missing auth_time не даёт свежую reauth. No-log/write-only secrets, exact Origin и одноразовая browser binding защищают start/complete. [Threat/design ADR](adr/014-federated-auth.md).

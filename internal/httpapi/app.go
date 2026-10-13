@@ -358,6 +358,7 @@ func (a *App) Handler() http.Handler {
 	a.treeRoutes(mux)
 	a.operationsRoutes(mux)
 	a.brandingRoutes(mux)
+	a.identityRoutes(mux)
 	a.organizationRoutes(mux)
 	a.exportRoutes(mux)
 	a.adminExportRoutes(mux)

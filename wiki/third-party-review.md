@@ -52,3 +52,9 @@ PR #3 предлагает Redis 8.10 вместо текущего 7.2. По [�
 GVfs/gio в отдельном Ubuntu Docker image используется только для квалификации Linux клиента; он не входит в пять runtime images FileX и не включён в продуктовые containers. Base image digest закреплён в [test Dockerfile](../scripts/webdav/Dockerfile), package/backend версии записываются тестом. macOS mount_webdav и Windows WebClient — клиентские компоненты тестовых ОС, не vendored binaries. Лицензионные решения для поставки продукта остаются отдельной внешней приёмкой.
 
 Итог native WebDAV qualification 2026-10-12: source и все пять runtime images имеют 0 HIGH/CRITICAL; `GO-2026-5932` UNKNOWN остаётся видимым в source x/crypto v0.58.0, API/CLI binary locations v0.58.0 и Traefik v0.57.0. Govulncheck FileX: 0 reachable/0 imported-package findings; это не binary reachability проверка стороннего Traefik. Scanner exceptions не добавлены. Exact source и границы — [session](session.md).
+
+## Протокольные зависимости SSO, 2026-10-13
+
+Добавлены закреплённые в go.mod/go.sum runtime libraries: go-oidc v3.21.0 (Apache-2.0), crewjam/saml v0.5.1 (BSD-2-Clause), go-ldap v3.4.15 (MIT). XML signature parser использует актуализированные etree v1.8.1 (BSD-2-Clause) и goxmldsig v1.6.1 (Apache-2.0); OIDC — go-jose v4.1.4 (Apache-2.0, вложенный json BSD-3-Clause) и oauth2 v0.36.0 (BSD-3-Clause). Источник — текущий go-licenses inventory, версии не выводятся из старых evidence. Новые crypto primitives в FileX не добавляются.
+
+Инвентаризация кандидата содержит 37 Go library entries и 434 npm packages; 16 записей требуют owner review согласно существующей политике. Это техническая инвентаризация, не юридическое принятие обязательств. Source/container UNKNOWN GO-2026-5932 остаётся видимым; FileX govulncheck 0 imported-package/symbol findings не является binary reachability review Traefik. Фактические hashes/gates — [session](session.md).

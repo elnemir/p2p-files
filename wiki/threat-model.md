@@ -39,3 +39,6 @@
 
 ## White labeling
 [ADR-013](adr/013-white-label.md): публичный plain-text DTO; bounded raster decode/re-encode, no SVG/CSS/URL fetch; hex/contrast guards; ADMIN/session/reauth/CSRF + CAS + atomic audit. SSR использует фиксированный operator-configured internal URL, не пользовательский Host. Public assets нельзя считать секретными.
+
+## Федерация identity
+[ADR-014](adr/014-federated-auth.md) и [руководство](federated-auth.md) добавляют недоверенные token/XML/LDAP responses и внешний authority: подписи/issuer/audience/expiry, PKCE+nonce, PG one-use browser binding, no email auto-link/no external ADMIN, LDAP TLS+escaped search, bounded SSRF-safe dial и secret redaction. Provider update отзывает связанные web sessions; local API tokens и upstream logout имеют отдельные lifecycles.

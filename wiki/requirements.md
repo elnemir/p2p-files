@@ -48,3 +48,6 @@
 
 ## Дополнение владельца: white labeling
 2026-10-13 разрешён настраиваемый общий брендинг установки: название, логотип/favicon, две палитры, стиль иконок, ADMIN preview/apply/reset и согласованное отображение в UI/письмах/новых PDF. [ADR-013](adr/013-white-label.md). Расширяет FR-001/010/012/016, сохраняет исходные 32 MUST и strict contracts.
+
+## Дополнение владельца: внешняя аутентификация
+2026-10-13 запрошены вход и регистрация через SAML/OIDC/LDAP, в том числе Keycloak, Entra ID/AD, Google Workspace и generic IdP/LDAP. [ADR-014](adr/014-federated-auth.md) расширяет SEC-001/003/005, OPS-001/003 и NFR-001/003 без автоматической выдачи ADMIN и auto-link по email. Внешняя приёмка конкретных tenants отличается от локальных protocol fixtures.

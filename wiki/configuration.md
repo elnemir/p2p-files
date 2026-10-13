@@ -82,3 +82,6 @@ Schedules также отдельные: backup default off, audit+crypto 3600 s
 
 ## WebDAV native profile
 Новых env/config keys или открытых портов нет. Credential выдаётся из draft после reauth на 60 s–30 days. Протокольные бюджеты фиксированы: 4 MiB chunk, 1 TiB file, 5 min stage lease, lock ≤3600 s и ≤256 active/draft, If 8 KiB, owner XML 4 KiB, properties 32 KiB/256 на ресурс и 4 MiB/draft, XML 64 KiB/depth 16/response 8 MiB, namespace 10 000, общие 8 stream slots. [Подключение/ошибки](webdav-upload.md). Клиент Windows может накладывать меньший лимит файла; изменение реестра не выполняется автоматически. Production guard остаётся закрытым.
+
+## Identity providers
+Новых env нет: migration 0019 хранит ADMIN-configured OIDC/SAML/LDAP providers, encrypted client/bind secrets и trusted CA/private CIDRs. Полный [справочник и примеры провайдеров](federated-auth.md). Local ADMIN login остаётся fallback; reconfiguration отзывает provider sessions.

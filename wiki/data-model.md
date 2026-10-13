@@ -42,3 +42,6 @@ QR link mutation increment links_revision и инвалидирует связа
 `branding_revisions` хранит публичный typed JSON, identity revision, время и ADMIN creator FK. Revision 0 виртуальна и соответствует embedded defaults. Apply сериализуется отдельным PG advisory lock; expectedRevision сверяется после захвата, новая строка и audit коммитятся вместе. Update ревизии запрещён trigger; sequence допускает пропуски после rollback. Данные не содержат secrets и входят в обычный backup schema discovery.
 
 `reports.branding` и `security_incident_reports.branding` — nullable JSONB snapshots оформления. Новая запись заполняется в transaction создания отчёта; trigger запрещает менять snapshot. NULL обозначает legacy renderer, а не текущий бренд. Это отдельная presentation metadata, canonical report JSON/hash и encrypted envelope не расширяются. Incident tables сохраняют прежнюю recovery/control-plane семантику. [Data flow, поля, bounds и API](white-label.md), [ADR-013](adr/013-white-label.md).
+
+## Identity federation (0019)
+identity_providers — UUID/revision/config и configuration-key encrypted secret; external_identities — unique(provider_id,subject) и unique(provider_id,user_id); identity_flows — digests, encrypted payload, expiry/verified; web_sessions.identity_provider_id связывает сессии с провайдером для отзыва. [Поток/constraints/backup](federated-auth.md).

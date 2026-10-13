@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filex.invalid/schemas/identity-provider-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "trustEmail": {
+      "type": "boolean"
+    },
+    "hostedDomain": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "protocol": {
+      "type": "string",
+      "enum": [
+        "oidc",
+        "saml",
+        "ldap"
+      ]
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "allowRegistration": {
+      "type": "boolean"
+    },
+    "allowedEmailDomains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "privateCidrs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "caPem": {
+      "type": "string"
+    },
+    "issuer": {
+      "type": "string"
+    },
+    "clientId": {
+      "type": "string"
+    },
+    "extraOrigins": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadataXml": {
+      "type": "string"
+    },
+    "emailAttribute": {
+      "type": "string"
+    },
+    "ldapUrl": {
+      "type": "string"
+    },
+    "baseDn": {
+      "type": "string"
+    },
+    "bindDn": {
+      "type": "string"
+    },
+    "loginAttribute": {
+      "type": "string"
+    },
+    "subjectAttribute": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "trustEmail",
+    "hostedDomain",
+    "name",
+    "protocol",
+    "enabled",
+    "allowRegistration",
+    "allowedEmailDomains",
+    "privateCidrs",
+    "caPem",
+    "issuer",
+    "clientId",
+    "extraOrigins",
+    "metadataXml",
+    "emailAttribute",
+    "ldapUrl",
+    "baseDn",
+    "bindDn",
+    "loginAttribute",
+    "subjectAttribute"
+  ]
+}
