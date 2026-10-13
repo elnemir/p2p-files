@@ -83,6 +83,7 @@ def markdown(data):
              'ZIP, QR, PDF, JSON, CSV, backup/restore, сверка и открытие доступа выполнены на стенде. '
              'S3/SMTP/webhook/миграция провайдеров/ротация/forensic показаны как формы, без внешней операции. '
              'Временные ресурсы после записи удалены; ссылки из кадров больше не действуют. '
+             'Глава WebDAV показывает настройки трёх ОС и реальный PUT в черновик; фактическая проверка Windows ожидает стенда. '
              'Тур не закрывает [внешнюю приёмку](environment-acceptance.md), 5 partial MUST или 14 pending decisions.', '',
              '## Как смотреть', '',
              'Интерактивная галерея работает без сборки и внешних сервисов: откройте HTML или отдайте каталог обычным HTTP-сервером. '
@@ -133,8 +134,13 @@ def main():
     if not (args.narration_dir or args.web_narration_dir) and not shutil.which('say'):
         raise SystemExit('Provide --narration-dir/--web-narration-dir or install macOS say; --gallery-only reuses shipped media')
     source = json.loads((RAW / 'capture.json').read_text())
-    if not source.get('passed') or len(source['chapters']) != 19 or len(source['screens']) != 44:
+    if not source.get('passed') or len(source['chapters']) != 20 or len(source['screens']) != 48:
         raise SystemExit('Capture is incomplete; fix the scenario before rendering')
+    # Retire stale numbered captures only after the complete new capture passed.
+    expected_screens = {screen['file'] for screen in source['screens']}
+    for stale in (OUT / 'screenshots').glob('*.png'):
+        if str(stale.relative_to(OUT)) not in expected_screens:
+            stale.unlink()
     external = None
     audio_sources = {}
     if args.narration_dir:

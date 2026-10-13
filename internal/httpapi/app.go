@@ -108,7 +108,7 @@ func failure(w http.ResponseWriter, e error) {
 		code, name = 429, "rate_limited"
 	case errors.Is(e, transfer.ErrNotFound):
 		code, name = 404, "not_found"
-	case errors.Is(e, transfer.ErrConflict) || errors.Is(e, files.ErrOffset) || errors.Is(e, keyring.ErrChanged):
+	case errors.Is(e, transfer.ErrLocked) || errors.Is(e, transfer.ErrConflict) || errors.Is(e, files.ErrOffset) || errors.Is(e, keyring.ErrChanged):
 		code, name = 409, "conflict"
 	case errors.Is(e, domain.ErrInvalid):
 		code, name = 400, "invalid_input"
@@ -360,11 +360,12 @@ func (a *App) Handler() http.Handler {
 	a.maintenanceRoutes(mux)
 	a.adminFileRoutes(mux)
 	a.transferRoutes(mux)
+	a.webDAVRoutes(mux)
 	a.recipientRoutes(mux)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		_ = reply(w, 404, map[string]string{"code": "not_found", "message": "not_found"})
 	})
-	return headers(a.recoveryGate(a.networkGate(a.limitStreams(tusProtocol(mux)))))
+	return headers(a.recoveryGate(a.networkGate(a.limitStreams(a.protocols(tusProtocol(mux))))))
 }
 func (a *App) Metrics() http.Handler {
 	mux := http.NewServeMux()
@@ -485,7 +486,7 @@ func (a *App) listTokens(w http.ResponseWriter, r *http.Request, p auth.Principa
 
 func (a *App) limitStreams(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		heavy := strings.HasSuffix(r.URL.Path, "/content") || strings.Contains(r.URL.Path, "/forensic") || strings.HasSuffix(r.URL.Path, "/finalize") || ((r.Method == "PATCH" || r.Method == "POST") && strings.HasPrefix(r.URL.Path, "/api/v1/uploads/"))
+		heavy := strings.HasSuffix(r.URL.Path, "/content") || strings.Contains(r.URL.Path, "/forensic") || strings.HasSuffix(r.URL.Path, "/finalize") || ((r.Method == "PATCH" || r.Method == "POST") && strings.HasPrefix(r.URL.Path, "/api/v1/uploads/")) || strings.HasPrefix(r.URL.Path, davPrefix)
 		if heavy {
 			select {
 			case a.streamSlots <- struct{}{}:

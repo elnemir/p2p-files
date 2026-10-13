@@ -9,13 +9,14 @@
 | ID | Приоритет / статус | Роль | Результат | Зависимости |
 |---|---|---|---|---|
 | DOC-01 | P0 / completed локально | Инженер | Вся документация в wiki, актуальные связи с кодом, воспроизводимые инструкции и этот план | [Сессия переноса](sessions/2026-10-11-documentation-migration.md) |
-| DOC-02 | P1 / completed локально | Инженер | 44 PNG, видеотур 5:25 / 19 глав, озвучка Liza через Chrome, субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
+| DOC-02 | P1 / completed локально | Инженер | 48 PNG, видеотур 5:56 / 20 глав (native WebDAV), озвучка Liza через Chrome, субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
 | REPO-01 | P1 / completed | Владелец + инженер | GitHub/main/Actions/security, templates, dependency updates и воспроизводимый audit | [Настройки и приёмка](repository-governance.md); фактическое применение/CI в session |
 | DEV-01 | P0 / ready для design | Backend + security reviewer + владелец | Reviewed механизм тестового/production допуска, затем реализация и негативные тесты | Сохранить существующий запрет; применение допуска зависит от EXT и REL |
 | DEV-02 | P1 / baseline qualified locally; CI в PR #19 | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
 | DEV-03 | P0 / ready для пакета review | Release engineer + владелец/reviewer | Состав фактической поставки, license notices/решения, текст proprietary license после решения владельца | Точные image digests/SBOM; EXT-07 закрывает решение |
 | DEV-04 | P0 / ready для design и tooling | Release engineer + оператор | Долговременное сохранение и восстановление evidence для exact candidate | Хранилище выбирает оператор; независимость от 14-дневных CI artifacts |
 | DEV-05 | P1 / ready | Frontend + QA | Явное терминальное состояние страницы получателя после завершения всей передачи | Наблюдение при скрин-туре; сохранить общий privacy-safe отказ и server completion |
+| DEV-06 | P1 / completed локально; Windows pending | Backend + frontend + QA | Загрузка через WebDAV в черновик, отдельные credentials, общий encrypted pipeline, UI и protocol/client tests | Выбор владельца 2026-10-12; [ADR-011](adr/011-native-webdav.md), [руководство](webdav-upload.md), [session](session.md) |
 | EXT-01 | P0 / external-blocked | Оператор | VPS/IPv4/DNS/ACME/host firewall/backups acceptance | Карточка окружения; approved путь запуска DEV-01 |
 | EXT-02 | P0 / external-blocked | Инженер + оператор | Настоящие SMTP/S3: TLS, доставка, retry, object semantics | Аккаунты/разрешённые тестовые адреса, EXT-01 |
 | EXT-03 | P0 / external-blocked | Оператор + security reviewer | Независимые backups/payload strategy/KEK/checkpoints доступны при потере VPS | Отдельное хранилище и доступ; EXT-01 |
@@ -72,3 +73,6 @@
 ## Размер шага и передача работы
 
 Каждый DEV/EXT разбивается на проверяемые изменения по [workflow](development-workflow.md): проблема → решение → контракт/data flow → негативный тест → evidence → wiki/session. Не закрывать карточку по одному design или пустому stub, если в результате нужна реализация. Для DOC-01 финальные проверки и статус — [сессия переноса](sessions/2026-10-11-documentation-migration.md); текущая работа — [session](session.md).
+
+## DEV-06: native WebDAV и следующий внешний шаг
+Реализованы owner draft read/Range, conditional atomic overwrite, durable exclusive locks, properties/timestamps и hidden encrypted staging/cleanup. macOS mount_webdav и Linux GVfs проверяются настоящими backend; Windows **ожидает стенда**, скрипт и приёмка готовы в [руководстве](webdav-upload.md). Дальше: запуск PowerShell на согласованном HTTPS стенде, server-created read, реальные copy/replace/rename/delete и отзыв/hold/publish. Результат связать с Windows build и exact server source. Отсутствующий стенд не закрывается HTTP fixtures. Office/KDE/davfs2 и production deployment не включаются автоматически.

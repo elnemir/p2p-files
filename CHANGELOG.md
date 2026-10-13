@@ -1,5 +1,17 @@
 # Changelog
 
+## Native WebDAV — 2026-10-12
+
+- WebDAV LOCK: upper bound Timeout явно проверяется до преобразования в `int`; сохранён предел 3600 s и добавлены проверки границ 32-bit integer без scanner suppression.
+- Поддержка штатных macOS/Linux DAV backend, инструкции Windows (ожидает стенда); owner draft GET/Range, atomic overwrite, PG LOCK/UNLOCK/If, persisted properties/timestamps.
+- Migration 0017: hidden encrypted stages/lease cleanup и durable locks, guards REST/tus/bulk/publish, bounded metadata. Неизвестная длина PUT без изменения FXP1.
+- Обновлены wiki, 48 кадров/20 глав тура с новой озвученной главой WebDAV.
+- E2E проверяет JSON до передачи настоящего upstream-ответа браузеру: навигация больше не теряет body для contract validation; добавлен управляемый HTTP regression, матрица расширена до 35 cases.
+- Дополнительная загрузка в черновик из WebDAV-клиента: отдельные отзываемые credentials, XML browse, MKCOL/PUT/MOVE/DELETE и UI подключения/обновления/отзыва.
+- PUT принимает известный или неизвестный размер, использует bounded encrypted chunks, server checksum/MIME/scanner и auth guards на транзакционных границах. Общие upload/cancel/tree операции строже соблюдают freeze.
+- Рекурсивные операции учитывают case-fold варианты имени папки; XML-ответ ограничен 8 MiB, metadata view — 10 000 nodes, все DAV methods делят 8 stream slots.
+- Отдельный protocol contract/credential schema, ADR-011, threat/state review, negative/concurrency/fault/fuzz/client/browser проверки. COPY и WebDAV resume не предоставляются. Production guard сохраняется.
+
 Опубликованных releases пока нет. Формат Keep a Changelog.
 
 ## Unreleased — этапы 1–6 и техническая реализация фазы 7

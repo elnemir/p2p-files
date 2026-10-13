@@ -1,41 +1,27 @@
 # Текущее состояние FileX
 
-## Контекст и основание
-
-Срез 2026-10-11 сверяет документацию с исходниками, Makefile, workflow, 16 SQL migrations, OpenAPI и машиночитаемой traceability. Базовый HEAD до переноса документации — `21aaa00c34ddbe7511ca950f1aacec2454989047`; реализация фазы 7 — `7dce226f1dffa7241267e3546371ad7b2665c423`. CI исходного документационного HEAD также завершился успешно: [#38146011717](https://github.com/elnemir/p2p-files/actions/runs/38146011717), оба jobs. Это проверка исходного HEAD; проверки самого переноса записаны в [сессии переноса](sessions/2026-10-11-documentation-migration.md).
-
-Для знакомства с работающим интерфейсом подготовлен [скрин-тур и видеотур](screen-tour.md). Съёмка выполняется на отдельном локальном стенде с синтетическими данными; она не меняет статусы внешней приёмки. Сценарий и инструменты пересъёмки описаны в [руководстве](tour-maintenance.md).
-
-2026-10-12 все 19 глав переозвучены голосом ElevenLabs Liza через Chrome; локальный MP4 пересобран (5:25), 44 исходных PNG сохранены. Проверены декодирование, громкость, главы и desktop-галерея. Приблизительные субтитры и граница API/web-синтеза описаны в [результате](tour-maintenance.md#результат-веб-генерации-2026-10-12).
-
-Наблюдение тура DEV-05: после полного ZIP сервер переводит передачу в completed и отклоняет recipient API, но refresh уже открытой страницы может оставить устаревший ready-список рядом с общим сообщением об отказе. Исправление клиентского терминального состояния описано в [плане](implementation-plan.md); серверная защита повторной выдачи действует.
-
-## Дополнение 2026-10-12: Dependabot
-
-Подготовлен поддерживаемый ESLint 10 / JSX-a11y-x с сохранением 31 a11y правила, Node types 24.19.2, strict install и проверки peer tree/runtime support. Реальные runtime — Node 24.21.0 LTS, Redis 7.2.16 Extended BSD. Обоснование решений по пяти PR, сроки поддержки и текущая квалификация — [dependency remediation](dependency-remediation.md), [session](session.md). Измерения 2026-10-11 ниже остаются историческими; их счётчики не переносятся автоматически на новый lockfile.
+## Контекст и проверяемая граница
+Срез 2026-10-12: рабочая ветка `codex/webdav-upload`, baseline `28ab4f3`. Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован на `7dce226`. Его измерения сохранены в [истории](history/development-evidence-2026-10-11.md), результаты нового diff — в [session](session.md). Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
 
 ## Реализовано
+- Identity/USER/ADMIN/scopes, settings/audit, tus/tree/publish, Local/S3, one-time Range/ZIP, freeze/forensic, crypto/rotation.
+- SMTP/webhooks/outbox, уведомления, immutable reports, exports/QR/artifacts, saved views/bulk.
+- Backup/restore с verified pre-backup, generation/drain/reconciliation/reopen, KEK recovery, checkpoints, operations UI/CLI.
+- TLS/ACME configuration, ingress policy, controlled upgrade, contracts/types, scanners/fuzz/browser/load/DR и fail-closed release evidence.
+- [Native WebDAV](webdav-upload.md): owner draft чтение, условная атомарная замена, PG locks/If, metadata, encrypted staging/cleanup, инструкции трёх ОС. Publish/recipient semantics сохранены.
 
-- Платформа, identity/USER/ADMIN/scopes, настройки, audit, tus/дерево/publish, Local/S3, одноразовая Range/ZIP выдача, freeze/forensic, crypto/rotation.
-- SMTP/webhooks/outbox, уведомления, immutable отчёты, exports/QR/artifacts, saved views/bulk.
-- Backup/restore с обязательной проверенной предварительной копией, generation fencing, reconciliation/reopen, KEK recovery, incidents/checkpoints и эксплуатационные UI/CLI.
-- HTTPS/ACME configuration generator, proxy/CIDR guards, controlled upgrade и технические проверки фазы 7: static analysis, compatibility, fuzz, browser/visual/a11y, load/DR, security/SBOM/licenses, source-bound readiness и verifier review bundle.
-
-Карта компонентов — [repository map](repository-map.md), потоки — [архитектура](architecture.md). Redis развёрнут как ephemeral сервис; authoritative очереди и correctness реализованы в PostgreSQL. Внешний scanner — точка расширения Go, действующий антивирусный сервис не настроен.
+Контракт: **108 REST/tus операций + WebDAV wire profile; 17 migrations; 11 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
 
 ## Проверено и не подтверждено
-
-| Область | Подтверждённая граница | Что ещё требуется |
+| Область | Текущая граница | Что ещё требуется |
 |---|---|---|
-| Требования/контракты | 32 MUST; 27 verified/5 partial; 107 HTTP операций; 16 migrations; 9 ADR | Все partial закрыть фактической приёмкой без исключения MUST |
-| Кандидат 7dce226 | 13 local gates и [CI #38144319522](https://github.com/elnemir/p2p-files/actions/runs/38144319522) PASS; 36 PG/race tests | Новый diff требует своих проверок; старый PASS не переносится на новый source hash |
-| Браузеры | 25 scenarios, 5 Linux engine/emulation profiles, 10 visual baselines, axe/keyboard/320px | Реальные Safari/mobile/assistive technology и ручная WCAG приёмка |
-| Load/DR | 2050 MiB/20000 synthetic rows, 15 assertions, ZIP SHA, 0 OOM, local TLS S3 | Целевой VPS/провайдер, естественное ожидание crash lease, внешнее восстановление и измерение RPO/RTO |
-| Security | На указанном кандидате source и 5 runtime images: 0 HIGH/CRITICAL; 3 fuzz campaigns | Свежий scan, независимый review и triage видимого module-only UNKNOWN advisory |
-| Лицензии | Inventory: 443 npm entries, 24 runtime Go libraries, font SHA, 16 записей для review | Решение владельца по поставке/обязательствам, OS/image/fonts и лицензии самого проекта |
-| Выпуск/эксплуатация | Генератор и unpublished verifier bundle существуют | Нет опубликованного release, принятого production окружения или разрешения deploy |
+| Требования | 32 MUST, 27 verified/5 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
+| Native WebDAV | macOS mount_webdav и настоящий Linux GVfs: полный файловый цикл, multi-chunk hash, server-created GET; 15 профильных HTTP/PG/race tests | Windows **ожидает стенда**; Office/KDE/davfs2 не квалифицированы |
+| Общая регрессия | 13 локальных gates PASS на source из session, 51 integration и 35 browser cases; macOS/GVfs повторно PASS | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике; CI после доставки отдельно |
+| Фото/видео | [48 кадров, 20 глав, Liza, единый MP4 5:56](screen-tour.md) | Это локальный synthetic Compose, не внешняя приёмка или запись Windows |
+| Release/production | Внешнего окружения нет по ответу владельца; APP_ENV=production отклоняется кодом | 14 решений owner/reviewer, реальные host/providers/escrow/DR/devices/security/licenses |
 
-Подробные измерения и hashes — [история evidence](history/development-evidence-2026-10-11.md), [сессия фазы 7](sessions/2026-10-11-phase7.md). Это датированные результаты. `.cache/evidence` не входит в Git, CI хранит artifacts 14 дней; ссылка в wiki не гарантирует бессрочную доступность raw logs.
+Тур переснят 2026-10-12; неизменившаяся озвучка 19 глав переиспользована по exact text/hash, добавлена одна глава WebDAV. [Воспроизведение и media QA](tour-maintenance.md). Наблюдение DEV-05 остаётся: после completed сервер запрещает повтор, но refresh открытого recipient UI может сохранить старый список с общей ошибкой; [отдельный backlog](implementation-plan.md) не закрыт этой задачей.
 
 ## Пять требований с незакрытой частью
 
@@ -48,14 +34,6 @@
 | NFR-004 | Лицензии, независимый review и R-01–06 | DEV-03, EXT-06–07 |
 
 ID задач раскрыты в [implementation plan](implementation-plan.md); точная связь с кодом/тестами генерируется в [matrix](test-matrix.md). Не менять partial на verified только по green CI или существованию runbook.
-
-## Изменено, добавлено, требует доработки
-
-**Изменено:** 20 документов перенесены в wiki; entrypoints, generators и CLI ссылаются на новый путь. Исторические измерения и первоначальный аудит отделены от текущих инструкций. Исправлены устаревшие указания о фазе 7, количестве E2E и необходимости устанавливать браузер на host.
-
-**Добавлено:** карта компонентов, конфигурационный справочник, developer workflow, план задач с зависимостями, внешняя acceptance matrix и шаблоны записи результатов. Продуктовые требования и runtime поведение не расширялись.
-
-**Требует доработки:** reviewed механизм production допуска, последующее сопровождение CI/image pins, решение лицензирования и сохранение release evidence вне 14-дневных CI artifacts. Это backlog, не скрытая реализация.
 
 ## Блокеры и ограничения
 

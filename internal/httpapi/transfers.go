@@ -99,7 +99,7 @@ func (a *App) transferDetail(w http.ResponseWriter, r *http.Request, p auth.Prin
 	if e != nil {
 		return e
 	}
-	rows, e := a.DB.Query(r.Context(), "SELECT id::text,path,size,upload_offset,state,sha256 FROM files WHERE transfer_id::text=$1 AND state NOT IN ('cancelled','deleted') ORDER BY path", id)
+	rows, e := a.DB.Query(r.Context(), "SELECT id::text,path,size,upload_offset,state,sha256 FROM files WHERE transfer_id::text=$1 AND staged_until IS NULL AND state NOT IN ('cancelled','deleted') ORDER BY path", id)
 	if e != nil {
 		return e
 	}
@@ -192,32 +192,7 @@ func (a *App) patchUpload(w http.ResponseWriter, r *http.Request, p auth.Princip
 	return nil
 }
 func (a *App) cancelUpload(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
-	f, e := a.Files.Get(r.Context(), p.ID, r.PathValue("id"))
-	if e != nil {
-		return e
-	}
-	tx, e := a.DB.Begin(r.Context())
-	if e != nil {
-		return e
-	}
-	defer tx.Rollback(r.Context())
-	var state string
-	if e = tx.QueryRow(r.Context(), "SELECT state FROM transfers WHERE id=$1 FOR UPDATE", f.TransferID).Scan(&state); e != nil {
-		return e
-	}
-	if state != "draft" {
-		return transfer.ErrConflict
-	}
-	if _, e = tx.Exec(r.Context(), "UPDATE files SET state='cancelled',upload_epoch=upload_epoch+1,path_key=path_key||'#cancelled:'||id::text WHERE id=$1 AND state<>'cancelled'", f.ID); e != nil {
-		return e
-	}
-	if _, e = tx.Exec(r.Context(), "INSERT INTO deletion_jobs(provider_id,object_key,file_id) SELECT $1,object_key,file_id FROM file_chunks WHERE file_id=$2 ON CONFLICT(object_key) DO NOTHING", f.ProviderID, f.ID); e != nil {
-		return e
-	}
-	if _, e = tx.Exec(r.Context(), "UPDATE transfers SET revision=revision+1 WHERE id=$1", f.TransferID); e != nil {
-		return e
-	}
-	if e = tx.Commit(r.Context()); e != nil {
+	if e := a.Files.Cancel(r.Context(), p.ID, r.PathValue("id")); e != nil {
 		return e
 	}
 	w.WriteHeader(204)

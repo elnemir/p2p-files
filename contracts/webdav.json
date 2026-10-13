@@ -1,0 +1,63 @@
+{
+  "profile": "native-draft",
+  "pathTemplate": "/api/v1/webdav/{id}/{path...}",
+  "authentication": "HTTP Basic; username filex, password from the owner-issued WebDAVCredential. HTTPS required except loopback development. Cookie authentication is not accepted.",
+  "authorization": "Exact webdav:<id> scope, owning account, active token/auth epoch and unfrozen draft; revalidated during writes and bounded payload reads. No cross-draft or published access.",
+  "methods": {
+    "OPTIONS": "200, DAV 1,2; Allow lists supported methods. COPY is unsupported.",
+    "PROPFIND": "207 XML DAV:multistatus; Depth 0 or 1 only; allprop, propname or requested properties, missing properties get 404 propstat. Empty body means allprop. XML body <= 64 KiB; complete XML response <= 8 MiB, otherwise 507 before any 207 body.",
+    "HEAD": "Same metadata as GET, no payload.",
+    "PUT": "201 create or 204 atomic replacement after encrypted staging, checksum/MIME/scanner. Known Content-Length or X-Expected-Entity-Length, otherwise bounded two-pass encrypted staging. Maximum 1 TiB, no Content-Range.",
+    "MKCOL": "201 for a new empty collection; parent must exist. Nonempty request bodies rejected.",
+    "MOVE": "201 or 204; same origin and draft. Atomic file overwrite unless Overwrite F; collection overwrite unsupported.",
+    "DELETE": "204; remove file or collection subtree from draft, queue encrypted payload cleanup. Root deletion forbidden.",
+    "PROPPATCH": "207; bounded dead properties and timestamps, atomic 403/424 on protected live properties.",
+    "GET": "200 or 206 for ready owner draft payload, no recipient consume. Conditional GET 304. Range is a single byte range.",
+    "COPY": "403; server-side copying is not granted.",
+    "LOCK": "200 existing or 201 created empty file; exclusive write, Depth 0/infinity, timeout capped at 3600 s. Empty body refreshes the submitted active lock.",
+    "UNLOCK": "204 with matching Lock-Token at lock root and credential."
+  },
+  "errors": {
+    "400": "Malformed path, XML, header or unsupported partial upload.",
+    "401": "Missing, invalid, expired or revoked credential; Basic challenge.",
+    "403": "Scope, origin, transport, policy, frozen or unavailable draft.",
+    "404": "Missing resource or non-owner transfer.",
+    "405": "Unsupported method or MKCOL on existing resource.",
+    "409": "Missing parent, collision, state/lease conflict.",
+    "412": "DAV If, If-Match, If-None-Match, If-Unmodified-Since or Overwrite F condition failed.",
+    "413": "XML, lock owner or upload size limit exceeded.",
+    "416": "Requested byte range is not satisfiable.",
+    "415": "Unsupported MKCOL body or content encoding.",
+    "429": "Shared concurrency limit of 8 streams, including all WebDAV methods.",
+    "500": "Storage/internal failure without private details.",
+    "507": "Draft tree exceeds 10000 nodes, response exceeds 8 MiB, or properties/active locks exceed their limits. Smaller Depth helps response size only; reduce draft metadata, release locks or split the draft.",
+    "503": "Maintenance or generation changed.",
+    "423": "Required exclusive lock token missing, active lock conflicts, or draft publish while locked."
+  },
+  "properties": [
+    "DAV:displayname",
+    "DAV:resourcetype",
+    "DAV:getcontentlength",
+    "DAV:getcontenttype",
+    "DAV:getetag",
+    "DAV:supportedlock",
+    "DAV:lockdiscovery",
+    "DAV:creationdate",
+    "DAV:getlastmodified"
+  ],
+  "limits": {
+    "chunkBytes": 4194304,
+    "maxFileBytes": 1099511627776,
+    "maxXMLBytes": 65536,
+    "maxResponseBytes": 8388608,
+    "maxNodes": 10000,
+    "maxDepth": 1,
+    "maxIfBytes": 8192,
+    "maxLockSeconds": 3600,
+    "maxPropertiesBytes": 32768,
+    "maxDraftPropertiesBytes": 4194304,
+    "maxLocks": 256,
+    "maxLockOwnerBytes": 4096
+  },
+  "retry": "Failed PUT preserves the old ready file; only staged candidates are cancelled. Expired staging leases are reclaimed by worker with hold checks. After lost success inspect ETag. Publish requires unlocked draft with no live staged files."
+}

@@ -55,6 +55,9 @@ func (s Service) Sweep(ctx context.Context) error {
 func (s Service) Cleanup(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
+	if e := s.cleanupStages(ctx); e != nil {
+		return e
+	}
 	if e := s.cleanupEmpty(ctx); e != nil {
 		return e
 	}

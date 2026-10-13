@@ -30,6 +30,10 @@ type Service struct {
 	Keys    keyring.Ring
 	Storage storage.Registry
 	Scanner Scanner
+	// WriteGuard binds long-running protocol uploads to current authorization.
+	// It runs inside parent-first transactions, never around storage I/O.
+	WriteGuard func(context.Context, pgx.Tx) error
+	ReadGuard  func(context.Context) error
 }
 type File struct {
 	ID         string  `json:"id"`
@@ -46,6 +50,17 @@ type File struct {
 }
 
 func (s Service) Create(ctx context.Context, owner, id, path string, size int64, c config.Settings) (transfer.Upload, error) {
+	return s.CreateWith(ctx, owner, id, path, size, c, nil)
+}
+
+// CreateWith checks protocol namespace conditions in the reservation transaction.
+func (s Service) CreateWith(ctx context.Context, owner, id, path string, size int64, c config.Settings, check func(pgx.Tx, string) error) (transfer.Upload, error) {
+	return s.create(ctx, owner, id, path, size, c, false, check)
+}
+func (s Service) CreateStaged(ctx context.Context, owner, id, path string, size int64, c config.Settings, check func(pgx.Tx, string) error) (transfer.Upload, error) {
+	return s.create(ctx, owner, id, path, size, c, true, check)
+}
+func (s Service) create(ctx context.Context, owner, id, path string, size int64, c config.Settings, staged bool, check func(pgx.Tx, string) error) (transfer.Upload, error) {
 	if size < 0 || size > 1<<40 {
 		return transfer.Upload{}, domain.ErrInvalid
 	}
@@ -61,7 +76,21 @@ func (s Service) Create(ctx context.Context, owner, id, path string, size int64,
 	if _, e = rand.Read(salt); e != nil {
 		return transfer.Upload{}, e
 	}
-	return transfer.New(s.DB, c).ReserveUploadWith(ctx, owner, id, path, size, func(tx pgx.Tx, fileID string) error {
+	reserve := transfer.New(s.DB, c).ReserveUploadWith
+	if staged {
+		reserve = transfer.New(s.DB, c).ReserveStaged
+	}
+	return reserve(ctx, owner, id, path, size, func(tx pgx.Tx, fileID string) error {
+		if s.WriteGuard != nil {
+			if e := s.WriteGuard(ctx, tx); e != nil {
+				return e
+			}
+		}
+		if check != nil {
+			if e := check(tx, fileID); e != nil {
+				return e
+			}
+		}
 		pathKey, e := domain.PathKey(path, c.MaxPathBytes)
 		if e != nil {
 			return e
@@ -100,7 +129,7 @@ func (s Service) Append(ctx context.Context, owner, id string, offset int64, dat
 		return 0, ErrOffset
 	}
 	if len(data) == 0 {
-		return offset, s.mutate(ctx, f.TransferID, func(tx pgx.Tx) error {
+		return offset, s.mutate(ctx, f.TransferID, f.Path, func(tx pgx.Tx) error {
 			var state string
 			return tx.QueryRow(ctx, "SELECT state FROM files WHERE id=$1 AND state='uploading' AND upload_offset=$2", id, offset).Scan(&state)
 		})
@@ -118,7 +147,7 @@ func (s Service) Append(ctx context.Context, owner, id string, offset int64, dat
 		return 0, e
 	}
 	var epoch int64
-	e = s.mutate(ctx, f.TransferID, func(tx pgx.Tx) error {
+	e = s.mutate(ctx, f.TransferID, f.Path, func(tx pgx.Tx) error {
 		return tx.QueryRow(ctx, `UPDATE files SET upload_epoch=upload_epoch+1,write_lease_until=clock_timestamp()+interval '60 seconds' WHERE id=$1 AND upload_offset=$2 AND upload_epoch<1048576 AND state='uploading' AND (write_lease_until IS NULL OR write_lease_until<clock_timestamp()) RETURNING upload_epoch`, id, offset).Scan(&epoch)
 	})
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -147,11 +176,24 @@ func (s Service) Append(ctx context.Context, owner, id string, offset int64, dat
 	}
 	defer tx.Rollback(context.Background())
 	var state string
-	if e = tx.QueryRow(ctx, "SELECT state FROM transfers WHERE id=$1 FOR UPDATE", f.TransferID).Scan(&state); e != nil {
+	var frozen bool
+	if e = tx.QueryRow(ctx, "SELECT state,frozen FROM transfers WHERE id=$1 FOR UPDATE", f.TransferID).Scan(&state, &frozen); e != nil {
 		return 0, e
 	}
-	if state != "draft" {
+	if state != "draft" || frozen {
 		return 0, transfer.ErrConflict
+	}
+	pathKey, e := domain.PathKey(f.Path, 4096)
+	if e != nil {
+		return offset, e
+	}
+	if e = transfer.CheckDAVLocks(ctx, tx, f.TransferID, pathKey, false); e != nil {
+		return offset, e
+	}
+	if s.WriteGuard != nil {
+		if e = s.WriteGuard(ctx, tx); e != nil {
+			return 0, e
+		}
 	}
 	tag, e := tx.Exec(ctx, "UPDATE files SET upload_offset=upload_offset+$3,write_lease_until=NULL WHERE id=$1 AND upload_epoch=$2 AND write_lease_until>clock_timestamp() AND upload_offset=$4 AND state='uploading'", id, epoch, len(data), offset)
 	if e != nil {
@@ -220,6 +262,11 @@ func (s Service) Read(ctx context.Context, f File, start, end int64, w io.Writer
 			break
 		}
 		for _, ch := range chunks {
+			if s.ReadGuard != nil {
+				if e = s.ReadGuard(ctx); e != nil {
+					return e
+				}
+			}
 			offset, length, object, checksum := ch.offset, ch.length, ch.object, ch.checksum
 			b, e := p.Get(ctx, object)
 			if e != nil {
@@ -275,7 +322,7 @@ func (s Service) Finalize(ctx context.Context, owner, id string, c config.Settin
 		return ErrOffset
 	}
 	store := transfer.New(s.DB, c)
-	if _, e = store.BeginFinalize(ctx, owner, f.TransferID, id); e != nil {
+	if _, e = store.BeginFinalizeWith(ctx, owner, f.TransferID, id, s.WriteGuard); e != nil {
 		return e
 	}
 	sha := sha256.New()
@@ -286,7 +333,7 @@ func (s Service) Finalize(ctx context.Context, owner, id string, c config.Settin
 	}
 	media := http.DetectContentType(sniff.b)
 	if !permitted(c.FileTypeMode, c.FileTypes, media) {
-		e = s.mutate(ctx, f.TransferID, func(tx pgx.Tx) error {
+		e = s.mutate(ctx, f.TransferID, f.Path, func(tx pgx.Tx) error {
 			_, e := tx.Exec(ctx, "UPDATE files SET state='rejected' WHERE id=$1 AND state='finalizing'", id)
 			return e
 		})
@@ -301,13 +348,13 @@ func (s Service) Finalize(ctx context.Context, owner, id string, c config.Settin
 		}
 	}
 	sum := hex.EncodeToString(sha.Sum(nil))
-	if e = s.mutate(ctx, f.TransferID, func(tx pgx.Tx) error {
+	if e = s.mutate(ctx, f.TransferID, f.Path, func(tx pgx.Tx) error {
 		_, e := tx.Exec(ctx, "UPDATE files SET crc32=$2,content_type=$3 WHERE id=$1 AND state='finalizing'", id, int64(crc.Sum32()), media)
 		return e
 	}); e != nil {
 		return e
 	}
-	_, e = store.Finalize(ctx, owner, f.TransferID, id, sum)
+	_, e = store.FinalizeWith(ctx, owner, f.TransferID, id, sum, s.WriteGuard)
 	return e
 }
 
@@ -324,7 +371,7 @@ func (p *prefix) Write(b []byte) (int, error) {
 }
 
 // Every file mutation acquires its parent first, matching publication and hold order.
-func (s Service) mutate(ctx context.Context, parent string, fn func(pgx.Tx) error) error {
+func (s Service) mutate(ctx context.Context, parent, filePath string, fn func(pgx.Tx) error) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	tx, e := s.DB.Begin(ctx)
@@ -339,6 +386,18 @@ func (s Service) mutate(ctx context.Context, parent string, fn func(pgx.Tx) erro
 	}
 	if state != "draft" || frozen {
 		return transfer.ErrConflict
+	}
+	key, e := domain.PathKey(filePath, 4096)
+	if e != nil {
+		return e
+	}
+	if e = transfer.CheckDAVLocks(ctx, tx, parent, key, false); e != nil {
+		return e
+	}
+	if s.WriteGuard != nil {
+		if e = s.WriteGuard(ctx, tx); e != nil {
+			return e
+		}
 	}
 	if e = fn(tx); e != nil {
 		return e

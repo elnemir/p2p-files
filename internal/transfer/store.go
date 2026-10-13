@@ -60,15 +60,16 @@ func (s *Store) CreateDraft(ctx context.Context, owner string) (Draft, error) {
 
 func lockDraft(ctx context.Context, tx pgx.Tx, owner, id string) (int64, error) {
 	var state string
+	var frozen bool
 	var revision int64
-	err := tx.QueryRow(ctx, "SELECT state,revision FROM transfers WHERE id=$1 AND owner_id=$2 FOR UPDATE", id, owner).Scan(&state, &revision)
+	err := tx.QueryRow(ctx, "SELECT state,revision,frozen FROM transfers WHERE id=$1 AND owner_id=$2 FOR UPDATE", id, owner).Scan(&state, &revision, &frozen)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, ErrNotFound
 	}
 	if err != nil {
 		return 0, err
 	}
-	if state != "draft" {
+	if state != "draft" || frozen {
 		return 0, ErrConflict
 	}
 	return revision, nil
@@ -78,6 +79,12 @@ func (s *Store) ReserveUpload(ctx context.Context, owner, id, path string, size 
 	return s.ReserveUploadWith(ctx, owner, id, path, size, nil)
 }
 func (s *Store) ReserveUploadWith(ctx context.Context, owner, id, path string, size int64, hook func(pgx.Tx, string) error) (Upload, error) {
+	return s.reserveUpload(ctx, owner, id, path, size, false, hook)
+}
+func (s *Store) ReserveStaged(ctx context.Context, owner, id, path string, size int64, hook func(pgx.Tx, string) error) (Upload, error) {
+	return s.reserveUpload(ctx, owner, id, path, size, true, hook)
+}
+func (s *Store) reserveUpload(ctx context.Context, owner, id, path string, size int64, staged bool, hook func(pgx.Tx, string) error) (Upload, error) {
 	if !domain.ValidID(owner) || !domain.ValidID(id) {
 		return Upload{}, ErrNotFound
 	}
@@ -94,11 +101,23 @@ func (s *Store) ReserveUploadWith(ctx context.Context, owner, id, path string, s
 	if err != nil {
 		return Upload{}, err
 	}
-	var count int
-	if err = tx.QueryRow(ctx, "SELECT count(*) FROM files WHERE transfer_id=$1 AND state NOT IN ('cancelled','deleted')", id).Scan(&count); err != nil {
+	if err = CheckDAVLocks(ctx, tx, id, key, false); err != nil {
 		return Upload{}, err
 	}
-	if count >= s.settings.MaxFiles {
+	var existingTarget bool
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM files WHERE transfer_id=$1 AND path_key=$2 AND staged_until IS NULL AND state NOT IN ('cancelled','deleted'))", id, key).Scan(&existingTarget); err != nil {
+		return Upload{}, err
+	}
+	if !existingTarget {
+		if err = CheckDAVMembership(ctx, tx, id, key); err != nil {
+			return Upload{}, err
+		}
+	}
+	var count int
+	if err = tx.QueryRow(ctx, "SELECT count(*) FROM files WHERE transfer_id=$1 AND staged_until IS NULL AND state NOT IN ('cancelled','deleted')", id).Scan(&count); err != nil {
+		return Upload{}, err
+	}
+	if count >= s.settings.MaxFiles && !staged {
 		return Upload{}, domain.ErrInvalid
 	}
 	rows, err := tx.Query(ctx, "SELECT path_key FROM files WHERE transfer_id=$1 AND state NOT IN ('cancelled','deleted')", id)
@@ -111,7 +130,7 @@ func (s *Store) ReserveUploadWith(ctx context.Context, owner, id, path string, s
 			rows.Close()
 			return Upload{}, err
 		}
-		if pathsConflict(key, existing) {
+		if pathsConflict(key, existing) && !(staged && key == existing) {
 			rows.Close()
 			return Upload{}, ErrConflict
 		}
@@ -123,8 +142,16 @@ func (s *Store) ReserveUploadWith(ctx context.Context, owner, id, path string, s
 	}
 	u := Upload{ID: domain.NewID(), Revision: revision + 1}
 	u.ObjectKey = u.ID
+	if staged {
+		key = "#staged:" + u.ID
+	}
 	if _, err = tx.Exec(ctx, "INSERT INTO files(id,transfer_id,path,path_key,size,object_key) VALUES($1,$2,$3,$4,$5,$6)", u.ID, id, path, key, size, u.ObjectKey); err != nil {
 		return Upload{}, err
+	}
+	if staged {
+		if _, err = tx.Exec(ctx, "UPDATE files SET staged_until=clock_timestamp()+interval '5 minutes' WHERE id=$1", u.ID); err != nil {
+			return Upload{}, err
+		}
 	}
 	if _, err = tx.Exec(ctx, "UPDATE transfers SET revision=revision+1 WHERE id=$1", id); err != nil {
 		return Upload{}, err
@@ -146,6 +173,10 @@ func pathsConflict(a, b string) bool {
 
 // BeginFinalize records the boundary between durable upload and server-side validation.
 func (s *Store) BeginFinalize(ctx context.Context, owner, id, fileID string) (int64, error) {
+	return s.BeginFinalizeWith(ctx, owner, id, fileID, nil)
+}
+
+func (s *Store) BeginFinalizeWith(ctx context.Context, owner, id, fileID string, guard func(context.Context, pgx.Tx) error) (int64, error) {
 	if !domain.ValidID(owner) || !domain.ValidID(id) || !domain.ValidID(fileID) {
 		return 0, ErrNotFound
 	}
@@ -157,6 +188,22 @@ func (s *Store) BeginFinalize(ctx context.Context, owner, id, fileID string) (in
 	revision, err := lockDraft(ctx, tx, owner, id)
 	if err != nil {
 		return 0, err
+	}
+	var filePath string
+	if err = tx.QueryRow(ctx, "SELECT path FROM files WHERE id=$1 AND transfer_id=$2", fileID, id).Scan(&filePath); err != nil {
+		return 0, err
+	}
+	fileKey, err := domain.PathKey(filePath, s.settings.MaxPathBytes)
+	if err != nil {
+		return 0, err
+	}
+	if err = CheckDAVLocks(ctx, tx, id, fileKey, false); err != nil {
+		return 0, err
+	}
+	if guard != nil {
+		if err = guard(ctx, tx); err != nil {
+			return 0, err
+		}
 	}
 	var state string
 	err = tx.QueryRow(ctx, "SELECT state FROM files WHERE id=$1 AND transfer_id=$2 FOR UPDATE", fileID, id).Scan(&state)
@@ -183,6 +230,10 @@ func (s *Store) BeginFinalize(ctx context.Context, owner, id, fileID string) (in
 
 // Finalize is a trusted worker boundary; no client-facing endpoint may set a checksum or ready state.
 func (s *Store) Finalize(ctx context.Context, owner, id, fileID, sha256 string) (int64, error) {
+	return s.FinalizeWith(ctx, owner, id, fileID, sha256, nil)
+}
+
+func (s *Store) FinalizeWith(ctx context.Context, owner, id, fileID, sha256 string, guard func(context.Context, pgx.Tx) error) (int64, error) {
 	if !domain.ValidID(owner) || !domain.ValidID(id) || !domain.ValidID(fileID) {
 		return 0, ErrNotFound
 	}
@@ -197,6 +248,22 @@ func (s *Store) Finalize(ctx context.Context, owner, id, fileID, sha256 string) 
 	revision, err := lockDraft(ctx, tx, owner, id)
 	if err != nil {
 		return 0, err
+	}
+	var filePath string
+	if err = tx.QueryRow(ctx, "SELECT path FROM files WHERE id=$1 AND transfer_id=$2", fileID, id).Scan(&filePath); err != nil {
+		return 0, err
+	}
+	fileKey, err := domain.PathKey(filePath, s.settings.MaxPathBytes)
+	if err != nil {
+		return 0, err
+	}
+	if err = CheckDAVLocks(ctx, tx, id, fileKey, false); err != nil {
+		return 0, err
+	}
+	if guard != nil {
+		if err = guard(ctx, tx); err != nil {
+			return 0, err
+		}
 	}
 	var state string
 	var checksum *string
@@ -262,6 +329,16 @@ func (s *Store) PublishWithRequest(ctx context.Context, owner, id string, expect
 		return p, tx.Commit(ctx)
 	}
 	if state != "draft" || revision != expectedRevision {
+		return Published{}, ErrConflict
+	}
+	if err = CheckDAVLocks(ctx, tx, id, "", true); err != nil {
+		return Published{}, err
+	}
+	var staging bool
+	if err = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM files WHERE transfer_id=$1 AND staged_until IS NOT NULL AND state NOT IN ('cancelled','deleted'))", id).Scan(&staging); err != nil {
+		return Published{}, err
+	}
+	if staging {
 		return Published{}, ErrConflict
 	}
 	rows, err := tx.Query(ctx, "SELECT id::text,path,size,sha256,state FROM files WHERE transfer_id=$1 AND state NOT IN ('cancelled','deleted') ORDER BY id", id)

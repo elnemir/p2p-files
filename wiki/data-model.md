@@ -1,7 +1,7 @@
 # Модель данных
 
 ## Контекст и изменения
-PostgreSQL authoritative для identity, доступа, jobs, immutable snapshots и audit. Миграции 0001–0016 встроены в binaries и применяются под advisory lock с SHA-256 checksum. Изменение уже применённого SQL блокирует startup. Внешние bytes располагаются в Local/S3 отдельно от DB.
+PostgreSQL authoritative для identity, доступа, jobs, immutable snapshots и audit. Миграции 0001–0017 встроены в binaries и применяются под advisory lock с SHA-256 checksum. Изменение уже применённого SQL блокирует startup. Внешние bytes располагаются в Local/S3 отдельно от DB.
 
 | Группа | Таблицы / ответственность |
 |---|---|
@@ -30,3 +30,10 @@ QR link mutation increment links_revision и инвалидирует связа
 
 ## Network policy фазы 7.1
 `app_settings.value.networkPolicy` расширяет settings v1 без новой SQL migration: trustedProxyCidrs, allowedClientCidrs, requireProxy, requireHttps. Apply с expectedRevision атомарно меняет active revision; network/origin change дополнительно закрывает `ops_control`, меняет generation и инвалидирует reconciliation. Host network reset создаёт новую revision и `network.allowlist_reset` audit event, сохраняет HTTPS/proxy/origin. Старые settings без policy остаются совместимыми. Поток/границы — [ingress](production-ingress.md).
+
+## Native WebDAV: migration 0017
+Контекст: штатным клиентам нужны durable locks и метаданные, а overwrite не должен уничтожать прежний файл при неудачной загрузке. `files.staged_until` и частичный expiry index выделяют скрытые кандидаты; timestamps/properties добавлены files/draft_folders, root properties — transfers. Старым ресурсам назначается время миграции, не предполагаемое время создания.
+
+`dav_locks` связывает transfer, credential, canonical path_key, recursive scope, безопасно сериализованный owner XML и expires_at. Active view дополнительно сверяет expiry/revocation/auth epoch/disabled пользователя. Locks не являются in-memory mutex. Parent transfer lock сериализует выдачу/снятие lock, swap, rename/delete и publish. Depth 0 папки защищает membership, subtree lock — descendants. Files properties ограничены БД 64 KiB JSONB representation и приложением 32 KiB входного JSON; aggregate draft budget 4 MiB. Owner XML ≤4 KiB.
+
+Пример: PUT существующего `notes.txt` пишет `#staged:<uuid>`; после finalize одна transaction отменяет прежний file ID с deletion jobs и делает новый ID видимым (`staged_until=NULL`, canonical path_key). Старые properties/creation time переносятся. Worker забирает expired stages parent-first с учётом hold. [Поток/ограничения](webdav-upload.md), [ADR-011](adr/011-native-webdav.md).

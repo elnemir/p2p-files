@@ -8,7 +8,7 @@ seconds=int(os.environ.get('FILEX_FUZZ_SECONDS','15'))
 if seconds<5 or seconds>3600:raise ValueError('Fuzz duration outside 5..3600 seconds')
 env=dict(os.environ,GOMODCACHE=str(root/'.cache/gomod'),GOCACHE=str(root/'.cache/go-build'))
 results=[]
-for package,target in [('domain','FuzzPathKey'),('cryptobox','FuzzPayloadAuthentication'),('httpapi','FuzzByteRangeBounds')]:
+for package,target in [('domain','FuzzPathKey'),('cryptobox','FuzzPayloadAuthentication'),('httpapi','FuzzByteRangeBounds'),('httpapi','FuzzWebDAVPathAndXML'),('httpapi','FuzzWebDAVIf')]:
  started=time.monotonic()
  with (out/(target+'.log')).open('w') as log:
   subprocess.run(['go','test','./internal/'+package,'-run=^$','-fuzz=^'+target+'$','-fuzztime='+str(seconds)+'s','-parallel=2'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=seconds+120)

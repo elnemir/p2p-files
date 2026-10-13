@@ -21,3 +21,5 @@ make up
 PostgreSQL — источник истины, Redis — ephemeral. Код proprietary; лицензии зависимостей ещё требуют review. Production deployment выполняется только по отдельной команде владельца.
 
 [Правила участия](CONTRIBUTING.md) · [Сообщить об уязвимости](SECURITY.md) · [Настройка репозитория](wiki/repository-governance.md).
+
+Нативный WebDAV: [подключение macOS/Linux/Windows и статус проверки](wiki/webdav-upload.md). Windows ожидает стенда. [Скрин-тур и единый MP4](wiki/screen-tour.md) включают этот workflow.
