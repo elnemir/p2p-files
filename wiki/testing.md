@@ -149,3 +149,10 @@ Conditional `GET /api/v1/branding` с `If-None-Match` проходит native HT
 Axe WCAG 2/2.1/2.2 AA и reflow проверяются на draft/recipient/preferences/ADMIN, в том числе 320 px. Автоматические проверки дополняются просмотром снимков: отсутствие document overflow само по себе не доказывает, что длинная подпись помещается внутри кнопки. Baseline update служит только подготовке reviewed изображений; gate запускается отдельно без update.
 
 Branding и keyboard negative-login E2E сначала дожидаются реального HTTP результата и явно сверяют 200/409/401, затем проверяют состояние UI. Contract capture может добавлять задержку перед доставкой ответа; ожидание server mutation не смешивается с пятисекундным ожиданием отображения. Общие timeout/retries и все DOM/contract assertions сохранены. Эти функциональные tests не заменяют отдельный performance gate.
+
+
+## PR #26: подтверждённое сохранение quiet hours
+
+**Контекст/проблема:** [CI 38462541585](https://github.com/elnemir/p2p-files/actions/runs/38462541585) на head `ac084c2` / merge ref `01ad482` прошёл 59/60 browser cases. Mobile WebKit обнаружил гонку самого сценария: после click тест сразу отправлял GET, который завершился до PUT=204 и прочитал прежние значения. Trace: PUT с `quietStart/quietEnd=null` начат 20:53:04.440Z, длился 49.527 ms; GET начат 20:53:04.463Z, длился 3.912 ms. Это не доказательство потери данных приложением: PUT передал правильные значения и успешно завершился.
+
+**Решение/data flow:** для включения и отключения quiet hours тест регистрирует ожидание PUT → нажимает Save → проверяет HTTP 204 → проверяет сообщение UI → читает сохранённые значения. Нет sleeps, retries, нового timeout или ослабления assertions; runtime/API/contracts не меняются. Новый source SHA-256 `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396` получает повторную квалификацию; старые PASS не переносятся автоматически. Диагностика сохранена в `.cache/product-ux/delivery/pr-functional-failed/` и `pr-failed.log`, прежние gate records — в `.cache/product-ux/delivery/local-gates/`. Синтетические session traces остаются приватным evidence.

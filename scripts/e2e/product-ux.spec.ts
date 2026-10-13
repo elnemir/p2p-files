@@ -160,7 +160,14 @@ test('search ignores late results and settings offer accessible timezone and qui
   await page.getByLabel('Включить тихие часы',{exact:true}).check();
   await page.getByLabel('Тихие часы: с',{exact:true}).selectOption('23');
   await page.getByLabel('Тихие часы: до',{exact:true}).selectOption('7');
-  await page.getByRole('button',{name:'Сохранить',exact:true}).click();await expect(page.getByRole('status')).toContainText('Настройки сохранены');
+  const savePreferences=async()=>{
+    // A completed click does not mean the server has committed the preferences.
+    const saved=page.waitForResponse(response=>response.url().endsWith('/notification-preferences') && response.request().method()==='PUT');
+    await page.getByRole('button',{name:'Сохранить',exact:true}).click();
+    expect((await saved).status()).toBe(204);
+    await expect(page.getByRole('status')).toContainText('Настройки сохранены');
+  };
+  await savePreferences();
   expect(await (await page.request.get('/api/v1/notification-preferences')).json()).toMatchObject({timezone:'Europe/Moscow',quietStart:23,quietEnd:7});
   await page.setViewportSize({width:320,height:900});await a11y(page);await page.screenshot({path:evidencePath('ux-settings-mobile.png'),fullPage:true});
   await page.getByRole('button',{name:'Аккаунт и безопасность',exact:true}).click();await expect(page.getByRole('heading',{name:'Сеансы',exact:true})).toBeVisible();
@@ -171,7 +178,7 @@ test('search ignores late results and settings offer accessible timezone and qui
   await expect(page.getByRole('main').getByRole('alert')).toContainText('проверьте ссылку и пароль');
   await expect(page.getByRole('heading',{name:'Сеансы',exact:true})).toBeVisible();expect((await page.request.get('/api/v1/auth/me')).status()).toBe(200);
   await page.getByRole('button',{name:'Уведомления и язык',exact:true}).click();await expect(page.getByLabel('Тихие часы: с',{exact:true})).toHaveValue('23');
-  await page.getByLabel('Включить тихие часы',{exact:true}).uncheck();await page.getByRole('button',{name:'Сохранить',exact:true}).click();
+  await page.getByLabel('Включить тихие часы',{exact:true}).uncheck();await savePreferences();
   expect(await (await page.request.get('/api/v1/notification-preferences')).json()).toMatchObject({quietStart:null,quietEnd:null});
   const me=await (await page.request.get('/api/v1/auth/me')).json();
   const h=await headers(page,new URL(page.url()).origin);

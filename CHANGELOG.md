@@ -7,6 +7,7 @@
 - Settings v1: обычная форма, выбор сроков/MIME policy, expert JSON, явные validate/apply/CAS и откат; введённое сохраняется при ошибке и конфликте.
 - Timezone/quiet hours и SMTP TLS/port selectors; privacy-safe terminal recipient view очищает устаревшие download controls, временные ошибки сохраняют resume.
 - Встроенная IANA database в API/worker/CLI исправляет отклонение часовых поясов минимальным runtime image. Отказ самой сессии очищает локальные данные во всех разделах; неверный пароль reauth сохраняет вход, поздние ответы не возвращают старую сессию.
+- E2E сохранения quiet hours ждёт подтверждённый PUT=204 перед проверочным GET, исключая гонку тестового чтения без изменения runtime или ослабления assertions.
 - [UX review, инструкции и ограничения](wiki/product-ux.md), сквозные negative/race/a11y regression tests. Статус текущих проверок — wiki/session.md.
 
 ## Unreleased — SAML/OIDC/LDAP

@@ -4,11 +4,14 @@
 По команде владельца: commit, push и squash merge подготовленного UX USER/ADMIN через PR после зелёных обязательных gates и CI.
 
 ## Status
-Реализация закоммичена (`64ef93fb50c2181029567e0d103bf723a3c3aa1a`) и отправлена в `origin/codex/product-ux`, база `c221369a6dc5d795c836d11ccdaeb39ee97ca3e9`. Доставка проводится через [PR #26](https://github.com/elnemir/p2p-files/pull/26). GitHub хранит актуальные head/merge SHA, exact-candidate checks и итоговую запись доставки в описании PR; перед продолжением необходимо прочитать их. Локальный PASS не подменяет результат CI. Production deployment не входит в эту команду.
+Реализация UX отправлена в [PR #26](https://github.com/elnemir/p2p-files/pull/26): основной commit `64ef93f`, документационный `ac084c2`, база main `c221369`. Первый final head ac084c2 прошёл security/supply-chain/repository-policy, но browser 59/60 из-за доказанной гонки тестового GET до PUT=204. Порядок quiet-hours E2E исправлен; runtime/API/contracts не менялись.
 
-Source SHA-256 `509dd43094935c4761e1f398b783361a1f527cb0cc497494c0ff7a48086da93a`: **13/13 gates PASS**, каждый моложе 24 часов; performance 32 MiB / 2000 rows smoke. **62/62 PG/race и 60/60 browser**, без пропусков, browser retries/flaky=0 и без baseline updates. Все gate records подтверждают неизменный source; подробные результаты, диагностика и границы — [evidence](history/product-ux-evidence-2026-10-13.md).
+Исправленный source SHA-256 `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396` получил **13/13 локальных gates PASS**, **62/62 PG/race и 60/60 browser** без skips/flaky/retries. Полный browser gate 627.7 s, performance smoke 32 MiB / 2000 rows. Подробности и первоначальный failure сохранены в [evidence](history/product-ux-evidence-2026-10-13.md).
+
+Точный актуальный head/merge SHA, CI и итог доставки сохраняются в описании PR #26 и связанных Actions; при восстановлении прочитать их. Локальный PASS не подменяет CI, production deployment не входит в команду.
 
 ## Completed steps
+- После CI failure исправлен доказанный порядок чтения quiet hours; повторены все 13 gates. Один startup CA failure ingress сохранён отдельно; полный повтор на новом стенде PASS без изменений TLS guards, точная причина единичного отказа не установлена.
 - По явной команде владельца завершены все 13 локальных gates, создан и отправлен UX commit; открыт PR #26. Audit GitHub settings: matchesPolicy=true, differences=[]. Текущие CI и merge подтверждаются GitHub readback, не предположением на момент записи wiki.
 - Выполнен нормативный startup и обзор USER/recipient/ADMIN; добавлены [ADR-015](adr/015-product-ux.md), threat/state/architecture/crypto review и [инструкция UX](product-ux.md).
 - Реализованы sidebar/mobile navigation, иконки бренда, тематические ADMIN разделы и reauth на месте, компактные действия файлов, loading/empty/error и подтверждения удаления/отзыва.
@@ -22,6 +25,7 @@ Source SHA-256 `509dd43094935c4761e1f398b783361a1f527cb0cc497494c0ff7a48086da93a
 - Обновлены current state, implementation plan, тематические руководства, testing, changelog, evidence и session. Все 93 Markdown страницы связаны, 32 требования трассируются, whitespace check PASS.
 
 ## Next steps
+- Исправление теста и свежая квалификация подготовлены для commit/push в тот же PR #26. Текущее состояние доставки сверить с PR, затем продолжить до green CI/merge/main verification.
 - При восстановлении сначала прочитать [PR #26](https://github.com/elnemir/p2p-files/pull/26) и его итоговую запись доставки. Если открыт — дождаться зелёных required checks и выполнить уже разрешённый squash merge exact head. Если merged — сверить merge SHA, main CI/CodeQL и fast-forward локального main; не создавать повторную реализацию или PR.
 - Последующие результаты CI/main сохраняются в итоговой записи PR, связанной из этой сессии и [evidence](history/product-ux-evidence-2026-10-13.md). Документационный commit не меняет source fingerprint.
 - Продолжить внешнюю приёмку по [плану](environment-acceptance.md): реальные устройства/AT, SSO tenants, Windows WebDAV и инфраструктура.

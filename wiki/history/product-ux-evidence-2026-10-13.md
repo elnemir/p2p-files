@@ -1,6 +1,7 @@
 # Проверка удобства USER/ADMIN — 2026-10-13
 
 ## Контекст и граница
+Текущая локальная квалификация после исправления порядка quiet-hours E2E: source `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396`, **13/13 gates PASS**, 62/62 PG/race и 60/60 browser. Результаты повторного прогона приведены в конце; первоначальные измерения source 509dd430 и отказ CI сохранены отдельно.
 Проверяется локальный UX срез [ADR-015](../adr/015-product-ux.md) в `codex/product-ux`, поверх `c221369a6dc5d795c836d11ccdaeb39ee97ca3e9`. Обзор до/после, потоки и снимки — [product UX](../product-ux.md). Изменены интерфейс, read-only editor endpoint, встраивание стандартной IANA database, контракты и тесты. Новых зависимостей, migrations и env нет.
 
 Source SHA-256: `509dd43094935c4761e1f398b783361a1f527cb0cc497494c0ff7a48086da93a`. `scripts/acceptance.py` включает код, contracts, тесты и изображения; исключает Markdown wiki/README/changelog, чтобы запись измерений не меняла измеряемый кандидат. Код закоммичен в `64ef93fb50c2181029567e0d103bf723a3c3aa1a`; доставка — [PR #26](https://github.com/elnemir/p2p-files/pull/26). Это локальная квалификация изменений, не release acceptance, CI или production deployment. Итоговая запись доставки в описании PR содержит последующие exact-head/main Actions и merge SHA; она связана из [session](../session.md), чтобы не смешивать измерение исходников с результатом GitHub.
@@ -88,3 +89,18 @@ caffeinate -i python3 scripts/acceptance.py run verifier
 Сканеры сохраняют прежний UNKNOWN `GO-2026-5932` для `x/crypto/openpgp`, без исключений. `go list -deps ./cmd/...` не содержит openpgp; это согласуется с govulncheck FileX, но не является binary reachability review стороннего Traefik.
 
 Обновлены четыре UX снимка в wiki; прежний озвученный MP4 остаётся исторической записью от 2026-10-12. Реальные устройства/assistive technology, Windows WebDAV, конкретные SSO tenants и внешняя инфраструктура не квалифицированы этой задачей. Все прежние внешние blockers и production guard сохранены. Все 13 локальных gates проверены для текущего source; GitHub CI проверяется отдельно на PR и main. Полный release profile, решения владельца и внешняя приёмка из этого результата не следуют.
+
+
+## PR #26: подтверждённое сохранение quiet hours
+
+**Контекст/проблема:** [CI 38462541585](https://github.com/elnemir/p2p-files/actions/runs/38462541585) на head `ac084c2` / merge ref `01ad482` прошёл 59/60 browser cases. Mobile WebKit обнаружил гонку самого сценария: после click тест сразу отправлял GET, который завершился до PUT=204 и прочитал прежние значения. Trace: PUT с `quietStart/quietEnd=null` начат 20:53:04.440Z, длился 49.527 ms; GET начат 20:53:04.463Z, длился 3.912 ms. Это не доказательство потери данных приложением: PUT передал правильные значения и успешно завершился.
+
+**Решение/data flow:** для включения и отключения quiet hours тест регистрирует ожидание PUT → нажимает Save → проверяет HTTP 204 → проверяет сообщение UI → читает сохранённые значения. Нет sleeps, retries, нового timeout или ослабления assertions; runtime/API/contracts не меняются. Новый source SHA-256 `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396` получает повторную квалификацию; старые PASS не переносятся автоматически. Диагностика сохранена в `.cache/product-ux/delivery/pr-functional-failed/` и `pr-failed.log`, прежние gate records — в `.cache/product-ux/delivery/local-gates/`. Синтетические session traces остаются приватным evidence.
+
+### TLS fixture при повторной квалификации
+На новом source dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396 первый локальный ingress остановился на readiness probe с `SSLCertVerificationError: self-signed certificate`, до основных protocol assertions. Диагностика и failed gate сохранены в `.cache/product-ux/delivery/ingress-startup-failure/`. Никакие TLS guards, CA verification, timeout или fixture code не менялись. Отдельный запуск на новом disposable стенде прошёл полную исходную проверку. Точная причина единичного startup отказа не установлена; успешный повтор не объявляется её исправлением. Это отличается от доказанной и исправленной гонки quiet-hours E2E.
+
+### Повторная квалификация 2026-10-14 (Москва)
+Source `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396`, база HEAD `ac084c206e9714f17f1507892d2c8a9a35f951f8` с изменённым тестом: все 13 gates PASS, sourceUnchanged=true, exitCode=0. PG/race 62/62 без skips. Browser 60/60: каждый профиль 12/12, unexpected/flaky/skipped=0; full matrix без baseline update/retries, timestamps reports внутри browser gate. Длительность browser 627.7 s.
+
+Остальные gates: check 32.4 s, integration 195.2 s, dependencies 5.8 s, source 3.7 s, licenses 3.2 s, images 15.1 s, fuzz 91.4 s, ingress 14.2 s, upgrade 23.3 s, performance 32.4 s, compatibility 0.2 s, verifier 5.9 s. Performance остаётся smoke 32 MiB / 2000 rows. Команды те же, все browser/runtime asserts и CA verification сохранены. Raw logs — `.cache/product-ux/quiet-hours-gate-<name>.log`; records — `.cache/product-ux/delivery/quiet-hours-local-gates/`. Следующий commit/CI в PR #26 квалифицируется отдельно по точному head; первоначальный CI failure не переименован в PASS.
