@@ -4,9 +4,10 @@
 Реализовать авторизацию и регистрацию через SAML 2.0, OpenID Connect и LDAP с настройками ADMIN. Владелец указал Keycloak, Microsoft Entra ID/AD, Google Workspace и другие IdP/LDAP.
 
 ## Status
-Локальная реализация и квалификация завершены в `codex/federated-auth` от main `73bf030`. **13/13 gates PASS** на неизменном source SHA-256 `70ada47d3ef41da8300ef649282149af202abb915aebfbdf9b0699cc0a3c80fb`. Владелец 2026-10-13 разрешил commit, push и merge. Начата доставка: source и все 13 gate records повторно сверены, origin/main остаётся 73bf030; посторонних изменений нет. GitHub CI и merge ещё ожидаются; production deployment не выполняется. [Подробное evidence](history/federated-auth-evidence-2026-10-13.md). Предыдущая доставка: [white labeling](sessions/2026-10-13-white-label-delivered.md).
+Локальная реализация и квалификация завершены в `codex/federated-auth` от main `73bf030`. **13/13 gates PASS** на неизменном source SHA-256 `70ada47d3ef41da8300ef649282149af202abb915aebfbdf9b0699cc0a3c80fb`. Владелец 2026-10-13 разрешил commit, push и merge. Коммит реализации `9bcabf3` отправлен; открыт [PR #25](https://github.com/elnemir/p2p-files/pull/25). Source и все 13 gate records повторно сверены; посторонних изменений нет. Точное текущее состояние merge и GitHub checks берётся из PR #25 и связанных Actions, а не из исторического локального PASS. Production deployment не выполняется. [Подробное evidence](history/federated-auth-evidence-2026-10-13.md). Предыдущая доставка: [white labeling](sessions/2026-10-13-white-label-delivered.md).
 
 ## Completed steps
+- Доставка авторизована: ветка отправлена, PR #25 создан; GitHub dependency-review первого head PASS, остальные checks на момент открытия ещё выполнялись. Эта запись не объявляет незавершённый CI успешным.
 - Прочитаны AGENTS, нормативная wiki и auth/session/keyring/recovery. Подготовлены ADR-014, threat/state machines, architecture consistency/crypto review, OpenAPI/JSON Schema до основной реализации; AsyncAPI не расширяется auth событиями.
 - Migration 0019: providers/revision/encrypted secrets, provider-subject bindings, browser-bound expiring flows, provider sessions. OIDC Code+PKCE/nonce, SAML signed SP flow, LDAP TLS/search/bind.
 - USER-only JIT, запрет auto-link по email, explicit fresh-account link, same-identity reauth, local role/disabled/auth_epoch authority, CAS и provider session revoke. Локальный ADMIN fallback сохранён.
@@ -16,7 +17,7 @@
 - README, профильная wiki, current state, contracts/types/schema, traceability, changelog, security/license review и operational guide актуализированы.
 
 ## Next steps
-- Выполнить разрешённые commit/push, создать PR и проверить exact-head CI/security; squash merge только после зелёных checks. Затем сверить main и post-merge workflows.
+- При восстановлении сессии сначала прочитать статус PR #25. Если открыт — дождаться зелёных exact-head CI/security и выполнить уже разрешённый squash merge. Если merged — синхронизировать main через fast-forward и проверить workflows merge-коммита. Не создавать повторную реализацию или второй PR для тех же изменений.
 - При получении параметров организаций настроить провайдеры по [руководству](federated-auth.md), выполнить внешнюю приёмку claims/TLS/clock/certificate rotation/disabled account/emergency login.
 - Сохранять прежние release blockers и отдельное требование production deployment команды владельца.
 

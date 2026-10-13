@@ -1,7 +1,7 @@
 # Текущее состояние FileX
 
 ## Контекст и проверяемая граница
-Срез 2026-10-13: текущая задача — [SAML/OIDC/LDAP](federated-auth.md), ветка `codex/federated-auth` от main `73bf030`. Backend, ADMIN и пользовательский вход реализованы; все 13 локальных gates PASS ([session](session.md), [evidence](history/federated-auth-evidence-2026-10-13.md)). White labeling доставлен через [PR #24](https://github.com/elnemir/p2p-files/pull/24), [архив доставки](sessions/2026-10-13-white-label-delivered.md). Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован; внешние release blockers сохраняются. Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
+Срез 2026-10-13: текущая задача — [SAML/OIDC/LDAP](federated-auth.md), ветка `codex/federated-auth` от main `73bf030`. Backend, ADMIN и пользовательский вход реализованы; все 13 локальных gates PASS; доставка — [PR #25](https://github.com/elnemir/p2p-files/pull/25) ([session](session.md), [evidence](history/federated-auth-evidence-2026-10-13.md)). White labeling доставлен через [PR #24](https://github.com/elnemir/p2p-files/pull/24), [архив доставки](sessions/2026-10-13-white-label-delivered.md). Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован; внешние release blockers сохраняются. Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
 
 ## Реализовано
 - [SAML/OIDC/LDAP](federated-auth.md): провайдеры в ADMIN, корпоративный вход, USER-only регистрация, явная привязка/reauth, encrypted secrets, provider revoke, recovery/rotation.
