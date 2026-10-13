@@ -4,7 +4,7 @@
 Реализовать настраиваемый white labeling всей установки: название продукта, логотипы/favicon, светлая/тёмная палитры, тема по умолчанию и стиль иконок. Владелец подтвердил отсутствие фиксированного бренда и общий ADMIN-редактор.
 
 ## Status
-Локальная реализация и квалификация завершены в `codex/white-label` от main `cf4392d65a597e9d5281a666b1cdc503f6dcec7b`. Владелец запросил commit, push и squash merge. Доставка выполняется через защищённый PR; GitHub checks проверяются отдельно от локальных gates. Production deployment не запрашивался.
+Локальная реализация и квалификация завершены в `codex/white-label` от main `cf4392d65a597e9d5281a666b1cdc503f6dcec7b`. Реализация закоммичена (`0f30f1d`) и отправлена в [PR #24](https://github.com/elnemir/p2p-files/pull/24). Владелец запросил squash merge после обязательных проверок. Актуальное состояние доставки и exact-head CI фиксирует PR; post-merge проверки доступны в [Actions main](https://github.com/elnemir/p2p-files/actions?query=branch%3Amain). Production deployment не запрашивался.
 
 **13/13 gates PASS** на неизменном source SHA-256 `e100d8b6197331d7273194e3251d006453fdc806fc0eae03282a0145d7c0f289`. Полный пакет: [evidence](history/white-label-evidence-2026-10-13.md). 56 PG/race integration cases без skips (включая rclone), 40 browser cases в пяти профилях без skipped/unexpected/flaky, 14 contract/harness tests. Performance — 32 MiB/2000 rows smoke. Историческая Node/WebDAV delivery session сохранена в [архиве](sessions/2026-10-13-node26-delivered.md).
 
@@ -18,7 +18,7 @@
 - Contracts/types/schema/matrix/changelog и профильная wiki синхронизированы. Source/container HIGH/CRITICAL=0; npm audit 0; Go symbol/imported-package findings 0 (module-only advisory указан в evidence). Все 13 gates повторены последовательно после окончательных изменений.
 
 ## Next steps
-- Выполнить Conventional Commit, push, PR и squash merge после зелёных exact-head GitHub checks; проверить post-merge main CI. Локальные PASS не заменяют CI.
+- Проверять GitHub delivery по PR #24 и связанным Actions: merge допускается только после зелёных exact-head checks; post-merge main CI является отдельной границей. Локальные PASS не заменяют CI.
 - Ручная приёмка конкретных фирменных assets/реальных устройств и внешняя release acceptance по существующему плану. Новых обязательных code steps для текущего запроса не осталось.
 
 ## Decisions
