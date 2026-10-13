@@ -28,4 +28,8 @@
 
 ## Дополнение: white labeling, 2026-10-13
 
-Предыдущая таблица фиксирует аудит native WebDAV и его исторические числа. Новый срез: 111 API operations, 18 migrations, ADR-013; [инструкция](white-label.md), architecture/configuration/repository map, controlled upgrade/recovery, testing, requirements/threat/states/review, changelog/matrix/session синхронизированы. Добавлен FILEX_BRANDING_API_URL только для SSR web. Технические названия протоколов и исторические документы/медиа не переименовываются. Текущие результаты квалификации не выводятся из предыдущего PASS — см. [session](session.md).
+Предыдущая таблица фиксирует аудит native WebDAV и его исторические числа. Срез white labeling: 111 API operations, 18 migrations, ADR-013; [инструкция](white-label.md), architecture/configuration/repository map, controlled upgrade/recovery, testing, requirements/threat/states/review, changelog/matrix/session синхронизированы. Добавлен FILEX_BRANDING_API_URL только для SSR web. Технические названия протоколов и исторические документы/медиа не переименовываются. Текущие результаты квалификации не выводятся из предыдущего PASS — см. [session](session.md).
+
+## Дополнение SAML/OIDC/LDAP, 2026-10-13
+
+Текущий контракт: 122 API operations, 19 migrations, ADR-014. Добавлены [инструкция и границы совместимости](federated-auth.md); обновлены architecture/configuration/data model/recovery/controlled upgrade, threat/state/design review, testing/traceability/changelog, repository map и current state. Browser pack теперь содержит 45 cases. Исторические delivery/evidence и туры сохраняют прежнюю границу проверки; фактическая квалификация новой реализации фиксируется отдельно в [session](session.md).

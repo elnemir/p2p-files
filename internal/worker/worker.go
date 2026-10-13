@@ -53,7 +53,8 @@ func (w Worker) Tasks() map[string]func(context.Context) error {
 	export := exports.Service{DB: w.DB, Artifacts: artifact}
 	tasks := map[string]func(context.Context) error{
 		"cleanup": func(ctx context.Context) error {
-			return errors.Join(w.Files.Sweep(ctx), w.Files.Cleanup(ctx), artifact.Cleanup(ctx), export.Cleanup(ctx))
+			_, identityErr := w.DB.Exec(ctx, "DELETE FROM identity_flows WHERE expires_at<=clock_timestamp()")
+			return errors.Join(identityErr, w.Files.Sweep(ctx), w.Files.Cleanup(ctx), artifact.Cleanup(ctx), export.Cleanup(ctx))
 		},
 		"maintenance": w.Files.Maintain,
 		"rotation":    w.Rotate,

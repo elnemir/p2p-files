@@ -56,3 +56,6 @@ Design вопросы completion, export snapshot, partial delivery и crypto is
 
 ## Дополнение владельца: white labeling
 2026-10-13: настраиваемый бренд всей установки без заранее заданных assets; [ADR-013](adr/013-white-label.md). Это не организационная tenancy и не переименование технических протоколов.
+
+## Дополнение владельца: SAML/OIDC/LDAP
+2026-10-13 разрешена реализация корпоративного входа/регистрации, подтверждены Keycloak, Entra ID/AD, Google Workspace и другие IdP/LDAP. [ADR-014](adr/014-federated-auth.md): провайдеры настраиваются ADMIN, JIT только USER, no implicit email linking; local password fallback сохраняется. Конкретные tenant credentials не предоставлены.

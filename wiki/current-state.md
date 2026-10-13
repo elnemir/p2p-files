@@ -1,22 +1,24 @@
 # Текущее состояние FileX
 
 ## Контекст и проверяемая граница
-Срез 2026-10-13: текущая задача — [настраиваемый брендинг](white-label.md), реализация в codex/white-label локально квалифицирована ([session](session.md)), доставка и GitHub checks отслеживаются в [PR #24](https://github.com/elnemir/p2p-files/pull/24). До неё native WebDAV merged через [PR #23](https://github.com/elnemir/p2p-files/pull/23), main после обоих merge `cf4392d`. Согласованный Node 24→26 и исправление idle recovery worker реализованы в [PR #22](https://github.com/elnemir/p2p-files/pull/22); source-bound квалификация и завершённая GitHub доставка — [архив Node 26](sessions/2026-10-13-node26-delivered.md). Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован на `7dce226`. Его измерения сохранены в [истории](history/development-evidence-2026-10-11.md), результаты нового diff — в [session](session.md). Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
+Срез 2026-10-13: текущая задача — [SAML/OIDC/LDAP](federated-auth.md), ветка `codex/federated-auth` от main `73bf030`. Backend, ADMIN и пользовательский вход реализованы; все 13 локальных gates PASS; доставка — [PR #25](https://github.com/elnemir/p2p-files/pull/25) ([session](session.md), [evidence](history/federated-auth-evidence-2026-10-13.md)). White labeling доставлен через [PR #24](https://github.com/elnemir/p2p-files/pull/24), [архив доставки](sessions/2026-10-13-white-label-delivered.md). Фазы 1–6 реализованы, технический набор фазы 7 ранее квалифицирован; внешние release blockers сохраняются. Наличие кода, локальный тест, реальный клиент, CI и production приёмка — разные границы.
 
 ## Реализовано
-- [White labeling](white-label.md): общий ADMIN preview/apply/reset, имя, палитры, логотипы/favicon, три стиля иконок; SSR, SMTP, immutable PDF presentation. Все 13 локальных gates PASS на source из текущего [evidence](history/white-label-evidence-2026-10-13.md).
+- [SAML/OIDC/LDAP](federated-auth.md): провайдеры в ADMIN, корпоративный вход, USER-only регистрация, явная привязка/reauth, encrypted secrets, provider revoke, recovery/rotation.
+- [White labeling](white-label.md): общий ADMIN preview/apply/reset, имя, палитры, логотипы/favicon, три стиля иконок; SSR, SMTP, immutable PDF presentation. Все 13 локальных gates PASS на source из исторического [evidence](history/white-label-evidence-2026-10-13.md).
 - Identity/USER/ADMIN/scopes, settings/audit, tus/tree/publish, Local/S3, one-time Range/ZIP, freeze/forensic, crypto/rotation.
 - SMTP/webhooks/outbox, уведомления, immutable reports, exports/QR/artifacts, saved views/bulk.
 - Backup/restore с verified pre-backup, generation/drain/reconciliation/reopen, KEK recovery, checkpoints, operations UI/CLI.
 - TLS/ACME configuration, ingress policy, controlled upgrade, contracts/types, scanners/fuzz/browser/load/DR и fail-closed release evidence.
 - [Native WebDAV](webdav-upload.md): owner draft чтение, условная атомарная замена, PG locks/If, metadata, encrypted staging/cleanup, инструкции трёх ОС. Publish/recipient semantics сохранены.
 
-Контракт: **111 REST/tus операций + WebDAV wire profile; 18 migrations; 13 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
+Контракт: **122 REST/tus операций + WebDAV wire profile; 19 migrations; 14 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
 
 ## Проверено и не подтверждено
 | Область | Текущая граница | Что ещё требуется |
 |---|---|---|
-| White labeling | 13/13 local gates, 56 PG/race и 40 browser cases; SSR/ETag/assets/CAS/audit/restore/PDF/SMTP | Commit/push/CI отдельно; реальные устройства и независимая приёмка не заявлены |
+| SAML/OIDC/LDAP | 13/13 local gates, 61 PG/race, 45 browser cases; protocol TLS/signature, JIT/link/reauth/replay/revoke/restore/rotation | Конкретные tenants/DC и GitHub delivery отдельно; локальные fixtures не означают внешнюю приёмку |
+| White labeling | 13/13 local gates, 56 PG/race и 40 browser cases; SSR/ETag/assets/CAS/audit/restore/PDF/SMTP | PR #24 merged, PR checks PASS; реальные устройства и независимая приёмка не заявлены |
 | Требования | 32 MUST, 27 verified/5 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
 | Native WebDAV | macOS mount_webdav и настоящий Linux GVfs: полный файловый цикл, multi-chunk hash, server-created GET; 15 профильных HTTP/PG/race tests | Windows **ожидает стенда**; Office/KDE/davfs2 не квалифицированы |
 | WebDAV regression | 13 локальных gates и PR #23/main CI PASS; 51 integration и 35 browser cases; macOS/GVfs повторно PASS в [исторической квалификации](sessions/2026-10-13-webdav-merged.md) | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике |

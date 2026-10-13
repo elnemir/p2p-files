@@ -54,3 +54,6 @@ FileX — приватная передача файлов: владелец п�
 [ADR-013: white labeling](adr/013-white-label.md), [история завершённого Node 26 merge](sessions/2026-10-13-node26-delivered.md).
 
 - [White labeling: инструкция администратора, API и эксплуатация](white-label.md).
+
+## Корпоративный вход
+[OIDC / SAML / LDAP: подключение, регистрация и reauth](federated-auth.md), [ADR-014](adr/014-federated-auth.md).

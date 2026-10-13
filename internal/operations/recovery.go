@@ -281,6 +281,7 @@ func (s Service) restore(ctx context.Context, id, source, actor, reason string, 
 	}
 	for _, q := range []string{
 		"UPDATE web_sessions SET revoked_at=clock_timestamp()",
+		"DELETE FROM identity_flows",
 		"UPDATE recipient_sessions SET expires_at=clock_timestamp()",
 		"UPDATE artifact_credentials SET expires_at=clock_timestamp(),state='completed',session_hash=NULL,writer_until=NULL,fence=fence+1",
 		"UPDATE downloads SET state='cancelled',writer_until=NULL,fence=fence+1 WHERE state='leased'",

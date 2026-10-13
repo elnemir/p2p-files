@@ -80,6 +80,8 @@ func (s Service) checkCrypto(ctx context.Context) error {
 		{"recipient_links", "id", "key_id", "token_envelope", "link", "true"},
 		{"storage_providers", "id", "secret_key_id", "secret_envelope", "storage", "secret_key_id IS NOT NULL"},
 		{"communication_configs", "id", "key_id", "envelope", "communications", "true"},
+		{"identity_providers", "id", "secret_key_id", "secret_box", "identity_provider", "true"},
+		{"identity_flows", "state_hash", "key_id", "box", "identity_flow", "true"},
 		{"reports", "id", "key_id", "snapshot_envelope", "report", "state<>'purged'"},
 		{"security_incident_reports", "id", "key_id", "envelope", "security_report", "true"},
 	}

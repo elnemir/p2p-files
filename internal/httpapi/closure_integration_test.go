@@ -19,6 +19,7 @@ import (
 
 func TestIntegrationRotationAcrossClassesAndArtifactLease(t *testing.T) {
 	c, _ := testClient(t)
+	identityStore, identityProvider, _ := identityFixture(t, c)
 	artifactProvider(t, c)
 	ctx := context.Background()
 	id := c.draft()
@@ -68,6 +69,16 @@ func TestIntegrationRotationAcrossClassesAndArtifactLease(t *testing.T) {
 		for i := 0; i < 15; i++ {
 			if e = worker.Rotate(ctx); e != nil {
 				t.Fatal(class, e)
+			}
+		}
+		if class == "configuration" {
+			var active bool
+			if e = c.a.DB.QueryRow(ctx, "SELECT k.active FROM identity_providers p JOIN key_versions k ON p.secret_key_id=k.id WHERE p.id=$1", identityProvider.ID).Scan(&active); e != nil || !active {
+				t.Fatal("identity secret rotation", e)
+			}
+			restored, e := identityStore.Get(ctx, identityProvider.ID)
+			if e != nil || !restored.HasSecret {
+				t.Fatal("rotated identity decryption", e)
 			}
 		}
 		if class == "artifacts" {

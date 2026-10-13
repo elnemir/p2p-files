@@ -77,3 +77,6 @@ Migration 0017 включена в schema fingerprint backup. Backup схемы 
 ## Брендинг в backup/restore
 
 Migration 0018 добавляет branding revisions и report presentation snapshots в schema discovery. Restore возвращает активный бренд вместе с прикладными данными; incident control plane по-прежнему сохраняется отдельно. Существующий matching-schema guard действует и для 0018: копия схемы 17 не импортируется напрямую в 18. PG recovery test проверяет смену бренда до/после backup и возврат сохранённой ревизии. [White labeling](white-label.md), текущий статус — [session](session.md).
+
+## Внешние identity providers
+Migration 0019 включается в автоматический backup catalog; crypto reconciliation проверяет provider/flow envelopes, configuration rotation переносит provider secrets. Restore удаляет все pending identity_flows и отзывает web_sessions. После восстановления вход ADMIN возможен локальным password; внешние claims и провайдеры проверяются отдельно. [Руководство](federated-auth.md).

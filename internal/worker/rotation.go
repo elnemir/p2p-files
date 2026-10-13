@@ -27,7 +27,7 @@ func (w Worker) Rotate(ctx context.Context) error {
 	type ref struct{ table, key, box, context, where string }
 	var refs []ref
 	if class == "configuration" {
-		refs = []ref{{"recipient_links", "key_id", "token_envelope", "link", "true"}, {"storage_providers", "secret_key_id", "secret_envelope", "storage", "secret_key_id IS NOT NULL"}, {"communication_configs", "key_id", "envelope", "communications", "true"}, {"security_incident_reports", "key_id", "envelope", "security_report", "true"}}
+		refs = []ref{{"recipient_links", "key_id", "token_envelope", "link", "true"}, {"storage_providers", "secret_key_id", "secret_envelope", "storage", "secret_key_id IS NOT NULL"}, {"identity_providers", "secret_key_id", "secret_box", "identity_provider", "true"}, {"communication_configs", "key_id", "envelope", "communications", "true"}, {"security_incident_reports", "key_id", "envelope", "security_report", "true"}}
 	} else if class == "artifacts" {
 		refs = []ref{{"reports", "key_id", "snapshot_envelope", "report", "state<>'purged'"}}
 	}

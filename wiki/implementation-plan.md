@@ -80,3 +80,6 @@
 ## Настраиваемый брендинг — 2026-10-13
 
 Вертикальный срез: [ADR-013](adr/013-white-label.md), [инструкция и data flow](white-label.md), migration 0018, API/SSR/ADMIN preview, письма/PDF и backup restore. Автоматическая приёмка — negative/concurrency/fault + пять browser profiles; фактический source-bound статус в [session](session.md). Ручная приёмка фирменных изображений и реальных устройств остаётся отдельной от автоматизированной проверки. Внешние release blockers не снимаются этим срезом.
+
+## Внешняя аутентификация — 2026-10-13
+[ADR-014](adr/014-federated-auth.md) и [руководство](federated-auth.md): migration 0019, external identity authority, API/UI, регистрация/link/reauth, protocol/PG/browser тесты и backup/key lifecycle. Статус квалификации — [session](session.md). Следующий внешний шаг: реальные Keycloak/Entra/Workspace/AD/OpenLDAP tenants, claim mappings, CA и сценарии ротации/отзыва; внешняя приёмка не подменяется fixtures.

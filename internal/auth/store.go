@@ -258,3 +258,15 @@ func (s *Store) ChangePassword(ctx context.Context, p Principal, old, newPasswor
 	}
 	return tx.Commit(ctx)
 }
+
+// ThrottleExternal shares durable rate limits with local authentication.
+func (s *Store) ThrottleExternal(ctx context.Context, remote, subject string) error {
+	if e := s.throttle(ctx, "ip:"+remote); e != nil {
+		return e
+	}
+	return s.throttle(ctx, "external:"+subject)
+}
+
+func (s *Store) ThrottleExternalSubject(ctx context.Context, subject string) error {
+	return s.throttle(ctx, "external-subject:"+subject)
+}

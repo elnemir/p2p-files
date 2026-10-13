@@ -1,31 +1,31 @@
 # Session State
 
 ## Task
-Реализовать настраиваемый white labeling всей установки: название продукта, логотипы/favicon, светлая/тёмная палитры, тема по умолчанию и стиль иконок. Владелец подтвердил отсутствие фиксированного бренда и общий ADMIN-редактор.
+Реализовать авторизацию и регистрацию через SAML 2.0, OpenID Connect и LDAP с настройками ADMIN. Владелец указал Keycloak, Microsoft Entra ID/AD, Google Workspace и другие IdP/LDAP.
 
 ## Status
-Локальная реализация и квалификация завершены в `codex/white-label` от main `cf4392d65a597e9d5281a666b1cdc503f6dcec7b`. Реализация закоммичена (`0f30f1d`) и отправлена в [PR #24](https://github.com/elnemir/p2p-files/pull/24). Владелец запросил squash merge после обязательных проверок. Актуальное состояние доставки и exact-head CI фиксирует PR; post-merge проверки доступны в [Actions main](https://github.com/elnemir/p2p-files/actions?query=branch%3Amain). Production deployment не запрашивался.
-
-**13/13 gates PASS** на неизменном source SHA-256 `e100d8b6197331d7273194e3251d006453fdc806fc0eae03282a0145d7c0f289`. Полный пакет: [evidence](history/white-label-evidence-2026-10-13.md). 56 PG/race integration cases без skips (включая rclone), 40 browser cases в пяти профилях без skipped/unexpected/flaky, 14 contract/harness tests. Performance — 32 MiB/2000 rows smoke. Историческая Node/WebDAV delivery session сохранена в [архиве](sessions/2026-10-13-node26-delivered.md).
+Локальная реализация и квалификация завершены в `codex/federated-auth` от main `73bf030`. **13/13 gates PASS** на неизменном source SHA-256 `70ada47d3ef41da8300ef649282149af202abb915aebfbdf9b0699cc0a3c80fb`. Владелец 2026-10-13 разрешил commit, push и merge. Коммит реализации `9bcabf3` отправлен; открыт [PR #25](https://github.com/elnemir/p2p-files/pull/25). Source и все 13 gate records повторно сверены; посторонних изменений нет. Точное текущее состояние merge и GitHub checks берётся из PR #25 и связанных Actions, а не из исторического локального PASS. Production deployment не выполняется. [Подробное evidence](history/federated-auth-evidence-2026-10-13.md). Предыдущая доставка: [white labeling](sessions/2026-10-13-white-label-delivered.md).
 
 ## Completed steps
-- Прочитаны обязательные правила/wiki; до реализации подготовлены ADR-013, threat/state, architecture/crypto review и контракты.
-- Migration 0018: typed branding revisions в PostgreSQL, CAS и audit в одной transaction; current ADMIN/session/epoch/reauth guards. Bounded PNG/JPEG decode/re-encode и contrast validation.
-- Public/admin API, SSR/context, название/описания/footer, палитры, logos/favicon, три стиля иконок. ADMIN preview/apply/reset/conflict; personal theme override и защита раннего выбора до hydration.
-- Бренд в UI, browser notifications, SMTP и WebDAV display name. Новые PDF сохраняют immutable presentation snapshot отдельно от прежнего canonical JSON; backup/restore проверен.
-- Исправлены реальные edge cases: shadowed SMTP error, Unicode subject line limit (TLS RED/GREEN), long-name 320px overflow. Test fixtures обновлены для schema 18, native conditional HTTP WebKit и CSS-pixel screenshot limits; guards/timeouts не ослаблены.
-- Просмотрены десять обновлённых visual baselines, новый редактор/публичная страница/мобильная шапка и PDF. [Инструкция со снимками](white-label.md).
-- Contracts/types/schema/matrix/changelog и профильная wiki синхронизированы. Source/container HIGH/CRITICAL=0; npm audit 0; Go symbol/imported-package findings 0 (module-only advisory указан в evidence). Все 13 gates повторены последовательно после окончательных изменений.
+- Доставка авторизована: ветка отправлена, PR #25 создан; GitHub dependency-review первого head PASS, остальные checks на момент открытия ещё выполнялись. Эта запись не объявляет незавершённый CI успешным.
+- Прочитаны AGENTS, нормативная wiki и auth/session/keyring/recovery. Подготовлены ADR-014, threat/state machines, architecture consistency/crypto review, OpenAPI/JSON Schema до основной реализации; AsyncAPI не расширяется auth событиями.
+- Migration 0019: providers/revision/encrypted secrets, provider-subject bindings, browser-bound expiring flows, provider sessions. OIDC Code+PKCE/nonce, SAML signed SP flow, LDAP TLS/search/bind.
+- USER-only JIT, запрет auto-link по email, explicit fresh-account link, same-identity reauth, local role/disabled/auth_epoch authority, CAS и provider session revoke. Локальный ADMIN fallback сохранён.
+- ADMIN UI, corporate login/link/reauth, JSON contract, strict config parsing, trusted origins/CIDR/CA и bounded outbound. Recovery/reconcile/rotation/cleanup включают новые данные.
+- 61 PG/race cases без skips, 45 browser cases в пяти профилях без skipped/unexpected/flaky, protocol TLS/signature negatives, concurrency и audit fault PASS. Upgrade 16→19, ingress, fuzz, compatibility, verifier и performance smoke PASS.
+- Найденные AAD, connection-pool, select accessibility, migration fixture, saved-session reload и long-name overflow проблемы исправлены; RED evidence сохранено. Screenshot с длинным именем визуально просмотрен.
+- README, профильная wiki, current state, contracts/types/schema, traceability, changelog, security/license review и operational guide актуализированы.
 
 ## Next steps
-- Проверять GitHub delivery по PR #24 и связанным Actions: merge допускается только после зелёных exact-head checks; post-merge main CI является отдельной границей. Локальные PASS не заменяют CI.
-- Ручная приёмка конкретных фирменных assets/реальных устройств и внешняя release acceptance по существующему плану. Новых обязательных code steps для текущего запроса не осталось.
+- При восстановлении сессии сначала прочитать статус PR #25. Если открыт — дождаться зелёных exact-head CI/security и выполнить уже разрешённый squash merge. Если merged — синхронизировать main через fast-forward и проверить workflows merge-коммита. Не создавать повторную реализацию или второй PR для тех же изменений.
+- При получении параметров организаций настроить провайдеры по [руководству](federated-auth.md), выполнить внешнюю приёмку claims/TLS/clock/certificate rotation/disabled account/emergency login.
+- Сохранять прежние release blockers и отдельное требование production deployment команды владельца.
 
 ## Decisions
-Брендинг общий для установки, без tenancy. Изображения публичные и нормализованные; URL/SVG/custom CSS/JS не принимаются. Технические cookies/CLI/protocol identifiers сохраняются для совместимости. Черновик локален редактору; при долгой настройке reauth выполняется во второй вкладке той же сессии. Исторические отчёты и фото/видеотур не переписываются сменой бренда.
+PG authoritative; протокольные библиотеки и существующий configuration DEK, без новых crypto primitives. Роли FileX не импортируются. Секреты write-only. Provider authority immutable, обновление отзывается через revision. Browser completion атомарен с JIT/session/audit. Обычный OIDC login без auth_time допустим без fresh reauth; privileged reauth требует свежий auth_time. SAML request signing/encryption/SLO, SCIM и group mapping вне текущего профиля.
 
 ## Context
-[White labeling](white-label.md), [ADR-013](adr/013-white-label.md), [evidence](history/white-label-evidence-2026-10-13.md), [требования](requirements.md), [архитектура](architecture.md), [testing](testing.md), [workflow](development-workflow.md).
+[SSO guide](federated-auth.md), [ADR-014](adr/014-federated-auth.md), [review](design-review.md), [evidence](history/federated-auth-evidence-2026-10-13.md), [workflow](development-workflow.md). Raw logs `.cache/identity/`; все 13 records `.cache/evidence/gates/`. Performance — 32 MiB / 2000 rows smoke, не release-load.
 
 ## Risks / blockers
-Windows native WebDAV **ожидает стенда**. Production startup guard, 14 внешних release decisions, independent security/license review и пять partial MUST сохраняются. Реальные SMTP/S3/host/escrow/DR и assistive technology не подменяются локальными fixtures. Отсутствие фирменного названия/цветов не блокирует готовый configurable implementation.
+Реальные tenant/DC, endpoints/metadata/CA и тестовые аккаунты не предоставлены: локальные fixtures не означают внешнюю приёмку. GO-2026-5932 UNKNOWN остаётся видимым; FileX govulncheck 0 affected symbols/imported packages, сторонний Traefik binary отдельно не квалифицирован. License inventory не равен owner acceptance. Windows WebDAV ожидает стенда. Production guard и прежние внешние release blockers сохранены; фото/видеотуры этой задачей не пересняты.

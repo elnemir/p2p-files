@@ -12,7 +12,10 @@
       "internal/branding/branding.go",
       "internal/branding/store.go",
       "apps/web/components/BrandingPanel.tsx",
-      "apps/web/components/BrandingProvider.tsx"
+      "apps/web/components/BrandingProvider.tsx",
+      "internal/identity/store.go",
+      "internal/identity/flow.go",
+      "internal/httpapi/identity.go"
     ],
     "tests": [
       {
@@ -49,6 +52,11 @@
         "id": "T-FR-001-7",
         "path": "scripts/e2e/branding.spec.ts",
         "name": "installation branding preview CAS publication SSR themes assets and reset"
+      },
+      {
+        "id": "T-FR-001-8",
+        "path": "scripts/e2e/identity.spec.ts",
+        "name": "external SAML registration browser binding reauthentication and provider revocation"
       }
     ],
     "gap": "Автоматизированы Chromium/Firefox/WebKit и две mobile emulation, RU/EN/themes/keyboard/error/320px/axe/visual. Исторический PASS: wiki/history/development-evidence-2026-10-11.md. Реальные Safari/mobile и manual assistive-technology WCAG: EXT-05, wiki/implementation-plan.md."
@@ -576,7 +584,10 @@
       "internal/httpapi/webdav.go",
       "internal/httpapi/webdav_conditions.go",
       "internal/httpapi/webdav_locks.go",
-      "internal/httpapi/webdav_read.go"
+      "internal/httpapi/webdav_read.go",
+      "internal/identity/store.go",
+      "internal/identity/flow.go",
+      "internal/httpapi/identity.go"
     ],
     "tests": [
       {
@@ -613,6 +624,36 @@
         "id": "T-SEC-001-7",
         "path": "internal/httpapi/branding_integration_test.go",
         "name": "TestIntegrationBrandingAuthorizationAndValidation"
+      },
+      {
+        "id": "T-SEC-001-8",
+        "path": "internal/httpapi/identity_integration_test.go",
+        "name": "TestIntegrationExternalIdentityRegistrationReplayAndCollision"
+      },
+      {
+        "id": "T-SEC-001-9",
+        "path": "internal/httpapi/identity_integration_test.go",
+        "name": "TestIntegrationExternalIdentityLinkReauthAndProviderRevocation"
+      },
+      {
+        "id": "T-SEC-001-10",
+        "path": "internal/identity/oidc_test.go",
+        "name": "TestOIDCCodePKCENonceAndClaims"
+      },
+      {
+        "id": "T-SEC-001-11",
+        "path": "internal/identity/saml_test.go",
+        "name": "TestSAMLSignatureAndRequestBinding"
+      },
+      {
+        "id": "T-SEC-001-12",
+        "path": "internal/identity/ldap_test.go",
+        "name": "TestLDAPTLSBindSearchAndFailure"
+      },
+      {
+        "id": "identity-authority-expiry",
+        "path": "internal/httpapi/identity_integration_test.go",
+        "name": "TestIntegrationExternalIdentityExpiryAndAuthorityGuards"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -662,7 +703,10 @@
       "internal/operations/keys.go",
       "internal/database/auditkey.go",
       "internal/httpapi/webdav.go",
-      "internal/files/staging.go"
+      "internal/files/staging.go",
+      "internal/identity/store.go",
+      "internal/identity/flow.go",
+      "internal/httpapi/identity.go"
     ],
     "tests": [
       {
@@ -719,6 +763,11 @@
         "id": "T-SEC-003-11",
         "path": "internal/httpapi/webdav_native_integration_test.go",
         "name": "TestIntegrationWebDAVNativeOverwriteAndUnknownLength"
+      },
+      {
+        "id": "T-SEC-003-12",
+        "path": "internal/httpapi/identity_integration_test.go",
+        "name": "TestIntegrationExternalIdentityProviderGuardsAndSecretRedaction"
       }
     ],
     "gap": "Encrypted BackupProvider, rewrap/recovery/fresh DEKs и durable budgets проверены локально; host escrow/production acceptance отдельно."
@@ -770,7 +819,10 @@
       "internal/httpapi/webdav.go",
       "internal/httpapi/webdav_xml.go",
       "internal/httpapi/webdav_properties.go",
-      "internal/httpapi/webdav_locks.go"
+      "internal/httpapi/webdav_locks.go",
+      "internal/identity/store.go",
+      "internal/identity/flow.go",
+      "internal/httpapi/identity.go"
     ],
     "tests": [
       {
@@ -832,6 +884,11 @@
         "id": "T-SEC-005-12",
         "path": "internal/branding/branding_test.go",
         "name": "TestBrandingRasterBoundsAndNormalization"
+      },
+      {
+        "id": "T-SEC-005-13",
+        "path": "internal/identity/config_test.go",
+        "name": "TestOutboundAddressPolicy"
       }
     ],
     "gap": "Trusted single proxy, IPv4 CIDR, generation fencing, host reset и HTTPS/ACME generator реализованы. Исторический local TLS PASS не заменяет public ACME/DNS/host и independent review: EXT-01/06, wiki/environment-acceptance.md."
@@ -896,7 +953,10 @@
     "implementation": [
       "internal/worker/worker.go",
       "internal/communications/worker.go",
-      "internal/httpapi/recipients.go"
+      "internal/httpapi/recipients.go",
+      "internal/identity/store.go",
+      "internal/identity/flow.go",
+      "internal/httpapi/identity.go"
     ],
     "tests": [
       {
@@ -923,6 +983,11 @@
         "id": "T-OPS-001-5",
         "path": "internal/httpapi/branding_integration_test.go",
         "name": "TestIntegrationBrandingCASAndAuditRollback"
+      },
+      {
+        "id": "T-OPS-001-6",
+        "path": "internal/httpapi/identity_integration_test.go",
+        "name": "TestIntegrationExternalIdentityAuditFaultRollsBackRegistration"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."

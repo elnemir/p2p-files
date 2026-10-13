@@ -40,3 +40,6 @@ Lock: absent → active → refreshed/released/expired/revoked. UUID token пр�
 
 ## Branding revision и preview
 [ADR-013](adr/013-white-label.md): локальный editing/preview → saving → committed либо editing/conflict. PG N→N+1 при expectedRevision и ADMIN guard; invalid/audit failure откатывают всю transaction. Reset — новая ревизия; report presentation immutable.
+
+## Внешняя аутентификация
+Provider disabled↔enabled, revision CAS. Flow pending→verified→consumed; expiry/revision change/recovery запрещают завершение. Login JIT создаёт только USER; link требует fresh current session; reauth проверяет тот же subject и свежую authentication. Сессия и consume/audit атомарны. [ADR-014](adr/014-federated-auth.md), [подробный data flow](federated-auth.md).
