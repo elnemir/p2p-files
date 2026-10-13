@@ -13,6 +13,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	// Reports and quiet hours must retain local-time semantics without host timezone packages.
+	_ "time/tzdata"
 )
 
 func run() error {

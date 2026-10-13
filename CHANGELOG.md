@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Удобство USER/ADMIN
+
+- Навигация кабинета и тематические ADMIN разделы, reauth на месте, иконки общего бренда, компактные действия файлов и понятные empty/error/loading состояния.
+- Срок публикации: presets/ползунок/точный ввод по действующему лимиту установки, клиентская проверка доступа, сохранение названия перед review без потери message; отдельный owner GET /editor возвращает message/maxTtlSeconds без изменения прежнего DTO.
+- Settings v1: обычная форма, выбор сроков/MIME policy, expert JSON, явные validate/apply/CAS и откат; введённое сохраняется при ошибке и конфликте.
+- Timezone/quiet hours и SMTP TLS/port selectors; privacy-safe terminal recipient view очищает устаревшие download controls, временные ошибки сохраняют resume.
+- Встроенная IANA database в API/worker/CLI исправляет отклонение часовых поясов минимальным runtime image. Отказ самой сессии очищает локальные данные во всех разделах; неверный пароль reauth сохраняет вход, поздние ответы не возвращают старую сессию.
+- [UX review, инструкции и ограничения](wiki/product-ux.md), сквозные negative/race/a11y regression tests. Статус текущих проверок — wiki/session.md.
+
 ## Unreleased — SAML/OIDC/LDAP
 
 - ADMIN-настройки внешних identity providers, USER-only регистрация при первом входе, явная привязка и повторная авторизация.

@@ -15,6 +15,8 @@ import (
 	"os"
 	"slices"
 	"time"
+	// Embed IANA data so minimal runtime images accept the same zones as local development.
+	_ "time/tzdata"
 )
 
 var jsonOutput bool

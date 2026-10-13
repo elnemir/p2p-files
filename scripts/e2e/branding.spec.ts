@@ -19,7 +19,7 @@ test('installation branding preview CAS publication SSR themes assets and reset'
  await page.getByLabel('Email',{exact:true}).fill(process.env.FILEX_E2E_ADMIN!);
  await page.getByLabel('Пароль',{exact:true}).fill(process.env.FILEX_E2E_PASSWORD!);
  await page.getByRole('button',{name:'Войти',exact:true}).click();
- await page.getByRole('button',{name:'Администрирование',exact:true}).click();
+ await page.getByRole('button',{name:'Администрирование',exact:true}).click();await page.getByRole('navigation',{name:'Разделы администрирования'}).getByRole('button',{name:'Оформление',exact:true}).click();
  const editor=page.getByRole('region',{name:'Брендинг и оформление',exact:true});
  await expect(editor).toBeVisible();
  const original=await (await page.request.get('/api/v1/branding')).json();originalValue=original.value;
@@ -49,8 +49,13 @@ test('installation branding preview CAS publication SSR themes assets and reset'
   await expect(spectator.locator('header .brand')).toHaveAttribute('aria-label',original.value.productName);
   await expect(editor.getByRole('region',{name:'Светлый предпросмотр'})).toContainText(name);
   const save=editor.getByRole('button',{name:'Применить брендинг',exact:true});
+  const applyBrand=async(status=200)=>{
+    // Wait for the real mutation and contract capture before checking the UI update.
+    const response=page.waitForResponse(r=>r.url().endsWith('/api/v1/admin/branding') && r.request().method()==='PUT');
+    await save.click();expect((await response).status()).toBe(status);
+  };
   const accent=editor.getByLabel('Светлая · Акцент',{exact:true});await accent.fill('#f7f8f4');await expect(save).toBeDisabled();await accent.fill('#2455a4');await expect(save).toBeEnabled();
-  await save.click();await expect(editor.getByRole('status')).toContainText('Брендинг применён');
+  await applyBrand();await expect(editor.getByRole('status')).toContainText('Брендинг применён');
   await expect(page.locator('header .brand')).toHaveAttribute('aria-label',name);
   await spectator.bringToFront();await spectator.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await expect(spectator.locator('header .brand')).toHaveAttribute('aria-label',name);
@@ -81,15 +86,15 @@ test('installation branding preview CAS publication SSR themes assets and reset'
   const csrf=await page.evaluate(()=>localStorage.getItem('filex.csrf')!);
   const rival={...applied.value,productName:'Concurrent brand'};
   expect((await page.request.put('/api/v1/admin/branding',{headers:{Origin:baseURL!,'X-CSRF-Token':csrf},data:{expectedRevision:applied.revision,value:rival}})).status()).toBe(200);
-  await editor.getByLabel('Название продукта',{exact:true}).fill('Stale draft');await save.click();await expect(editor.getByRole('alert')).toContainText('другой сессии');await expect(editor.getByLabel('Название продукта',{exact:true})).toHaveValue('Stale draft');
+  await editor.getByLabel('Название продукта',{exact:true}).fill('Stale draft');await applyBrand(409);await expect(editor.getByRole('alert')).toContainText('другой сессии');await expect(editor.getByLabel('Название продукта',{exact:true})).toHaveValue('Stale draft');
   await editor.getByRole('button',{name:'Загрузить актуальную версию',exact:true}).click();await expect(editor.getByLabel('Название продукта',{exact:true})).toHaveValue('Concurrent brand');
   const longName='ОченьДлинноеНазвание'.repeat(4);
   await editor.getByLabel('Название продукта',{exact:true}).fill(longName);
   for(const label of ['Светлый логотип','Тёмный логотип'])await editor.getByRole('button',{name:'Удалить · '+label,exact:true}).click();
-  await save.click();await expect(page.locator('header .brand')).toHaveAttribute('aria-label',longName);
+  await applyBrand();await expect(page.locator('header .brand')).toHaveAttribute('aria-label',longName);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await editor.getByRole('button',{name:'Исходное оформление',exact:true}).click();await expect(page.locator('header .brand')).toHaveAttribute('aria-label',longName);
-  await save.click();await expect(page.locator('header .brand')).toHaveAttribute('aria-label','FileX');await expect(page.locator('header .brand img')).toHaveCount(0);
+  await applyBrand();await expect(page.locator('header .brand')).toHaveAttribute('aria-label','FileX');await expect(page.locator('header .brand img')).toHaveCount(0);
   const result=await contracts.finish();expect(result.failures).toEqual([]);expect(errors).toEqual([]);
  }finally{
   await observer.close();

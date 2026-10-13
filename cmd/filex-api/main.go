@@ -11,6 +11,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	// Embed IANA data so minimal runtime images accept the same zones as local development.
+	_ "time/tzdata"
 )
 
 func run() error {

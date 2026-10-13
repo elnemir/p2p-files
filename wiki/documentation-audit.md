@@ -33,3 +33,7 @@
 ## Дополнение SAML/OIDC/LDAP, 2026-10-13
 
 Текущий контракт: 122 API operations, 19 migrations, ADR-014. Добавлены [инструкция и границы совместимости](federated-auth.md); обновлены architecture/configuration/data model/recovery/controlled upgrade, threat/state/design review, testing/traceability/changelog, repository map и current state. Browser pack теперь содержит 45 cases. Исторические delivery/evidence и туры сохраняют прежнюю границу проверки; фактическая квалификация новой реализации фиксируется отдельно в [session](session.md).
+
+## Дополнение UX USER/ADMIN, 2026-10-13
+
+[ADR-015](adr/015-product-ux.md), [ревью и инструкция](product-ux.md): 123 API operations, прежние 19 migrations, 62 PG integration cases и 60 browser cases в текущем наборе. Отдельный owner editor DTO сохраняет строгий старый контракт. Навигация white labeling, SSO и operations актуализирована; configuration/testing/threat/states/traceability и changelog согласованы. API/worker/CLI включают IANA database Go. Предыдущие числа выше остаются историческими, фактические результаты нового набора фиксируются в [session](session.md). Нарративный тур сохраняет дату записи 2026-10-12; новые UX снимки имеют собственную границу проверки.

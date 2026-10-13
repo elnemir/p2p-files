@@ -15,7 +15,10 @@
       "apps/web/components/BrandingProvider.tsx",
       "internal/identity/store.go",
       "internal/identity/flow.go",
-      "internal/httpapi/identity.go"
+      "internal/httpapi/identity.go",
+      "apps/web/components/AdminPanel.tsx",
+      "apps/web/components/ApplicationSettings.tsx",
+      "apps/web/components/Controls.tsx"
     ],
     "tests": [
       {
@@ -57,6 +60,26 @@
         "id": "T-FR-001-8",
         "path": "scripts/e2e/identity.spec.ts",
         "name": "external SAML registration browser binding reauthentication and provider revocation"
+      },
+      {
+        "id": "T-FR-001-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
+      },
+      {
+        "id": "T-FR-001-UX-2",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "search ignores late results and settings offer accessible timezone and quiet hours"
+      },
+      {
+        "id": "T-FR-001-UX-3",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "admin typed settings validate before apply, preserve network values, detect CAS conflict and retain form input"
+      },
+      {
+        "id": "T-FR-001-9",
+        "path": "internal/httpapi/editor_integration_test.go",
+        "name": "TestIntegrationTransferEditorCompatibilityAndOwnerIsolation"
       }
     ],
     "gap": "Автоматизированы Chromium/Firefox/WebKit и две mobile emulation, RU/EN/themes/keyboard/error/320px/axe/visual. Исторический PASS: wiki/history/development-evidence-2026-10-11.md. Реальные Safari/mobile и manual assistive-technology WCAG: EXT-05, wiki/implementation-plan.md."
@@ -209,6 +232,16 @@
         "id": "T-FR-004-6",
         "path": "internal/httpapi/webdav_native_integration_test.go",
         "name": "TestIntegrationWebDAVNativeStagingHiddenAndCleanup"
+      },
+      {
+        "id": "T-FR-004-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
+      },
+      {
+        "id": "T-FR-004-7",
+        "path": "internal/httpapi/editor_integration_test.go",
+        "name": "TestIntegrationTransferEditorCompatibilityAndOwnerIsolation"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -261,6 +294,16 @@
         "id": "T-FR-006-2",
         "path": "internal/httpapi/files_integration_test.go",
         "name": "TestIntegrationOneTimeRangesZIPAndCleanup"
+      },
+      {
+        "id": "T-FR-006-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
+      },
+      {
+        "id": "T-FR-006-3",
+        "path": "internal/httpapi/editor_integration_test.go",
+        "name": "TestIntegrationTransferEditorCompatibilityAndOwnerIsolation"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -289,6 +332,11 @@
         "id": "T-FR-007-3",
         "path": "internal/httpapi/retention_integration_test.go",
         "name": "TestIntegrationFreezeStopsWriterAndPreservesPayload"
+      },
+      {
+        "id": "T-FR-007-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -417,6 +465,11 @@
         "id": "T-FR-011-3",
         "path": "internal/httpapi/communications_integration_test.go",
         "name": "TestIntegrationOutboxRetryDLQAndPrivacy"
+      },
+      {
+        "id": "T-FR-011-UX-2",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "search ignores late results and settings offer accessible timezone and quiet hours"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -544,6 +597,11 @@
         "id": "T-FR-015-2",
         "path": "internal/httpapi/closure_integration_test.go",
         "name": "TestIntegrationAtomicTreeAndAdminArtifactGuards"
+      },
+      {
+        "id": "T-FR-015-UX-2",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "search ignores late results and settings offer accessible timezone and quiet hours"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -654,6 +712,16 @@
         "id": "identity-authority-expiry",
         "path": "internal/httpapi/identity_integration_test.go",
         "name": "TestIntegrationExternalIdentityExpiryAndAuthorityGuards"
+      },
+      {
+        "id": "T-SEC-001-UX-3",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "admin typed settings validate before apply, preserve network values, detect CAS conflict and retain form input"
+      },
+      {
+        "id": "T-SEC-001-13",
+        "path": "internal/httpapi/editor_integration_test.go",
+        "name": "TestIntegrationTransferEditorCompatibilityAndOwnerIsolation"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1222,6 +1290,11 @@
         "id": "T-OPS-005-11",
         "path": "scripts/test-upgrade.py",
         "name": "test_controlled_image_upgrade"
+      },
+      {
+        "id": "T-OPS-005-UX-3",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "admin typed settings validate before apply, preserve network values, detect CAS conflict and retain form input"
       }
     ],
     "gap": "Strict migration prefix, drain/upgrade/closed restart и same-schema image drill реализованы; реальный SQL upgrade/fault/race проверяется PG suite. APP_ENV=production безусловно отклоняется: reviewed механизм допуска DEV-01 и target acceptance EXT-01/REL-01 ещё открыты."
@@ -1282,6 +1355,16 @@
         "id": "T-NFR-001-8",
         "path": "scripts/contracts.test.mjs",
         "name": "branding contract is public-only and matches the shared defaults"
+      },
+      {
+        "id": "T-NFR-001-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
+      },
+      {
+        "id": "T-NFR-001-UX-3",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "admin typed settings validate before apply, preserve network values, detect CAS conflict and retain form input"
       }
     ],
     "gap": "В scope этапов 1–5 локально проверено; release evidence отдельно."
@@ -1501,6 +1584,26 @@
         "id": "T-NFR-003-31",
         "path": "scripts/dependencies.test.mjs",
         "name": "the original Current review cannot outlive Node security support"
+      },
+      {
+        "id": "T-NFR-003-UX-1",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "guided publication preserves metadata, validates access, confirms deletion and clears completed recipient controls"
+      },
+      {
+        "id": "T-NFR-003-UX-2",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "search ignores late results and settings offer accessible timezone and quiet hours"
+      },
+      {
+        "id": "T-NFR-003-UX-3",
+        "path": "scripts/e2e/product-ux.spec.ts",
+        "name": "admin typed settings validate before apply, preserve network values, detect CAS conflict and retain form input"
+      },
+      {
+        "id": "T-NFR-003-32",
+        "path": "internal/httpapi/editor_integration_test.go",
+        "name": "TestIntegrationTransferEditorCompatibilityAndOwnerIsolation"
       }
     ],
     "gap": "Технические security/SBOM/license/secret, browser/visual/axe, fuzz/load/DR gates реализованы. Исторические результаты: wiki/history/development-evidence-2026-10-11.md; новый diff: wiki/session.md. Полная внешняя приёмка и долговременный пакет evidence: EXT-01–06, DEV-04, REL-01."

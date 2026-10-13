@@ -13,7 +13,9 @@ test('keyboard navigation, error recovery, themes and 320px reflow',async({page}
   await page.keyboard.press('Tab');
   await expect(page.getByLabel('Пароль',{exact:true})).toBeFocused();
   await page.keyboard.type('Incorrect-fixture-password');
+  const rejected=page.waitForResponse(response=>response.url().endsWith('/api/v1/auth/login') && response.request().method()==='POST');
   await page.keyboard.press('Enter');
+  expect((await rejected).status()).toBe(401);
   await expect(page.locator('main').getByRole('alert')).toBeVisible();
   await page.locator('main').getByRole('alert').getByRole('button').click();
   await expect(page.locator('main').getByRole('alert')).toHaveCount(0);

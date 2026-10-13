@@ -3,6 +3,8 @@
 ## Контекст
 Фаза 6 реализует encrypted BackupProvider Local/S3, restore через ADMIN UI/host CLI, обязательный проверенный pre-backup, post-restore reconciliation и explicit reopen. Подробный воспроизводимый поток, alerts, данные и ограничения: [runbook](operations-recovery.md), [ADR-006](adr/006-operations-recovery.md), [CLI](cli.md).
 
+В интерфейсе основной путь — «Администрирование → Эксплуатация». Storage находится в «Хранение файлов», SMTP — в «Почта», общие Settings v1 — в «Параметры системы», forensic/ключи/audit/чужие exports — в «Безопасность и аудит». Подтверждение личности доступно над подразделами. Переключение подразделов сохраняет ввод; инструкции — [UX USER/ADMIN](product-ux.md).
+
 ## Bootstrap и изменения
 DB connection, MASTER_KEK, APP_ENV — bootstrap env. Dev Compose автоматически provision отдельный `DEV_BACKUP_ROOT=/data/backups` и `backup_data` volume рядом с payload/artifact volumes. S3 secrets подаются ADMIN UI или CLI stdin и хранятся encrypted. `APP_ENV=production` безусловно запрещён текущим кодом; изменение допуска выделено в DEV-01 [плана](implementation-plan.md).
 

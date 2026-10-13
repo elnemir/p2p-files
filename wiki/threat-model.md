@@ -42,3 +42,12 @@
 
 ## Федерация identity
 [ADR-014](adr/014-federated-auth.md) и [руководство](federated-auth.md) добавляют недоверенные token/XML/LDAP responses и внешний authority: подписи/issuer/audience/expiry, PKCE+nonce, PG one-use browser binding, no email auto-link/no external ADMIN, LDAP TLS+escaped search, bounded SSRF-safe dial и secret redaction. Provider update отзывает связанные web sessions; local API tokens и upstream logout имеют отдельные lifecycles.
+
+## UX срез 2026-10-13
+[ADR-015](adr/015-product-ux.md): защитить от stale search responses, случайных деструктивных действий и ложного успеха Settings apply. Скрытые разделы не являются ACL. Recipient denial показывает общий отказ без причины; transient network error не расходует доступ и не стирает resume. Ключи/пароли в UI остаются только в памяти.
+
+Явная ссылка получателя имеет приоритет над существующей cookie. Обработчик same-document fragment navigation очищает прежнее представление; generation guard защищает также позднее завершение POST session. Raw capability после чтения удаляется из адресной строки, в browser persistence не записывается. Новый editor GET проходит ту же owner/scope границу, что прежний detail; дополнительное поле message недоступно чужому ADMIN.
+
+Во всех owner разделах периодически проверяется действующая cookie и server role. Отозванная сессия очищает отображаемый workspace и отменяет upload; неверный пароль reauth при действующей cookie сохраняет рабочую сессию. Это защита от устаревшего интерфейса, не замена API guards. Ответ, начатый до смены session/view/search generation, не должен возвращать прежние данные.
+
+Owner API adapter проверяет session generation до возврата результата любому action callback, включая открытие редактора. Guard только внутри фонового refresh недостаточен: отложенный ответ ручного действия тоже может вернуться после очистки сессии. Регрессия проверяет отзыв и вход другого аккаунта без перезагрузки страницы, с удержанным настоящим editor response.
