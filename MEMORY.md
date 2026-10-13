@@ -13,3 +13,5 @@
 - R-01–06/лицензии принимаются владельцем; production deployment — только отдельной командой.
 
 Все решения — [decisions](wiki/decisions.md) и ADR в [индексе](wiki/index.md). Исходное интервью 1–978 отсутствует; текущие решения нельзя приписывать отсутствующему интервью. Исторические числа и CI находятся в [истории проверок](wiki/history/development-evidence-2026-10-11.md).
+
+Текущий native WebDAV срез добавляет migration 0017, PG locks/conditions, owner draft чтение и atomic encrypted staging. Статус проверок/туров — только wiki/session.md; Windows ожидает стенда. Исторические числа выше не относятся к текущему diff.

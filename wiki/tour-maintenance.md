@@ -1,173 +1,66 @@
-# Как обновлять скрин-тур и видеотур
+# Обновление фото- и видеотура
 
-## Контекст и задача
+## Контекст и текущая поставка
+Тур знакомит с реальным FileX без подготовки окружения. [Галерея](tour/index.html), [скрин-тур](screen-tour.md) и [единый MP4](tour/filex-tour.mp4) находятся в Git. Для передачи другому человеку достаточно одного MP4: русская озвучка, вшитые заголовки/субтитры и главы уже внутри.
 
-[Тур](screen-tour.md) знакомит с FileX через настоящий интерфейс: от загрузки до получения файлов и восстановления системы. Он хранится рядом с канонической документацией в `wiki/tour/`. PNG — исходные снимки Playwright; MP4 — монтаж записанного Chromium video, а не анимация статичных изображений. Галерея не входит в runtime приложения.
+Съёмка 2026-10-12: **48 PNG, 20 глав, 79 VTT cues**, видео **355,96 s (5:56)**, **9 955 451 bytes**, H.264 1440×1080 / 25 fps, AAC mono 48 kHz. SHA-256 MP4: `8457a74f51773997816ef587e6a06f2ca757ab9bf5621e11fa7bf9efc58e133a`. Полный список — [SHA256SUMS](tour/SHA256SUMS), параметры и таймкоды — [manifest](tour/manifest.json).
 
-Старые картинки быстро расходятся с продуктом. Поэтому сценарий, подписи, сборка видео и галерея находятся в репозитории. При изменении интерфейса нужно переснять затронутый маршрут и проверить подписи, а не ретушировать состояние на картинках.
+Глава 3 показывает инструкции Finder/Windows/GNOME, отдельный credential, настоящий PUT и готовый файл в списке. Это запись веб-интерфейса; реальные macOS/GVfs backend проверены [отдельными тестами](webdav-upload.md), Windows ожидает стенда. Настройки Windows в кадре не выдаются за запуск на Windows.
 
-## Один видеофайл для передачи
+## Входы и поток сборки
+`scripts/tour/capture.py` → случайный локальный Compose project → реальные Chromium действия из `capture.mjs` → PNG в `wiki/tour/screenshots`, raw videos и capture.json в ignored `.cache/tour/raw` → проверенный narration cache → `render.py` → MP4/VTT/manifest/HTML/Markdown/SHA256SUMS → визуальная и media/browser QA.
 
-Для знакомства с системой вне галереи достаточно [filex-tour.mp4](tour/filex-tour.mp4): все 19 глав идут последовательно, русская озвучка Liza находится в аудиодорожке, а заголовки и субтитры уже вшиты в изображение. HTML, PNG, manifest, отдельные MP3 и VTT для просмотра не нужны. Файл можно отправить как обычное вложение и открыть в плеере с поддержкой H.264/AAC.
+Capture использует синтетические аккаунты/документы, собственные случайные credentials/KEK и pinned Playwright Linux image. Он не читает operator `.env`, отказывается занимать чужой порт 8090 и удаляет только свой project/volumes/browser в finally. Пароли остаются masked, URL из кадров относятся к уже удалённому стенду. PNG не ретушируются. Mobile — viewport emulation, не реальные телефоны.
 
-2026-10-12 подготовлен самостоятельный MP4: 324,60 s (5:25), 8 698 620 bytes, 1440 × 1080 / 25 fps. Сначала файл был выдан как `.cache/exports/FileX-Video-Tour-RU.mp4`, затем по команде владельца перенесён в отслеживаемый Git путь `wiki/tour/filex-tour.mp4`. Галерея и прямая ссылка используют этот же файл. Поток подготовки: готовый MP4 → копия без перекодирования → сверка SHA-256 → полное декодирование → перенос в канонический путь репозитория. Проверки прошли; SHA-256: `56e3d346d1ff8586f901b0e256d38ab954ab6d1ab93bd651359e6664bb5bcf12`. Новая генерация речи и дополнительные списания не требуются.
+Сценарий реально выполняет upload/publish/ZIP/QR/PDF/JSON/CSV, backup/restore/restart/reconcile/reopen, public verification и повторный отказ recipient после completed. S3/SMTP/webhooks/provider migration/rotation/forensic показаны как формы без внешних операций. Наблюдение DEV-05 о старом recipient UI после refresh остаётся [backlog](implementation-plan.md).
 
-Передавать можно непосредственно `wiki/tour/filex-tour.mp4`. Если для отправки нужно имя `FileX-Video-Tour-RU.mp4`, необязательная локальная копия создаётся из корня репозитория:
-
-```sh
-mkdir -p .cache/exports
-cp -i wiki/tour/filex-tour.mp4 .cache/exports/FileX-Video-Tour-RU.mp4
-shasum -a 256 wiki/tour/filex-tour.mp4 .cache/exports/FileX-Video-Tour-RU.mp4
-```
-
-Экспорт в `.cache` локальный и не хранится в Git; канонический файл остаётся в `wiki/tour/`. После пересборки копию нужно обновить. Тайминги веб-субтитров приблизительные; доступность меню встроенных глав зависит от плеера, но непрерывное воспроизведение всех глав от него не зависит. Конфигурация и runtime приложения не меняются.
-
-Ролик и инструменты опубликованы в ветке `codex/tour-liza`, медиа-коммит `ad00a3d`. Для следующего коммита журнала `f9b367057adce8c49f99dda0c4258b7c8ee310d7` подтверждены успешные [development-checks](https://github.com/elnemir/p2p-files/actions/runs/38218316682) и [security-analysis/CodeQL](https://github.com/elnemir/p2p-files/actions/runs/38218320189). Результат относится именно к этому SHA; дальнейшие документационные коммиты не объявляются прошедшими тот же exact-commit run. Выдача готового MP4 из репозитория не требует повторной сборки или обращения к ElevenLabs.
-
-## Компоненты и поток данных
-
-1. [capture.py](../scripts/tour/capture.py) создаёт случайный проект `filex-tour-<10 hex>` с отдельными volumes. Секреты генерируются в памяти, `.env` оператора не читается. Занятый порт 8090 вызывает отказ, чтобы не подключиться к чужому стенду.
-2. Compose собирает настоящие API/worker/web из рабочего дерева. CLI создаёт две учётные записи `designer@example.test` и `operator@example.test`; браузер запускается из закреплённого E2E image. Docker socket внутрь браузера не передаётся.
-3. [capture.mjs](../scripts/tour/capture.mjs) выполняет UI-сценарий, скачивает артефакты и проверяет результаты. Каждый PNG попадает в `wiki/tour/screenshots/`; непрерывные видео по ролям, внутренний timeline и временные файлы — в `.cache/tour/raw/`.
-4. Harness перезапускает только API/worker своего проекта при restore. После завершения, включая обычную ошибку сценария, удаляет собственные контейнеры, сети и volumes. Не выполняет global prune и не затрагивает существующие проекты.
-5. [render.py](../scripts/tour/render.py) берёт записанные фрагменты, использует русскую озвучку macOS Milena или проверенные внешние audio/character timings и создаёт ASS/VTT субтитры, собирает H.264/AAC MP4 с главами. Ускорение ожиданий ограничено; короткие фрагменты замедляются под повествование. Заголовки и вшитые субтитры находятся в полях вокруг UI.
-6. Шаблоны [HTML](../scripts/tour/gallery.html), [CSS](../scripts/tour/gallery.css) и [JavaScript](../scripts/tour/gallery.js) создают автономную галерею. Встроенный manifest позволяет открывать её через `file://` без fetch и без внешних шрифтов/сервисов. Отдельный [manifest](tour/manifest.json) содержит описания, временные отметки и границу проверки.
-
-Поля URL из manifest проходят отдельную проверку перед установкой src/href: разрешён только `screenshots/NN-name.png` без query, traversal, внешнего origin, data/javascript schemes или другого формата. Имя кодируется как один URL segment. Текстовые поля вставляются через textContent; JSON внутри HTML экранирует `<`. Это закрывает предупреждения CodeQL DOM XSS, обнаруженные при первом включении сканера: три места в исходнике и три в generated copy. Негативный browser QA подставляет семь недопустимых путей в настоящий embedded manifest и проверяет отказ до появления URL в DOM. После изменения gallery.js выполняется `render.py --gallery-only`, а затем повторные checksums/browser QA; PNG и MP4 не пересоздаются.
-
-## Подготовка
-
-Нужны Docker/Compose, Node/npm и зависимости репозитория (`npm ci`), Python 3, свободный loopback-порт 8090 и несколько гигабайт под Docker cache. Сценарий длится несколько минут; cold build может идти дольше. Не запускать одновременно с E2E/dev на том же порту.
-
-Для сборки озвученного видео на macOS нужны установленный голос `Milena` (`say -v '?'`) и FFmpeg с libx264, AAC, drawtext и libass. Эти инструменты используются только для документации. Runtime images продукта не меняются. Можно указать свой бинарник FFmpeg через `--ffmpeg` и шрифт с кириллицей через `--font`.
-
-При этой съёмке использован FFmpeg 7.1 из wheel `imageio_ffmpeg-0.6.0-py3-none-macosx_11_0_arm64.whl`; SHA-256 wheel: `b1ae3173414b5fc5f538a726c4e48ea97edc0d2cdc11f103afee655c463fa742`. Wheel скачан и распакован в игнорируемый `.cache/tour-tools`, без глобальной установки. Он и исходный FFmpeg не включены в поставку приложения. Голос и системный шрифт также не копируются в репозиторий.
-
-## Воспроизведение
-
-Запускать из корня репозитория:
+## Съёмка
+Нужны Docker, зависимости `npm ci` на поддерживаемом Node 24, Python, свободный локальный 8090. Никакой production:
 
 ```sh
 python3 scripts/tour/capture.py
-python3 scripts/tour/render.py --ffmpeg /absolute/path/to/ffmpeg
-make docs-check
-git diff --check
 ```
 
-Проверка готовой галереи и media выполняется [check.mjs](../scripts/tour/check.mjs):
+Успешный capture.json имеет `passed: true`, 20 chapters, 48 screens и assertions; неполный сценарий renderer отвергает. В каждой главе сохраняются начало/конец raw video и точный narration text. Ошибка остановит сценарий: не подменять её пустой картинкой или ручным success.
+
+Manifest связывает кадры с applicationSourceSHA256: sorted unique `git ls-files --cached --others --exclude-standard` по apps/cmd/internal/migrations/deploy/go.mod/go.sum/package*.json, hash `path + NUL + bytes + NUL`. Новые untracked source files включены. Текущая съёмка: `aa0afcdedbd0d1f2dfebca3a2b84fd44598ac4a87dce6cb83f4182ab2c7acd3d`, baseline `28ab4f3`. Повторная съёмка в 13:58 UTC включает окончательный runtime/UI и нейтральную подсказку подключения без привязки к Mac/8090. Позже изменён только generated TypeScript comment с названием WebDAV operation (upload-only → owner draft); это меняет application source hash, но не код исполнения и не интерфейс. Полная регрессия использует отдельный repository source hash в [session](session.md), включающий scripts/contracts/media; эти два hash имеют разные scope и не должны сравниваться как одинаковые.
+
+## Озвучка Liza и безопасный кеш
+Голос ElevenLabs Liza, ID `KzqxCy7zSSePwgb1Cz0Q`, `eleven_multilingual_v2`; speed 1, stability 0.5, similarity 0.75, style 0, speaker boost true. Для нового тура повторно использованы 19 неизменённых глав (4647 символов) по exact text + SHA-256. Через открытую владельцем вкладку Chrome синтезирована только новая глава WebDAV: 454 символа, 5324 → 4870 credits. Всего текст текущего тура — 5101 символ. Повторная генерация после зависшего browser download не выполнялась: скачанный MP3 найден локально и проверен.
+
+Рабочий cache: `.cache/tour/elevenlabs-web-Liza-native`, исходный неизменённый — `.cache/tour/elevenlabs-web-Liza`. Ключи API, cookies, приватные raw journals и отдельные MP3 не коммитятся. Внешнему TTS передаётся только согласованный текст демонстрации, не файлы пользователей/скриншоты/пароли. Предыдущий API payment_required не объявляется исправленным успешной web-генерацией.
+
+В `progress.json` нужны `provider: ElevenLabs`, `channel: Chrome web UI`, voiceId/voiceName/modelId/voiceSettings и ровно один entry для каждой главы: number, text, textSha256, status=downloaded, file=NN.mp3, audioSha256. `load_web_narration` отвергает missing/extra/duplicate chapter, изменённый текст/хеш, неполный status, чужой путь и symlink. При вставке главы перенумеровать кеш по совпадению текста, не по старому номеру. Старый журнал не переписывать: создать новый cache.
+
+API-вариант сохранён в `scripts/tour/narrate.py` (план/лимит символов, model/voice preflight, with-timestamps, validated resume cache); доступная API-квота проверяется отдельно. `--narration-dir` принимает manifest API с character alignment, `--web-narration-dir` — журнал скачанных UI MP3. Эти форматы не взаимозаменяемы. Без внешнего cache renderer может использовать локальную macOS Milena, но текущая поставка озвучена Liza.
+
+## Рендер и обновление галереи
+Нужен FFmpeg с libx264/libass, читаемый Arial и полный capture. Пример:
 
 ```sh
-node scripts/tour/check.mjs
+python3 scripts/tour/render.py --ffmpeg /absolute/path/to/ffmpeg \
+  --web-narration-dir .cache/tour/elevenlabs-web-Liza-native
 ```
 
-Для неё нужен локальный Chromium Playwright (`npx playwright install chromium`, если он ещё не установлен). Можно использовать установленный Chrome: `FILEX_TOUR_BROWSER_CHANNEL=chrome node scripts/tour/check.mjs`; создаётся отдельный временный профиль. Проверка не подключается к приложению: открывает готовый HTML через file URL, сверяет hashes/PNG, проверяет поиск/фильтры/lightbox, axe на desktop/mobile и воспроизведение/перемотку видео. Результат и contact sheets для визуального review находятся в `.cache/tour/qa/`. Системные скрытые файлы Finder не включаются в checksums.
+Renderer сокращает ожидания и подстраивает скорость реальных записей под звук; новых кадров интерфейса не рисует. Главы собираются в один faststart MP4, captions также сохраняются отдельным VTT. Для web MP3 timings оценены по длине текста/длительности главы: word-perfect/provider alignment не заявляется. Loudness нормализуется по главам с headroom; границы звука проверяются на итоговом файле.
 
-Скрипт записи изменяет галерею только через её assets; файлы приложения и production-конфигурация не редактируются. Ошибочный сценарий оставляет диагностический screenshot и текст ошибки в `.cache/tour/raw/`, а не в публикуемой галерее. При аварийном завершении процесса/хоста проверить оставшиеся ресурсы по точному случайному project name из capture log; не использовать общий `docker compose down`.
-
-Для изменения оформления или текста страницы без повторного кодирования видео:
+После полного успешного capture renderer удаляет устаревшие нумерованные PNG, которых нет в новом manifest. Source `gallery.html/css/js` находится в scripts/tour. Если меняется только оболочка галереи:
 
 ```sh
 python3 scripts/tour/render.py --gallery-only
-python3 -m http.server 8765 --bind 127.0.0.1 --directory wiki
 ```
 
-Открыть `http://127.0.0.1:8765/tour/`. Этот простой сервер подходит для просмотра галереи, но штатный `http.server` не реализует HTTP Range: Chrome может показывать `seekable=[0,0]` и возвращаться в начало при переходе по главам. Для HTTP-видеотура нужен сервер с корректными `Accept-Ranges: bytes`, `206` и `Content-Range`. Альтернатива для пользователя — открыть автономный HTML напрямую в браузере, допускающем локальные файлы. `--gallery-only` использует существующий manifest и обновляет Markdown/HTML/CSS/JS и `SHA256SUMS`. После любого изменения assets пересчитать checksums этим режимом или полной сборкой; прежний hash не переносить на изменённый файл. Имя голоса в галерее берётся из manifest через textContent, а не закрепляется в шаблоне.
+Эта команда синхронизирует HTML/Markdown/checksums, не меняет PNG/MP4. Все generated файлы обновлять генератором. Галерея не требует сборки или сервера: `index.html` открывается локально. Manifest text вставляется через textContent, `<` в embedded JSON экранируется, screenshot URL ограничен `screenshots/NN-name.png`; внешние/data/javascript/traversal пути отвергаются.
 
-## Проверки и критерии готовности
-
-- Capture проходит полностью, без pageerror и горизонтального переполнения на сохранённых viewport. Ошибка сценария не считается частично успешным туром.
-- ZIP содержит реальные демонстрационные документы; PDF/JSON/CSV/QR скачиваются; JSON проверяется публичным UI. Восстановление действительно доходит до restart/reconcile/reopen; до подтверждения reopen недоступен.
-- Каждый PNG визуально проверен: текст читается, важное действие попало в кадр, нет случайного failure state и рабочих секретов.
-- MP4 декодируется целиком без ошибок; есть видео/аудио и главы. Проверяются начало, середина, конец, субтитры, синхронизация повествования с главами и переход по главам в браузере.
-- Галерея проверяется на desktop/mobile: поиск, фильтры, lightbox, Escape/стрелки, навигация клавиатурой и отсутствие переполнения. Все ссылки и файлы существуют.
-- Wiki/session, индекс и текущий статус отражают дату и границу новой съёмки. Состояния внешней приёмки не изменяются по факту наличия тура.
-
-## Исходная съёмка 2026-10-11 с Milena
-
-Первоначально получены 44 PNG и видео с Milena длительностью 325,94 s (5:26): H.264, 1440 × 1080, 25 fps; AAC mono 48 kHz, 19 встроенных глав. Размер прежнего MP4 около 8,2 MiB; исторический SHA-256: `08eb067ab50cbd1db789dd13801277b304c14cf34b3390bf8c23e89ab50dbb92`. Текущая пересборка с Liza описана ниже; [SHA256SUMS](tour/SHA256SUMS) содержит hashes действующих 50 assets. Базовый commit, отдельный hash исходников приложения и сценарные assertions сохраняются в [manifest](tour/manifest.json). Этот hash не является полным release source hash.
-
-Полный capture завершился с PASS; браузерные ошибки отсутствуют. Фактически скачаны ZIP с тремя документами (CRC и все три payload SHA-256 совпали), QR ZIP, PDF, JSON, CSV и audit checkpoint. JSON проверен публичным интерфейсом. Backup/restore/restart/reconcile/reopen завершены. Повторный доступ к completed передаче отклонён сервером.
-
-Просмотрены все 44 кадра на contact sheets и ключевые оригиналы; проверены образцы видео в начале, середине и конце, читаемость подписей и субтитров. FFmpeg декодировал весь MP4 без ошибок; audio mean −17,3 dB, peak −1,2 dB. Галерея проверена в отдельном Chrome 154.0.8037.98: desktop 1440 × 1000, mobile 390 × 844, поиск/пустой результат/фильтры, lightbox/стрелки/Escape/возврат фокуса, axe без violations, отсутствие горизонтального переполнения, воспроизведение и переход к главе. Проверены 50 checksum и PNG dimensions. Это QA галереи; продуктовые кадры записаны отдельно в закреплённом Chromium Linux.
-
-Доказательства текущего прогона: `.cache/tour/{capture,render,gallery-check,check-gate,video-decode,audio-check}.log`, `.cache/tour/qa/result.json`, contact sheets и кадры видео в `.cache/tour/qa/`. Эти локальные файлы не публикуются и не заменяют release evidence. Временные Compose контейнеры/сети/volumes и 48 tags восьми созданных в ходе отладки проектов удалены; общий Docker cache и чужие ресурсы не очищались.
-
-## Озвучка ElevenLabs
-
-### Контекст и текущее состояние
-
-Для более естественной речи добавлен отдельный локальный [narrate.py](../scripts/tour/narrate.py). Он не является частью API/worker/web и не запускается в CI. Пользователь предоставил существующий ключ; выбран `eleven_multilingual_v2` с поддержкой русского. Первый голос `xyu8HSCv1JYrhLx4m8UG` — Ariana, Energetic and Inspiring — получил HTTP 402 `payment_required` при синтезе главы 1, после чего пользователь отложил озвучку.
-
-2026-10-12 пользователь запросил новую попытку с `KzqxCy7zSSePwgb1Cz0Q`. Voices API подтвердил **Liza**, категория `professional`; Models API подтвердил русский TTS выбранной модели. Один API-запрос главы 1 (244 символа) в `2026-10-11T23:49:16Z` снова получил **HTTP 402 `payment_required`**. Через API аудио не получено, главы 2–19 не запрашивались, автоматических повторов нет. Запрос сохранён как `rejected` в `.cache/tour/elevenlabs-KzqxCy7zSSePwgb1Cz0Q/manifest.json`; plan SHA-256 — `6907f1c4c80fb37faf3dbd60d8dba1e375cd9550100266d4098bd58be6cca237`. Код отказа не устанавливает точную причину в настройках оплаты/тарифа аккаунта. Позднее в тот же день пользователь разрешил генерацию через Chrome: первый веб-синтез успешен; текущий статус полной сборки — в [session](session.md). Успешный веб-синтез не подтверждает работоспособность API.
-
-Ранее подготовленная в браузере форма нового ключа не отправлялась: пользователь заменил выпуск предоставлением существующего секрета. Его срок, серверный spending limit и полный набор scopes не изменялись. Subscription API ответил `missing_permissions`; права не расширялись, оплата не выполнялась.
-
-### Секреты и поток данных
-
-Ключ хранится в `~/.config/filex/elevenlabs.env`: каталог 0700, файл 0600. Имена полей — `ELEVENLABS_API_KEY` и `ELEVENLABS_VOICE_ID`; значение ключа никогда не записывается в wiki/Git/manifest/logs. Генератор читает только эти два поля без shell source/eval; symlink и доступный группе/остальным файл отвергаются. Переменные окружения могут переопределить значения, `--env-file` задаёт другой приватный файл. Приложение, CI и production этот секрет не получают. Для минимального нового ключа нужны TTS Access, Voices Read, Models Access; [официальная инструкция по authentication/scopes](https://elevenlabs.io/docs/api-reference/authentication).
-
-`capture.json chapters[].narration` → проверка номера/текста/лимита → HTTPS Models/Voices preflight → [TTS with timestamps](https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps) с текущим и соседними текстами главы → `.cache/tour/elevenlabs/NN.mp3` и приватный manifest → offline renderer → MP4/VTT/public manifest/checksums → media/browser QA. Пользовательские файлы, скриншоты и credentials FileX провайдеру не отправляются; только заранее подготовленный текст демонстрации. API использует обычный режим сервиса, zero-retention не заявляется.
-
-Параметры: `mp3_44100_128`, stability 0.5, similarity_boost 0.75, style 0, speaker boost true, speed 1, seed `101100 + номер главы` (не гарантия идентичной генерации). В туре 19 глав / 4647 Unicode-символов; default `--max-characters 6000` ограничивает суммарный текст всех глав даже при sample. Это лимит текста, а не гарантия суммы списания или наличия квоты.
-
-### Отдельный импорт аудио из Chrome
-
-**Проблема:** API может отклонять выбранный голос, когда веб-интерфейс аккаунта разрешает синтез. По прямой команде пользователя можно использовать Text to Speech в Chrome и скачать результат обычной кнопкой Download Audio. Ни ключи сессии браузера, ни внутренние запросы страницы не извлекаются; оплата и права аккаунта не меняются.
-
-**Поток:** точный текст одной главы из capture → выбранный Liza / Eleven Multilingual v2 → одна генерация → проверка текста и голоса в player → MP3 download → отдельный `NN.mp3` и запись `progress.json` → проверка всех глав и hashes → offline `render.py --web-narration-dir`. Первоначально UI показал 9971 кредит, после первой главы 9727. Число кредитов для последующих глав проверяется по фактическому UI; при отказе или недостатке квоты работа останавливается. Перед повтором неизвестного исхода проверяется History: успешные главы не генерируются заново.
-
-В `progress.json` обязательны `provider: "ElevenLabs"`, `channel: "Chrome web UI"`, `voiceId`, `voiceName`, `modelId`, `voiceSettings` и `chapters`. Для каждой главы: `number`, исходный `text`, его `textSha256`, `status: "downloaded"`, `file: "NN.mp3"`, `audioSha256`. Дополнительные поля журнала связывают скачивание с временем и исходным именем файла. Они не попадают в публичный manifest. Missing/duplicate/extra chapters, incomplete status, изменённый текст, чужое имя/путь файла, symlink и несовпадающий SHA-256 отвергаются до рендера. Кэш API и журнал веб-скачивания не взаимозаменяемы.
-
+## Проверка результата
 ```sh
-python3 scripts/tour/render.py --web-narration-dir .cache/tour/elevenlabs-web-Liza --ffmpeg /absolute/path/to/ffmpeg
+FILEX_TOUR_BROWSER_CHANNEL=chrome node scripts/tour/check.mjs
+ffmpeg -v error -i wiki/tour/filex-tour.mp4 -f null -
+python3 scripts/check_docs.py
 ```
 
-Веб-MP3 не содержит проверенного character alignment. Субтитры распределяются внутри соответствующей главы по длине текста и декодированной длительности аудио, как в исходном Milena renderer; это приблизительные тайминги, а не посимвольное совпадение. Public manifest явно записывает `acquisition: "Chrome web UI download"` и `captionTiming` с этой границей. Проверка API alignment остаётся строгой и не ослабляется. Для точных субтитров нужен отдельно проверенный alignment. FFmpeg нормализует громкость с целью −16 LUFS; после ресэмплинга в 48 kHz limiter с пределом −3 dB и компенсацией задержки оставляет запас для AAC overshoot. Проверяется пик уже декодированного MP4, а не только промежуточного потока. Длительности глав вычисляются заново; runtime FileX и production не затрагиваются.
+Browser QA проверяет все 54 checksum entries, PNG dimensions, 48 карточек, 20 глав, поиск/пустое состояние/filter/lightbox/keyboard/focus, desktop/mobile reflow, axe, playback/seek и 7 опасных URL. Full decode не должен содержать ошибок. Визуально просмотреть все PNG на contact sheets и ключевые оригиналы, затем видео в начале, новой главе, середине и конце. Проверять читаемость/обрезание, соответствие narration текущему сценарию, отсутствие секретов и clipping звука.
 
-### Возобновление API после решения пользователя
+Текущий результат: все 48 кадров просмотрены, Windows status читаем, подписи/субтитры не перекрывают UI; full decode PASS, gallery/axe/playback PASS. Loudness −16,8 LUFS, LRA 2,9 LU, true peak −1,0 dBFS. Raw evidence: `.cache/tour/qa/screens-*.png`, `.cache/tour/qa/native-video-*.png`, `.cache/webdav-native-tour-{capture,render,qa,decode,volume}.log`; hash/media metadata — manifest/SHA256SUMS. История предыдущего тура — [сессия merge](sessions/2026-10-12-tour-merged.md).
 
-Отдельный кэш Liza содержит известный отказ 402. Следующие команды показаны для будущего запуска после сообщения пользователя об устранении `payment_required`; они сами по себе не пополняют баланс. Voice ID задаётся явно: значение в приватном env-файле может относиться к прежнему голосу.
-
-```sh
-# First sample; the explicit flag acknowledges the prior known payment rejection.
-python3 scripts/tour/narrate.py --voice-id KzqxCy7zSSePwgb1Cz0Q --output .cache/tour/elevenlabs-KzqxCy7zSSePwgb1Cz0Q --chapter 1 --retry-rejected
-# After listening to the sample, reuse chapter 1 and generate remaining chapters.
-python3 scripts/tour/narrate.py --voice-id KzqxCy7zSSePwgb1Cz0Q --output .cache/tour/elevenlabs-KzqxCy7zSSePwgb1Cz0Q
-# Rendering reads cached files only; it makes no provider requests.
-python3 scripts/tour/render.py --narration-dir .cache/tour/elevenlabs-KzqxCy7zSSePwgb1Cz0Q --ffmpeg /absolute/path/to/ffmpeg
-node scripts/tour/check.mjs
-make docs-check
-```
-
-Для нового пустого output каталога достаточно `--chapter 1` без retry flag. `--source`, `--output`, `--voice-id`, `--model` поддерживают отдельную новую запись. Изменение текста/голоса/модели/настроек меняет plan hash и требует нового каталога; нельзя смешивать аудио разных планов или удалять кэш ради автоматического повторного списания.
-
-### Сбои, возобновление и проверки
-
-- Перед платным POST сохраняется `requested`. Timeout/неизвестный исход оставляет главу incomplete; автоматический повтор запрещён, даже с `--retry-rejected`. Нужно проверить фактический исход у провайдера перед любым новым запросом.
-- Только известный HTTP 402 сохраняется как `rejected` и допускает явный `--retry-rejected`. Ключ/сырой provider body не печатаются в ошибках.
-- Полученный ответ сохраняется до проверки alignment. Повреждённый MP3, несовпадающий текст или неверные timings останавливают сборку и не инициируют новый synthesis.
-- Manifest содержит SHA-256 аудио/текста, voice/model/settings, даты и character alignment. Resume полностью готового кэша не обращается к API. `.generation.lock` запрещает параллельные генераторы одного каталога; после аварии stale lock удаляется только после проверки отсутствия живого процесса. При этом `requested` marker всё равно защищает от автоматического повтора.
-- Renderer проверяет все главы до обработки, использует исходный character alignment для VTT/ASS, проверяет границы по декодированной длительности, нормализует внешнее аудио до -16 LUFS / -1.5 dBTP и записывает источник/тайминги в public manifest. FFmpeg и кириллический шрифт обязательны, macOS `say` для внешнего audio не требуется.
-- `python3 -m unittest discover -s scripts -p test_tour_narration.py` проверяет resume, лимит/voice validation, конкурентный запуск, неоднозначный сбой, 402, stale/corrupt audio, invalid alignment и приватность файла. Тесты используют synthetic responses и никогда не вызывают платный API; входят в make test/test-race/check.
-
-Проверено 2026-10-11: 8 unit/fault tests PASS; отдельный offline fixture собрал и полностью декодировал 19 глав с MP3 и character timings, сохранил 19 VTT cues. Готовая публичная галерея отдельно прошла 50 checksums / 44 screens / 19 chapters / a11y / playback. Тестовое видео находится только в ignored `.cache/consolidation/offline-render/` и не заменяет тур.
-
-2026-10-12 до веб-генерации повторно пройдены 8 unit/fault tests без внешних запросов; после добавления web importer — 11 tests, включая отказ для неполного набора, stale text, неподходящего пути, symlink и повреждённого audio. Offline fixtures сами по себе не доказывают произношение или качество выбранного голоса.
-
-### Результат веб-генерации 2026-10-12
-
-Через открытую пользователем вкладку Chrome сгенерированы и скачаны **все 19 глав / 4647 символов**, Liza / Eleven Multilingual v2, параметры 1 / 0.5 / 0.75 / 0 / speaker boost. Начальный остаток 9971, итоговый 5324 кредита: расход 4647, повторных генераций готовых глав нет. Исходные MP3 суммарно 305,30 s; каждый полностью декодирован и связан с точным текстом и SHA-256 в локальном журнале. ZIP всех 19 дорожек с текстами и manifest находится в `.cache/tour/elevenlabs-web-Liza/filex-liza-19-chapters.zip` (5 225 272 bytes); ключей и данных аккаунта в нём нет.
-
-Текущий [MP4](tour/filex-tour.mp4): **324,60 s (5:25), 8 698 620 bytes**, H.264 1440 × 1080 / 25 fps, AAC mono 48 kHz, 19 chapters и 71 VTT cue. SHA-256: `56e3d346d1ff8586f901b0e256d38ab954ab6d1ab93bd651359e6664bb5bcf12`. Полное декодирование PASS; decoded audio mean −16,8 dB, peak −1,066 dBFS. Все 50 checksum совпали, 44 PNG byte-for-byte равны исходной съёмке. Заголовки и субтитры просмотрены на кадрах начала, середины и конца. MP4/VTT/manifest/gallery обновлены; имя голоса в галерее теперь читается из manifest.
-
-В Chrome проверены playback и переходы к главам, поиск (5 результатов для backup, 0 для отсутствующего текста), фильтр восстановления (4 кадра), lightbox, стрелка вправо/Escape и возврат 44 кадров. Для перемотки использован loopback HTTP server с Range; `http.server` без Range не подтверждает этот сценарий. Это desktop QA нового медиа и галереи, не повторная product/device/a11y приёмка. Посимвольный alignment отсутствует; субтитры приблизительные. Субъективная оценка звучания и произношения остаётся за слушателем.
-
-Evidence: `.cache/tour/elevenlabs-web-Liza/{progress,media-qa,browser-qa}.json`, `render-final.log`, `video-decode-final.log`, `completed-elevenlabs.png`, три извлечённых video PNG. Проверенный source SHA-256 рабочего дерева: `3e179312df400d012e686e129bc88f1ace7961d8e7866dbc030eb328933adcfe`; основа — main `5096726741c31ee9d9a9faf70086bc8d942ed514`. Старое видео/галерея сохранены в `.cache/tour/milena-before-web-narration/`. Новая дорожка получена без API TTS; прежний API `payment_required` не переобъявляется исправленным.
-
-## Ограничения и продолжение
-
-Тур показывает основные пользовательские и административные маршруты, но не все 107 API операций и fault-injection варианты. Шифрование, race/fencing и security-инварианты подтверждаются отдельными [тестами](testing.md), а не изображениями.
-
-SMTP/S3/webhook/миграция/ротация/forensic показаны формами, без реальных интеграций. Мобильные снимки используют viewport 390 × 844 в Chromium Linux. 5 partial MUST, 14 pending decisions и запрет самостоятельного production deployment сохранены. Временный PIN и ссылки видимы только на уничтоженном синтетическом стенде и не должны заменяться рабочими данными при пересъёмке.
-
-Следующий шаг при изменении UI — обновить сценарий и переснять тур; при подготовке внешнего окружения — выполнить [план приёмки](environment-acceptance.md) независимо от тура. Текущий локальный тур использует Liza, полученную через Chrome. Для повторной сборки использовать готовый кэш или ZIP без новых списаний. Обе API-попытки (Ariana и Liza) получили HTTP 402; автоматизацию через API можно возобновлять отдельно после устранения ограничения.
+Тур — демонстрация локального функционала. Он не закрывает 5 partial MUST, 14 external decisions, Windows acceptance или production deployment.

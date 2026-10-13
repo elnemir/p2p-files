@@ -17,7 +17,8 @@ from urllib.parse import urlsplit
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = '50de642f2bf9e2c58e5e3ae0e92f92903cfa634e'
+BASELINE = '28ab4f36e15a0b5e052b23e0f058bdda7a1c9d12'
+EXPECTED_MIGRATIONS = ['0017_native_webdav.sql']
 
 
 class Client:
@@ -99,10 +100,12 @@ def test_controlled_image_upgrade():
             kwargs.setdefault('check', True)
             return subprocess.run(['docker', 'compose', '--project-name', project, '-f', str(work / (profile + '.json')), *args], cwd=work, env=env, text=True, **kwargs)
 
-        def cli(profile, *args, value=None, ok=True):
+        def cli(profile, *args, value=None, ok=True, failure=None):
             result = dc(profile, 'run', '--rm', '--no-deps', '-T', '--entrypoint', 'filex-cli', 'api', *args, '--json', input=json.dumps(value) if value is not None else None, capture_output=True, check=False)
             if (result.returncode == 0) != ok:
                 raise RuntimeError('CLI probe returned unexpected exit status: ' + ' '.join(args))
+            if failure is not None and failure not in result.stderr:
+                raise RuntimeError('CLI rejected the probe for an unexpected reason: ' + ' '.join(args))
             return json.loads(result.stdout) if ok else None
 
         def sql(statement):
@@ -165,8 +168,9 @@ def test_controlled_image_upgrade():
                 raise RuntimeError('baseline Range payload mismatch')
             before = cli('baseline', 'upgrade', 'check')
             preflight = cli('candidate', 'upgrade', 'check')
-            if before != preflight or preflight['pending'] or not preflight['compatible']:
-                raise RuntimeError('baseline/candidate schema differs; update drill explicitly')
+            if before['pending'] or not before['compatible'] or preflight != {'applied': before['applied'], 'pending': EXPECTED_MIGRATIONS, 'compatible': True}:
+                raise RuntimeError('unexpected baseline/candidate migration plan')
+            ledger_before = sql('SELECT name || chr(9) || sha256 FROM schema_migrations ORDER BY name')
             image_ids = [subprocess.check_output(['docker', 'image', 'inspect', '--format', '{{.Id}}', tag], text=True).strip() for tag in images]
             if image_ids[0] == image_ids[1]:
                 raise RuntimeError('drill did not build distinct revisions')
@@ -188,7 +192,7 @@ def test_controlled_image_upgrade():
             sampler = threading.Thread(target=sample, daemon=True)
             sampler.start()
             started = time.monotonic()
-            prepared = cli('candidate', 'upgrade', 'prepare', value={'reason': 'Isolated controlled image upgrade drill'})
+            prepared = cli('baseline', 'upgrade', 'prepare', value={'reason': 'Isolated controlled image upgrade drill'})
             if not prepared['drained'] or not prepared['requiresRestart'] or prepared['mode'] == 'open':
                 raise RuntimeError('upgrade did not fence and drain')
             owner.expect('GET', '/api/v1/auth/me', 503)
@@ -226,11 +230,26 @@ def test_controlled_image_upgrade():
             owner.expect('GET', '/api/v1/transfers/' + transfer, 503)
             recipient.expect('GET', download, 503)
             after = cli('candidate', 'upgrade', 'check')
-            if after != before:
-                raise RuntimeError('same-schema image upgrade changed migration ledger')
-            verified_after = cli('candidate', 'backup', 'verify', value={'backupId': backup['id']})
-            if verified_after != verified:
-                raise RuntimeError('candidate cannot verify baseline backup')
+            if after != {'applied': before['applied'] + len(EXPECTED_MIGRATIONS), 'pending': [], 'compatible': True}:
+                raise RuntimeError('candidate did not apply exactly the expected migrations')
+            expected_ledger = ledger_before.splitlines() + [name + '\t' + hashlib.sha256((ROOT / 'internal/database/migrations' / name).read_bytes()).hexdigest() for name in EXPECTED_MIGRATIONS]
+            if sql('SELECT name || chr(9) || sha256 FROM schema_migrations ORDER BY name').splitlines() != expected_ledger:
+                raise RuntimeError('migration changed historical checksums or applied unexpected SQL')
+            # The old binary must refuse the new schema. Rollback requires a
+            # separately reviewed restore, never silently starting old code.
+            cli('baseline', 'upgrade', 'check', ok=False)
+            if sql("SELECT count(*) FROM files WHERE created_at IS NULL OR modified_at IS NULL OR dav_properties <> '[]'::jsonb OR staged_until IS NOT NULL") != '0':
+                raise RuntimeError('migration metadata baseline is invalid')
+            if sql("SELECT count(*) FROM dav_locks") != '0':
+                raise RuntimeError('migration unexpectedly created locks')
+            # Verification also enforces restore schema compatibility. The pre-DDL
+            # backup remains a verified schema-16 recovery point, not a schema-17
+            # import candidate. Do not weaken that guard to pass an upgrade drill.
+            cli('candidate', 'backup', 'verify', value={'backupId': backup['id']}, ok=False, failure='"code":"command_failed"')
+            post_backup = cli('candidate', 'backup', 'create', value={'providerId': provider, 'reason': 'Verify a fresh schema-17 recovery point'})
+            verified_after = cli('candidate', 'backup', 'verify', value={'backupId': post_backup['id']})
+            if not verified_after['verified']:
+                raise RuntimeError('candidate backup verification failed')
             reconciliation = cli('candidate', 'recovery', 'reconcile', value={'reason': 'Review post-upgrade audit crypto storage'})
             state = cli('candidate', 'operations', 'status')
             job = next(j for j in state['jobs'] if j['id'] == reconciliation['id'])
@@ -273,7 +292,7 @@ def test_controlled_image_upgrade():
             unavailable = [(at, code) for at, code in samples if code != 200]
             if not unavailable:
                 raise RuntimeError('no observed downtime samples')
-            result = {'baselineCommit': BASELINE, 'candidateCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(), 'candidateDirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()), 'baselineImageId': image_ids[0], 'candidateImageId': image_ids[1], 'migrationCount': after['applied'], 'schemaChanged': False, 'maintenanceWindowSeconds': round(finished - started, 3), 'observedUnavailableSeconds': round(unavailable[-1][0] - unavailable[0][0], 3), 'sampleIntervalSeconds': 0.2, 'unavailableSamples': len(unavailable), 'backupVerified': True, 'payloadVerified': True, 'startupFaultsRejected': ['unknown_migration', 'wrong_kek'], 'gateExplicitlyReopened': True}
+            result = {'baselineCommit': BASELINE, 'candidateCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(), 'candidateDirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()), 'baselineImageId': image_ids[0], 'candidateImageId': image_ids[1], 'migrationCount': after['applied'], 'schemaChanged': True, 'addedMigrations': EXPECTED_MIGRATIONS, 'downgradeRejected': True, 'maintenanceWindowSeconds': round(finished - started, 3), 'observedUnavailableSeconds': round(unavailable[-1][0] - unavailable[0][0], 3), 'sampleIntervalSeconds': 0.2, 'unavailableSamples': len(unavailable), 'backupVerified': True, 'oldSchemaBackupRejected': True, 'postMigrationBackupVerified': True, 'payloadVerified': True, 'startupFaultsRejected': ['unknown_migration', 'wrong_kek'], 'gateExplicitlyReopened': True}
             evidence = ROOT / '.cache/evidence/phase7-upgrade.json'
             evidence.parent.mkdir(parents=True, exist_ok=True)
             evidence.write_text(json.dumps(result, indent=2) + '\n')

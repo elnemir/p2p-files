@@ -78,3 +78,6 @@ make down
 | Compatibility не видит baseline | Получить необходимую Git history; не менять baseline ради зелёного результата |
 
 Логи own containers можно читать через `docker compose ... logs --tail 100 api worker`; не публиковать secret input/полный env, реальные links и session traces. Для инцидента сохранить time, IDs/errorCode и состояние, затем [incident response](incident-response.md).
+
+## Native client tests и документация
+Штатные macOS/Linux DAV backend tests запускаются отдельно от обычного Go/HTTP набора. Требования, Dockerfile GVfs и Windows PowerShell-сценарий — [WebDAV](webdav-upload.md). Windows пока ожидает выделенного стенда. Для UI использовать disposable capture; полный MP4 и изображения обновляются вместе по [tour-maintenance](tour-maintenance.md), озвучка неизменившихся глав берётся из проверенного кеша.

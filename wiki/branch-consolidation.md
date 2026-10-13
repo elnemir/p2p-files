@@ -1,5 +1,13 @@
 # Объединение веток и результаты проверок
 
+## WebDAV: объединение 2026-10-12
+
+**Контекст:** команда владельца после commit/push разрешает объединить завершённую `codex/webdav-upload` с main. Head до записи этого шага — `325286b`, main — `28ab4f3`. Изменения включают owner draft WebDAV, migration 0017, contracts/tests/wiki и 48 PNG/20 глав MP4. Windows остаётся ожидающей стенда; macOS mount_webdav/Linux GVfs имеют локальное evidence.
+
+**Поток:** неизменённый runtime source `ab17d1f1a09a0cdc86bbcd8a7841587379299592103ddba68f6fc23019ea05a5` → PR → required checks/CodeQL для фактического head → squash merge → main CI и сверка дерева → удаление только принятой topic-ветки. Связь исходных 13 локальных gates с этим Git inventory описана в [session](session.md); records не переписываются. Внешняя приёмка и production отдельно.
+
+**Новая независимая ветка:** [Dependabot #22](https://github.com/elnemir/p2p-files/pull/22) / `6bb2e37` меняет только два Node FROM на 26. [Development run 38260976979](https://github.com/elnemir/p2p-files/actions/runs/38260976979) имеет failed repository-policy/checks/supply-chain; `.nvmrc`, engines, Node types и reviewed policy остаются на 24. Это не допустимый кандидат для merge. [Upstream schedule](https://github.com/nodejs/Release/blob/main/schedule.json), повторно проверенный 2026-10-12, назначает Node 26 LTS на 2026-10-28, а Node 24 получает security support до 2028-04-30. Сохраняется согласованная поддерживаемая ветка; #22 остаётся открытым, scanner/engine/LTS guards не меняются. Следующий шаг для Node 26 — синхронная квалификация runtime/types/CI после LTS, как описано в [dependency remediation](dependency-remediation.md).
+
 ## Видеотур: объединение 2026-10-12
 
 **Контекст:** после отдельного commit/push озвученный тур находится в `codex/tour-liza`, тогда как main ещё содержит прежнее видео. По новой команде владельца проверены все локальные и удалённые ветки: main `5096726` и tour `5166594`, открытых PR нет. Три коммита тура включают готовый MP4, безопасный offline-импорт аудио из Chrome, новые негативные тесты, обновлённые assets и документацию.

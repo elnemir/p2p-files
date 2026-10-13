@@ -651,6 +651,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/transfers/{id}/webdav-credentials": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a WebDAV credential for one owner draft
+     * @description Owner cookie session and reauthentication within five minutes required. Returns a password once, stored only as a digest in api_tokens with scope webdav:<transfer UUID>. Revoke via DELETE /auth/tokens/{id}. This credential grants no REST, recipient or cross-draft access; publication, freeze, expiry, revocation and account security changes deny access. See the x-webdav protocol profile for the non-JSON WebDAV methods.
+     */
+    post: operations["postTransfersIdWebdavCredentials"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/transfers/search": {
     parameters: {
       query?: never;
@@ -2334,6 +2354,17 @@ export interface components {
       };
       /** Format: date-time */
       createdAt: string;
+    };
+    WebDAVCredential: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uri */
+      url: string;
+      /** @constant */
+      username: "filex";
+      password: string;
+      /** Format: date-time */
+      expiresAt: string;
     };
     "manifest-v1": {
       /** @constant */
@@ -5701,6 +5732,112 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Draft"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  postTransfersIdWebdavCredentials: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication. */
+        Origin?: string;
+        /** @description Required with cookie authentication; obtained at login. Not required for bearer requests. */
+        "X-CSRF-Token"?: string;
+      };
+      path: {
+        /** @description Resource identifier or allowed action. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          ttlSeconds: number;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WebDAVCredential"];
         };
       };
       /** @description Invalid input */

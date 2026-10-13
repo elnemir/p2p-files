@@ -1,7 +1,7 @@
 import SwaggerParser from "@apidevtools/swagger-parser";
 import Ajv from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
-import type { Page, Request } from "@playwright/test";
+import type { APIResponse, Page, Route } from "@playwright/test";
 
 export async function contractObserver() {
   const api: any = await SwaggerParser.dereference("contracts/openapi.json");
@@ -20,16 +20,15 @@ export async function contractObserver() {
   const checks = new Map<string, any>();
   const failures: string[] = [];
   const pending: Promise<void>[] = [];
-  const listeners = new Map<Page, (request: Request) => void>();
+  const routes = new Map<Page, (route: Route) => Promise<void>>();
+  const pattern = "**/api/v1/**";
   let count = 0;
   let finished = false;
 
-  async function validateResponse(request: Request) {
-    const response = await request.response();
-    if (!response) throw new Error("Missing finished response");
+  async function validateResponse(response: APIResponse, method: string) {
     if (!response.headers()["content-type"]?.includes("application/json"))
       return;
-    // Read bytes before schema compilation so navigation cannot evict a completed body first.
+    // APIResponse owns its bytes independently of the document being navigated away from.
     const body = await response.json();
     const url = new URL(response.url());
     const path = Object.keys(api.paths).find((path) =>
@@ -37,14 +36,13 @@ export async function contractObserver() {
         url.pathname,
       ),
     );
-    const method = response.request().method().toLowerCase();
     const op = path && api.paths[path][method];
     const schema =
       op?.responses[String(response.status())]?.content?.["application/json"]
         ?.schema;
     if (!schema) {
       failures.push(
-        `${method} ${path || url.pathname}: undocumented JSON status ${response.status()}`,
+        `${method} ${path || "<unmatched>"}: undocumented JSON status ${response.status()}`,
       );
       return;
     }
@@ -56,32 +54,51 @@ export async function contractObserver() {
       failures.push(`${method} ${path}: ${JSON.stringify(validate.errors)}`);
   }
 
-  function observe(page: Page) {
+  async function observe(page: Page) {
     if (finished) throw new Error("Contract observation already finished");
-    if (listeners.has(page)) return;
-    const listener = (request: Request) => {
+    if (routes.has(page)) return;
+    const handler = async (route: Route) => {
+      const request = route.request();
       const path = new URL(request.url()).pathname;
-      if (path.endsWith("/content") || !path.startsWith("/api/v1/")) return;
-      // Attach rejection handling immediately; browser events can outlive an assertion.
-      pending.push(
-        validateResponse(request).catch(() => {
-          failures.push("API response capture failed");
-        }),
-      );
+      if (finished || path.endsWith("/content") || /^\/api\/v1\/uploads\/[^/]+$/.test(path) || !path.startsWith("/api/v1/")) {
+        await route.fallback();
+        return;
+      }
+      let responding = false;
+      const capture = async () => {
+        // Forward the real request exactly once. Never replay mutations or follow redirects.
+        const response = await route.fetch({ maxRetries: 0, maxRedirects: 0 });
+        try {
+          await validateResponse(response, request.method().toLowerCase());
+          // Preserve the upstream status, headers and body, including non-JSON responses.
+          responding = true;
+          await route.fulfill({ response });
+        } finally {
+          await response.dispose();
+        }
+      };
+      // Attach rejection handling immediately; navigation can outlive a test action.
+      const job = capture().catch(async () => {
+        failures.push("API response capture failed");
+        if (!responding) await route.abort("failed");
+      });
+      pending.push(job);
+      await job;
     };
-    listeners.set(page, listener);
-    page.on("requestfinished", listener);
+    routes.set(page, handler);
+    await page.route(pattern, handler);
   }
 
   return {
     observe,
     async finish() {
-      // Close the event boundary before draining so teardown cannot enqueue new jobs.
+      // Close the capture boundary before draining so teardown cannot enqueue new jobs.
       finished = true;
-      for (const [page, listener] of listeners)
-        page.off("requestfinished", listener);
-      listeners.clear();
+      // Removing the route first would release intercepted requests before capture finishes.
       await Promise.all(pending);
+      for (const [page, handler] of routes)
+        if (!page.isClosed()) await page.unroute(pattern, handler);
+      routes.clear();
       return { failures, count };
     },
   };

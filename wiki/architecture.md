@@ -33,7 +33,7 @@ Dev Traefik публикует loopback HTTP :8090. HTTPS/ACME profile гене�
 
 ## Основные потоки
 
-1. **Upload/publish:** owner session или scope → draft → sticky provider → PATCH encrypted chunks + committed offset → server finalize SHA/CRC/MIME/scanner → ready → atomic publish manifest/hash/TTL/links/outbox. После publish набор file/path/name immutable.
+1. **Upload/publish:** owner session или scope → draft → sticky provider → PATCH encrypted chunks + committed offset → server finalize SHA/CRC/MIME/scanner → ready → atomic publish manifest/hash/TTL/links/outbox. Дополнительный [WebDAV вход](webdav-upload.md) принимает известную или потоковую длину PUT в скрытый encrypted staging, вызывает общий append/finalize и атомарно меняет видимый файл. PG locks/If защищают draft и от других каналов записи; owner GET/Range не расходует recipient выдачу. Неизвестная длина требует encrypted rewrap с фактическим размером. После publish набор file/path/name immutable, WebDAV недоступен.
 2. **Выдача:** recipient fragment token + PIN → явный POST session → opaque refs → explicit acquire file/all → PG lease/fence → guarded GET/Range → полное server-observed coverage → один atomic logical delete → worker physical cleanup. Busy/frozen/error member блокирует весь ZIP; ошибка ZIP не удаляет часть набора.
 3. **Отчёты/exports:** authorized snapshot значений → immutable encrypted revision либо bounded PG export_rows → render PDF/CSV/JSON/ZIP/GZIP → verified encrypted artifact → session-bound one-use credential/Range. USER output не раскрывает recipient correlation/IP/UA; ADMIN re-auth проверяется отдельно и непрерывно.
 4. **Recovery:** verified archive → close/drain → mandatory verified pre-backup → matching-schema atomic import без SQL из archive → session/lease invalidation + новая generation → restart → audit/crypto/storage reconciliation → reviewed capabilities/findings → explicit reopen. Ops control plane не откатывается.
@@ -43,7 +43,7 @@ Dev Traefik публикует loopback HTTP :8090. HTTPS/ACME profile гене�
 
 ## API и trust boundaries
 
-REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 107 операций; generator/codegen/route coverage проверяются CI. Browser идёт через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
+REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 108 операций плюс [WebDAV wire profile](../contracts/webdav.json) в `x-webdav`: нестандартные HTTP методы/XML не маскируются под JSON REST. Generator/codegen/route coverage проверяются CI. Browser и WebDAV идут через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
 
 ADMIN имеет аудируемые forensic/recovery полномочия, но обычные owner-scoped endpoints не превращаются в cross-owner routes. Host CLI доверен в границе host/container, без дополнительного password, сохраняя pre-backup/schema/key/reopen guards. [Threat model](threat-model.md), [security](security.md).
 

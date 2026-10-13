@@ -596,7 +596,7 @@ func TestIntegrationUpgradePreflightIsReadOnly(t *testing.T) {
 	if e != nil || !plan.Compatible || len(plan.Pending) != 0 {
 		t.Fatal(plan, e)
 	}
-	if _, e = p.Exec(ctx, "DELETE FROM schema_migrations WHERE name='0016_administrative_exports.sql'"); e != nil {
+	if _, e = p.Exec(ctx, "DELETE FROM schema_migrations WHERE name='0017_native_webdav.sql'"); e != nil {
 		t.Fatal(e)
 	}
 	plan, e = database.CheckUpgrade(ctx, p)
@@ -604,7 +604,7 @@ func TestIntegrationUpgradePreflightIsReadOnly(t *testing.T) {
 		t.Fatal(plan, e)
 	}
 	var exists bool
-	if e = p.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name='0016_administrative_exports.sql')").Scan(&exists); e != nil || exists {
+	if e = p.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name='0017_native_webdav.sql')").Scan(&exists); e != nil || exists {
 		t.Fatal("preflight applied migration", e)
 	}
 	if _, e = p.Exec(ctx, "INSERT INTO schema_migrations(name,sha256) VALUES('9999_newer.sql','unknown')"); e != nil {

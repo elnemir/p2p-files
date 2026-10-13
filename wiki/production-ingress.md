@@ -66,3 +66,6 @@ python3 scripts/production_config.py \
 
 ## Продолжение фазы 7
 [Controlled upgrade/downtime](controlled-upgrade.md) реализован отдельным срезом с локальным fixture; точный статус регрессии/CI — в session. Автоматическая browser matrix и local load/DR/SBOM/license/container/secret/static gates реализованы. Остаются реальные devices/manual WCAG, load/DR на целевой топологии, independent security review и решения владельца о лицензиях/residual risks. Production guard безусловный; reviewed механизм допуска ещё требует DEV-01 в [плане](implementation-plan.md), успешный release-check не изменяет его; реальные DNS/host/deploy mutations требуют отдельного поручения. Все 32 MUST сохранены, SEC-005/OPS-005 пока partial.
+
+## DAV wire methods
+`/api/v1/webdav/<draft>/` использует тот же single-origin route и HTTPS policy. Proxy должен пропускать OPTIONS/PROPFIND/PROPPATCH/MKCOL/PUT/GET/HEAD/MOVE/DELETE/LOCK/UNLOCK, Authorization/If/Lock-Token/Timeout/Depth/Destination и потоковое тело. Никакого внешнего Basic over HTTP или отдельного обходного listener. Локальный TLS ingress gate и реальные loopback native clients — разные проверки; Windows с доверенным HTTPS ожидает стенда. [Полный профиль](webdav-upload.md).
