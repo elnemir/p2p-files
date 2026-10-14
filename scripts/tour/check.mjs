@@ -11,8 +11,11 @@ const out = path.join(root, 'wiki/tour');
 const evidence = path.join(root, '.cache/tour/qa');
 await mkdir(evidence, { recursive: true });
 const data = JSON.parse(await readFile(path.join(out, 'manifest.json')));
-expect(data.screens).toHaveLength(48);
-expect(data.chapters).toHaveLength(20);
+const planBytes = await readFile(path.join(root, 'scripts/tour/plan.json'));
+const plan = JSON.parse(planBytes);
+expect(data.capturePlanSHA256).toBe(createHash('sha256').update(planBytes).digest('hex'));
+expect(data.screens.map(s => s.id)).toEqual(plan.chapters.flatMap(ch => ch.screens));
+expect(data.chapters.map(ch => ({ title: ch.title, screens: ch.screens }))).toEqual(plan.chapters);
 expect(new Set(data.screens.map(s => s.id)).size).toBe(data.screens.length);
 const listed = (await readFile(path.join(out, 'SHA256SUMS'), 'utf8')).trim().split('\n');
 for (const line of listed) {

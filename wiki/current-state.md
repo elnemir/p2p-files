@@ -1,7 +1,9 @@
 # Текущее состояние FileX
 
 ## Контекст и проверяемая граница
-Срез 2026-10-13: текущая задача — [UX USER/ADMIN](product-ux.md), ветка `codex/product-ux` от main `c221369`. UX реализован и проверен локально: все 13 локальных gates, 62 PG/race и 60 browser cases PASS на [точном source](history/product-ux-evidence-2026-10-13.md). Commit `64ef93f` отправлен; исправление выявленной CI гонки E2E повторно квалифицировано: 13/13 local gates на source dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396. Доставка и актуальные CI/merge receipts — в [PR #26](https://github.com/elnemir/p2p-files/pull/26) и [session](session.md). Локальные результаты не заменяют exact-candidate CI. SSO доставлен через [PR #25](https://github.com/elnemir/p2p-files/pull/25), CI main PASS ([архив](sessions/2026-10-13-federated-auth-delivered.md)); white labeling — [PR #24](https://github.com/elnemir/p2p-files/pull/24). Фазы 1–6 и техническая часть 7 исторически квалифицированы; внешние release blockers сохраняются. Исторические результаты ниже относятся к своим источникам; текущий UX имеет отдельное evidence.
+Срез 2026-10-14: UX USER/ADMIN доставлен через [PR #26](https://github.com/elnemir/p2p-files/pull/26), main `28a6b4a0aac2ed23c7699ec35e468f59255949b7`. Все 13 локальных gates, PR CI и main CI PASS; 62/62 PG/race и 60/60 browser. [История доставки](sessions/2026-10-14-product-ux-delivered.md) и [evidence](history/product-ux-evidence-2026-10-13.md) фиксируют точный проверенный источник. Фото/видеотур и документация обновлены на этом runtime; новый media/tooling diff прошёл отдельный check и media QA — [session](session.md).
+
+SSO доставлен через [PR #25](https://github.com/elnemir/p2p-files/pull/25), white labeling — [PR #24](https://github.com/elnemir/p2p-files/pull/24). Фазы 1–6 и техническая часть 7 исторически квалифицированы; внешние release blockers сохраняются. Исторические результаты относятся к своим источникам: новый media/tooling diff не получает прежний repository source fingerprint автоматически.
 
 ## Реализовано
 - [UX USER/ADMIN](product-ux.md): навигация и иконки, шаги публикации, пресеты/ползунок/точный срок, формы ADMIN Settings с CAS, timezone/quiet hours, подтверждения и защита смены сессии. DEV-05 закрыт локально: recipient terminal/revoke/expiry/resume имеют проверенные переходы.
@@ -18,17 +20,17 @@
 ## Проверено и не подтверждено
 | Область | Текущая граница | Что ещё требуется |
 |---|---|---|
-| UX USER/ADMIN | 13/13 local gates, 62 PG/race, 60 browser cases, 10 reviewed visual baselines; [evidence](history/product-ux-evidence-2026-10-13.md) | Локальный набор завершён; exact-candidate CI, реальные устройства/AT и внешняя приёмка отдельно |
+| UX USER/ADMIN | 13/13 local gates, 62 PG/race, 60 browser cases, 10 reviewed visual baselines; [evidence](history/product-ux-evidence-2026-10-13.md) | PR #26 merged, main CI PASS; реальные устройства/AT и внешняя приёмка отдельно |
 | SAML/OIDC/LDAP | 13/13 local gates, 61 PG/race, 45 browser cases; protocol TLS/signature, JIT/link/reauth/replay/revoke/restore/rotation | PR #25 merged и main CI PASS; конкретные tenants/DC отдельно; локальные fixtures не означают внешнюю приёмку |
 | White labeling | 13/13 local gates, 56 PG/race и 40 browser cases; SSR/ETag/assets/CAS/audit/restore/PDF/SMTP | PR #24 merged, PR checks PASS; реальные устройства и независимая приёмка не заявлены |
 | Требования | 32 MUST, 27 verified/5 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
 | Native WebDAV | macOS mount_webdav и настоящий Linux GVfs: полный файловый цикл, multi-chunk hash, server-created GET; 15 профильных HTTP/PG/race tests | Windows **ожидает стенда**; Office/KDE/davfs2 не квалифицированы |
 | WebDAV regression | 13 локальных gates и PR #23/main CI PASS; 51 integration и 35 browser cases; macOS/GVfs повторно PASS в [исторической квалификации](sessions/2026-10-13-webdav-merged.md) | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике |
 | Node 26 | Runtime/types/CI/policy, clean install и 57 toolchain tests PASS; все 13 local gates, 53 integration и 35 browser PASS на source из [архива](sessions/2026-10-13-node26-delivered.md); PR #22 и main CI PASS | Для нового diff требуется новая квалификация; это не production acceptance |
-| Фото/видео | [Четыре актуальных UX снимка](product-ux.md); [48 кадров и MP4 5:56 / 20 глав](screen-tour.md) от 2026-10-12 | Озвученный MP4 исторический, новый UX в него ещё не переснят; локальный Compose не заменяет внешние устройства |
+| Фото/видео | [71 кадр и MP4 7:56 / 26 глав](screen-tour.md) от 2026-10-14, ElevenLabs Liza; полный актуальный UX, SSO и branding | Локальный SAML signer; OIDC/LDAP — формы; реальные providers/devices отдельно. [Media evidence](history/tour-refresh-evidence-2026-10-14.md) |
 | Release/production | Внешнего окружения нет по ответу владельца; APP_ENV=production отклоняется кодом | 14 решений owner/reviewer, реальные host/providers/escrow/DR/devices/security/licenses |
 
-Тур переснят 2026-10-12; неизменившаяся озвучка 19 глав переиспользована по exact text/hash, добавлена одна глава WebDAV. [Воспроизведение и media QA](tour-maintenance.md). DEV-05 исправлен в текущем [UX срезе](product-ux.md): после terminal denial старые файлы и controls очищаются, временная ошибка сохраняет resume. Сценарии подтверждены полной browser matrix; старый видеокадр не является изображением нового интерфейса.
+Тур переснят 2026-10-14 на runtime main `28a6b4a`: 18 неизменённых фрагментов Liza сверены по exact text/hash, восемь записаны заново. [Воспроизведение и media QA](tour-maintenance.md). В видео показаны новый terminal recipient после ZIP, отказ повторного входа, настройки draft/validate/apply, отчёт trash/restore, корпоративная регистрация USER и реальное применение бренда. Это отдельная локальная демонстрация, а не повторная квалификация всех 13 release gates.
 
 ## Пять требований с незакрытой частью
 

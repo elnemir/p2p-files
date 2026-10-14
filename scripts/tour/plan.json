@@ -1,0 +1,206 @@
+{
+  "version": 2,
+  "chapters": [
+    {
+      "title": "Вход и личный кабинет",
+      "screens": [
+        "01-login",
+        "02-empty"
+      ]
+    },
+    {
+      "title": "Черновик и загрузка",
+      "screens": [
+        "03-draft",
+        "04-files",
+        "05-organize"
+      ]
+    },
+    {
+      "title": "WebDAV: папка на компьютере",
+      "screens": [
+        "06-webdav-macos",
+        "07-webdav-windows",
+        "08-webdav-linux",
+        "09-webdav-upload"
+      ]
+    },
+    {
+      "title": "Проверка и публикация",
+      "screens": [
+        "10-access",
+        "11-publish-review",
+        "12-published"
+      ]
+    },
+    {
+      "title": "Получатель: защищённый доступ",
+      "screens": [
+        "13-recipient-pin",
+        "14-recipient-files",
+        "15-recipient-mobile"
+      ]
+    },
+    {
+      "title": "ZIP и завершённая выдача",
+      "screens": [
+        "16-recipient-completed",
+        "17-downloaded"
+      ]
+    },
+    {
+      "title": "Журнал и отчёт",
+      "screens": [
+        "18-reports",
+        "19-journal"
+      ]
+    },
+    {
+      "title": "История отчётов и корзина",
+      "screens": [
+        "20-report-trash",
+        "21-report-history"
+      ]
+    },
+    {
+      "title": "Публичная проверка отчёта",
+      "screens": [
+        "22-verify"
+      ]
+    },
+    {
+      "title": "Поиск и сохранённые виды",
+      "screens": [
+        "23-search",
+        "24-selection"
+      ]
+    },
+    {
+      "title": "Экспорт и фоновые задачи",
+      "screens": [
+        "25-exports",
+        "26-exports-mobile"
+      ]
+    },
+    {
+      "title": "Уведомления и предпочтения",
+      "screens": [
+        "27-notifications",
+        "28-preferences"
+      ]
+    },
+    {
+      "title": "Безопасность учётной записи",
+      "screens": [
+        "29-account",
+        "30-tokens",
+        "31-webhooks"
+      ]
+    },
+    {
+      "title": "Тёмная тема и мобильный интерфейс",
+      "screens": [
+        "32-dark",
+        "33-settings-mobile"
+      ]
+    },
+    {
+      "title": "Панель администратора",
+      "screens": [
+        "34-admin",
+        "35-backup"
+      ]
+    },
+    {
+      "title": "Восстановление: проверка последствий",
+      "screens": [
+        "36-restore-review",
+        "37-restart"
+      ]
+    },
+    {
+      "title": "Сверка и явное открытие доступа",
+      "screens": [
+        "38-reconcile",
+        "39-reopened"
+      ]
+    },
+    {
+      "title": "Аудит и доступ к экспортам",
+      "screens": [
+        "40-checkpoint",
+        "41-admin-exports"
+      ]
+    },
+    {
+      "title": "Хранилища, перенос и ключи",
+      "screens": [
+        "42-storage",
+        "43-migration",
+        "44-keys"
+      ]
+    },
+    {
+      "title": "Безопасность и почта",
+      "screens": [
+        "45-admin-users",
+        "46-forensic",
+        "47-smtp",
+        "48-audit"
+      ]
+    },
+    {
+      "title": "Системные настройки: проверить и применить",
+      "screens": [
+        "49-app-settings",
+        "50-settings-validated",
+        "51-settings-confirm",
+        "52-settings-history",
+        "53-settings-json",
+        "54-settings-form-mobile"
+      ]
+    },
+    {
+      "title": "Корпоративный вход: OIDC, SAML и LDAP",
+      "screens": [
+        "55-identity-oidc",
+        "56-identity-oidc-fields",
+        "57-identity-ldap",
+        "58-identity-saml",
+        "59-identity-saved"
+      ]
+    },
+    {
+      "title": "Первый вход через корпоративный аккаунт",
+      "screens": [
+        "60-corporate-login",
+        "61-corporate-account",
+        "62-corporate-linked"
+      ]
+    },
+    {
+      "title": "White labeling: свой бренд без пересборки",
+      "screens": [
+        "63-branding-editor",
+        "64-branding-palettes",
+        "65-branding-preview",
+        "66-branding-applied"
+      ]
+    },
+    {
+      "title": "Бренд на публичных страницах",
+      "screens": [
+        "67-branding-public",
+        "68-branding-mobile"
+      ]
+    },
+    {
+      "title": "Помощь, языки и статус",
+      "screens": [
+        "69-help",
+        "70-english-mobile",
+        "71-status"
+      ]
+    }
+  ]
+}

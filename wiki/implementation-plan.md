@@ -9,7 +9,7 @@
 | ID | Приоритет / статус | Роль | Результат | Зависимости |
 |---|---|---|---|---|
 | DOC-01 | P0 / completed локально | Инженер | Вся документация в wiki, актуальные связи с кодом, воспроизводимые инструкции и этот план | [Сессия переноса](sessions/2026-10-11-documentation-migration.md) |
-| DOC-02 | P1 / completed локально | Инженер | 48 PNG, видеотур 5:56 / 20 глав (native WebDAV), озвучка Liza через Chrome, субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
+| DOC-02 | P1 / completed локально | Инженер | 71 PNG, видеотур 7:56 / 26 глав (UX, WebDAV, SSO, white labeling), озвучка Liza через Chrome, субтитры, галерея и повторяемый capture/QA | [Тур](screen-tour.md), [обслуживание](tour-maintenance.md), запись отдельного стенда |
 | REPO-01 | P1 / completed | Владелец + инженер | GitHub/main/Actions/security, templates, dependency updates и воспроизводимый audit | [Настройки и приёмка](repository-governance.md); фактическое применение/CI в session |
 | DEV-01 | P0 / ready для design | Backend + security reviewer + владелец | Reviewed механизм тестового/production допуска, затем реализация и негативные тесты | Сохранить существующий запрет; применение допуска зависит от EXT и REL |
 | DEV-02 | P1 / baseline qualified locally; CI в PR #19 | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
@@ -84,5 +84,5 @@
 ## Внешняя аутентификация — 2026-10-13
 [ADR-014](adr/014-federated-auth.md) и [руководство](federated-auth.md): migration 0019, external identity authority, API/UI, регистрация/link/reauth, protocol/PG/browser тесты и backup/key lifecycle. Статус квалификации — [session](session.md). Следующий внешний шаг: реальные Keycloak/Entra/Workspace/AD/OpenLDAP tenants, claim mappings, CA и сценарии ротации/отзыва; внешняя приёмка не подменяется fixtures.
 
-## UX USER/ADMIN: реализовано локально
-[ADR-015](adr/015-product-ux.md) и [руководство](product-ux.md) описывают навигацию, иконки, формы Settings v1, TTL controls, reauth, приватность при смене сессии и четыре новых снимка. Старые DTO сохранены, `/editor` добавляет контекст формы, API/worker/CLI содержат стандартную IANA database. Перед публикацией ветки выполняются обязательные gates; production guard и внешние release задачи остаются прежними.
+## UX USER/ADMIN: доставлено через PR #26
+[ADR-015](adr/015-product-ux.md) и [руководство](product-ux.md) описывают навигацию, иконки, формы Settings v1, TTL controls, reauth, приватность при смене сессии и четыре новых снимка. Старые DTO сохранены, `/editor` добавляет контекст формы, API/worker/CLI содержат стандартную IANA database. [PR #26](https://github.com/elnemir/p2p-files/pull/26) объединён в main `28a6b4a`; обязательные local/PR/main gates PASS на своём source — [архив доставки](sessions/2026-10-14-product-ux-delivered.md). Полный [тур](screen-tour.md) переснят 2026-10-14. Production guard и внешние release задачи остаются прежними.

@@ -36,4 +36,16 @@
 
 ## Дополнение UX USER/ADMIN, 2026-10-13
 
-[ADR-015](adr/015-product-ux.md), [ревью и инструкция](product-ux.md): 123 API operations, прежние 19 migrations, 62 PG integration cases и 60 browser cases в текущем наборе. Отдельный owner editor DTO сохраняет строгий старый контракт. Навигация white labeling, SSO и operations актуализирована; configuration/testing/threat/states/traceability и changelog согласованы. API/worker/CLI включают IANA database Go. Предыдущие числа выше остаются историческими, фактические результаты нового набора фиксируются в [session](session.md). Нарративный тур сохраняет дату записи 2026-10-12; новые UX снимки имеют собственную границу проверки.
+[ADR-015](adr/015-product-ux.md), [ревью и инструкция](product-ux.md): 123 API operations, прежние 19 migrations, 62 PG integration cases и 60 browser cases в текущем наборе. Отдельный owner editor DTO сохраняет строгий старый контракт. Навигация white labeling, SSO и operations актуализирована; configuration/testing/threat/states/traceability и changelog согласованы. API/worker/CLI включают IANA database Go. Предыдущие числа выше остаются историческими, фактические результаты нового набора фиксируются в [session](session.md). На момент этого шага нарративный тур сохранял дату 2026-10-12; UX снимки имели собственную границу проверки.
+
+## Дополнение: полный тур и актуальная навигация, 2026-10-14
+
+| Статус | Результат и граница |
+|---|---|
+| Реализовано | Пересняты все 71 PNG и 26 глав (7:56), 104 cues, единый MP4 ElevenLabs Liza. Настройки/apply, report trash/restore, SAML JIT USER, бренд/apply/reset и recovery выполнены на одноразовом Compose. |
+| Изменено | Обзор README/index/current-state/MEMORY и план отражают main 28a6b4a/PR #26. Product UX/white label/SSO ссылаются на новую запись; старые снимки review остаются датированными. |
+| Добавлено | Reviewed capture plan, проверка полноты до рендера, приватный staging PNG, новые негативные tests, актуальные инструкции сборки/озвучки/QA и [evidence](history/tour-refresh-evidence-2026-10-14.md). |
+| Не подтверждено | Реальные IdP tenants, Windows WebDAV, физические устройства, внешняя SMTP/S3/escrow/DR приёмка. Их статус не меняется из-за демонстрации форм. |
+| Требует доработки | DEV-01/03/04, EXT/REL и 5 partial MUST / 14 pending decisions остаются открыты. DEV-05 уже доставлен с UX; историческая строка среза 2026-10-12 выше не описывает нынешний backlog. |
+
+Runtime/API/env/migrations не изменены. Architecture/security/contracts документы проверены на применимость, их правила не переписываются ради медиа. `screen-tour.md`, HTML, manifest, captions и checksums создаются генератором; historical counts/hashes в history/sessions сохраняются. Документационный checker проверяет весь Markdown-корпус и достижимость архивов; текущая граница QA — [session](session.md).
