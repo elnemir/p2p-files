@@ -6,6 +6,7 @@ import ipaddress
 import json
 import os
 from pathlib import Path
+from license_fixture import new_fixture, activate
 import secrets
 import socket
 import ssl
@@ -67,6 +68,7 @@ def test_generated_tls_ingress():
         if subnet is None:
             raise RuntimeError('no non-overlapping test subnet found')
         config = configuration(DOMAIN, 'operator@example.test', subnet, 'example.test/api@sha256:' + 'a' * 64, 'example.test/web@sha256:' + 'b' * 64, *['example.test/'+name+'@sha256:'+'c'*64 for name in ['postgres','redis','traefik']])
+        license_fixture=new_fixture()
         compose = config['compose.json']
         compose['name'] = PROJECT
         for name in ['api', 'worker', 'web', 'postgres', 'redis', 'traefik']:
@@ -76,6 +78,7 @@ def test_generated_tls_ingress():
             service['build'] = {'context': str(ROOT), 'dockerfile': 'deploy/Dockerfile.'+image_name}
             if name in ['api','worker']:
                 service['environment']['APP_ENV'] = 'development'
+                service['build']['args']=license_fixture['env']
         compose['services']['api']['environment'].update({'DEV_PAYLOAD_ROOT': '/data/payload', 'DEV_ARTIFACT_ROOT': '/data/artifacts', 'DEV_BACKUP_ROOT': '/data/backups'})
         for service in compose['services'].values():
             service['restart'] = 'no'
@@ -129,6 +132,7 @@ def test_generated_tls_ingress():
                 time.sleep(1)
             else:
                 raise RuntimeError('TLS ingress did not become ready: ' + last_probe)
+            activate(dc,license_fixture)
             cli('user', 'create', value={'email': 'admin@example.test', 'password': password, 'role': 'admin'})
             active = cli('settings', 'show')
             active['value'].update(config['settings-ingress.json'])

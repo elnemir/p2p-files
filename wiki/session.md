@@ -1,33 +1,96 @@
 # Session State
 
 ## Task
-Актуализировать полный фото- и видеотур FileX, добавить отсутствующие разделы, озвучить через ElevenLabs и обновить документацию; по следующей команде владельца — commit, push и squash merge после зелёных проверок.
+Веб-мастера первичной настройки уже запущенных FileX и issuer контейнеров.
 
 ## Status
-Фото/видеотур завершён: [MP4 7:56](tour/filex-tour.mp4), [71 кадр / 26 глав](screen-tour.md), [галерея](tour/index.html). Доставка по команде владельца — [PR #27](https://github.com/elnemir/p2p-files/pull/27), ветка `codex/tour-refresh`, baseline `28a6b4a`. Commit реализации `a629583` отправлен. Runtime не изменён; check/source/compatibility для подготовленного snapshot PASS. Предыдущая [доставка UX](sessions/2026-10-14-product-ux-delivered.md) сохранена отдельно.
-
-Для возобновления сначала прочитать состояние PR #27 и Actions для его merge commit: статус queued/running не считать PASS, прошлые запуски не переносить на новый head. Squash merge разрешён только после required checks и CodeQL без блокирующих findings; после него отдельно проверяется main CI. Окончательные commit/run IDs и результат доставки сохраняются в описании PR и приватном `.cache/tour/refresh-20261014/delivery/delivered.json`.
+Локальная реализация и проверки завершены. Production deployment не выполнялся.
 
 ## Completed steps
-- Пересняты USER/recipient/ADMIN и WebDAV; добавлены report trash/restore/history, Settings draft/validate/apply, SSO forms и настоящая локальная SAML JIT-регистрация USER, white labeling apply/reset и public/mobile brand.
-- Изолированный capture: 71 PNG / 26 глав / 16 assertions; project/volumes/signer удалены. Application source `76574e49e37a5fdfd1bbd7e935c9e22691222070a912f1260ca058e3d53bcc42`.
-- ElevenLabs Liza: 18 точных reuse + 8 новых, 6915 символов, все MP3 сверены с text/hash. Credits 4870→2484. Последняя запись получена из History без повторного синтеза после предложения подписки.
-- MP4: 476,24 s, 15 971 458 bytes, SHA-256 `c04f6620d8f2e099e6bb184309157dcd7ea5fff7a65a14c3e01d6bc49f1a7bac`; 104 captions, 26 embedded chapters. Все 71 PNG и девять видеофреймов просмотрены; gallery desktop/mobile просмотрена.
-- Исправлен выявленный audio overshoot. Финальный decode PASS, −17,9 LUFS / LRA 2,7 LU / true peak −0,5 dBFS. Gallery QA PASS: 77 checksums, axe, playback/seek, keyboard/search/filter и unsafe URL rejection.
-- Reviewed capture plan и негативные tests защищают от неполной/устаревшей записи; PNG сначала staging, generated output обновляется renderer.
-- Обновлены README, MEMORY, index/current-state/plan, UX/branding/SSO, testing/map/development, tour-maintenance, documentation audit и changelog. 95 Markdown / 32 requirement links PASS.
-- `acceptance.py run check` PASS: source `f9738f63b5a290f90554821fc1d6f9ed19f90dac562d1db850c9a6e71df72bc2`, sourceUnchanged=true. 13 tour tests и остальные проверки make check прошли.
-
-- Перед commit повторно PASS: check/source/compatibility на staged source `f74a78d67d771cb7ee1663f0ed951c8a3a61a8e883426be94dbdb1fcd6879122`. Разница с прежним hash вызвана снятием удалённых PNG из Git index; bytes оставшихся media неизменны. Gitleaks history/worktree не нашёл секретов.
+- Прочитаны правила и bootstrap/licensing контекст.
+- Зафиксированы threat model, state machines и architecture/crypto review в [ADR-017](adr/017-first-run-wizards.md).
+- Предыдущая сессия: [лицензирование](sessions/2026-10-14-licensing-completed.md).
 
 ## Next steps
-Если PR #27 ещё открыт — завершить required CI и squash merge, затем проверить main CI. Если PR уже merged и оба workflow main успешны — доставка завершена; повторно создавать PR или переписывать историю не нужно. После будущих изменений UI обновлять reviewed plan и запись по [runbook](tour-maintenance.md). Windows и внешние environments принять отдельно при появлении стендов.
+- Операторская проверка реальных IdP/MFA/TLS и escrow; независимая release/security приёмка.
+- Для запуска следовать first-run-setup.md; production guard FileX сохранён.
 
 ## Decisions
-Только синтетические данные и одноразовый локальный стенд. TTS получает лишь тексты экскурсии. API-квота отдельно от web credits и в этой задаче не проверялась. Старый narration cache сохранён; новый private journal — `.cache/tour/elevenlabs-web-Liza-20261014`. Runtime/API/env/migrations/crypto/production guard не менялись.
+- Только настройка запущенных контейнеров; без Docker API и production deployment.
+- Opt-in token с expiry; необратимое через HTTP завершение; отдельный issuer config key.
 
 ## Context
-[Полные evidence и диагностика](history/tour-refresh-evidence-2026-10-14.md), [обслуживание тура](tour-maintenance.md), [UX](product-ux.md), [white labeling](white-label.md), [SSO](federated-auth.md), [план](implementation-plan.md). Raw evidence — `.cache/tour/refresh-20261014/`, `.cache/tour/qa/`, `.cache/tour/raw/`; не коммитить synthetic sessions/credentials.
+[ADR-017](adr/017-first-run-wizards.md), [licensing operations](licensing-operations.md).
 
 ## Risks / blockers
-Windows WebDAV **ожидает стенда**. Реальные IdP tenants, SMTP/S3 и физические устройства не проверялись; локальный SAML signer явно обозначен. Внешние 5 partial MUST / 14 решений сохраняются. Эта задача не выполняла production deployment или полную повторную квалификацию 13 release gates. Тайминги субтитров приблизительные внутри главы, без provider word alignment.
+- Реальные IdP/MFA, TLS и host secrets подготавливает оператор. Production guard сохранён.
+
+## Development step: server and UI
+- Реализованы общая capability guard, migration 0021, atomic ADMIN bootstrap, encrypted issuer config/runtime, обе трёхшаговые формы, host helper.
+- Targeted PostgreSQL race/fault/restart PASS (`.cache/setup-integration.log`); unit/typecheck/build PASS. Browser выявил неоднозначный locator alert (Next announcer); исправляется harness.
+- Runbook: [first-run setup](first-run-setup.md); контракты и traceability обновлены. Следующее: browser/полный regression/review.
+
+## Verification progress
+- Оба browser setup workflow PASS (реальные API/PG, synthetic IdP, ADMIN/MFA login, reload закрытого мастера, 390px axe); скриншоты просмотрены.
+- Final targeted PG: setup atomic race/fault/restart и issuer database role isolation PASS.
+- `make check` PASS на source `3af129d850e7e9d5312fc9ae06a6e76f4b1010d7850bf0c320f8fe64146e05e9`, sourceUnchanged=true, baseline `4215c0a7953eca30422b9681cd33789f9993ebe1`.
+- Полный первый PG run: один устаревший тест ожидал предыдущую migration count; исправлен на pending 0021 с обязательной проверкой ошибки license verifier. Повторный полный PG и Chromium regression идут.
+- Security: npm 0, govulncheck 0 called vulnerabilities; 1 module-only finding как в предыдущей квалификации. Source scanner: no leaks, 0 HIGH/CRITICAL.
+
+## Final regression progress
+- Полный PostgreSQL suite PASS: 73 top-level integration tests с race detector; `.cache/setup-full-integration.log`. Новый latch, schema upgrade, licence recovery/restore и issuer grants проверены.
+- Chromium обнаружил missing response schema у `GET /api/v1/setup` 503 во время recovery: runtime gate работал правильно, дополнены error contracts (setup state либо общий Error) и добавлен negative contract test. Повторный Chromium выполняется.
+- Docker issuer-web build PASS, включая shared SetupWizard; `.cache/setup-issuer-image.log`.
+
+## Итог — 2026-10-14
+- Реализованы оба мастера для уже запущенных контейнеров: FileX `/setup`, issuer `/issuer/setup`. Одноразовый expiring host capability; atomic first ADMIN; immutable encrypted issuer config; public trust/private signer separation сохранены.
+- Финальный source SHA-256: `b99a3cd766e1b1847be5881a9ff9eb909b5e60539feebb5e391053981e0034d0`, baseline commit `4215c0a7953eca30422b9681cd33789f9993ebe1`, рабочий diff не закоммичен. `make check` PASS/sourceUnchanged=true: `.cache/evidence/gates/check.json`, `.cache/setup-check.log`.
+- Полный PostgreSQL/race suite: **73 PASS**, `.cache/setup-full-integration.log`, exit 0. Go implementation/test boundary `3af129d850e7e9d5312fc9ae06a6e76f4b1010d7850bf0c320f8fe64146e05e9`; последующие изменения только error contracts/contract test, Go-код совпадает с финальным.
+- Финальный Chromium: **13/13 PASS** (1.8m), issuer issue/renewal workflow PASS и оба setup workflow PASS; `.cache/setup-full-browser.log`, exit 0. Проверены real API/PG, synthetic TLS IdP/MFA, mobile axe/reflow, replay/reload, вход ADMIN/operator. Финальные mobile screenshots просмотрены. Firefox/WebKit полного diff отдельно не запускались.
+- `make security`: npm 0 vulnerabilities, govulncheck 0 called/imported vulnerabilities, 1 unused module finding. Финальный source scan: no leaks, 0 HIGH/CRITICAL, 1 finding; `.cache/setup-source-scan.log`. Это не внешний аудит.
+- Docker issuer-web image build PASS (`.cache/setup-issuer-image.log`); customer API/web build в финальном e2e PASS. Документация: 102 Markdown, 35 требований, broken links 0; git diff --check PASS.
+- Документированы host prerequisites, expiry/key retention, fail-closed recovery, неизменность issuer config и ограничения. Ни реальный vendor key, ни реальный IdP не создавались/настраивались; deployment не выполнялся.
+
+## Commit/push — 2026-10-14
+- Пользователь поручил commit и push всего завершённого среза лицензирования/issuer/setup.
+- Перед отправкой fingerprint совпадает с проверенным `b99a3cd766e1b1847be5881a9ff9eb909b5e60539feebb5e391053981e0034d0`; origin/main совпадает с baseline. Нет новых посторонних изменений.
+- Main workflow требует PR; для публикации используется отдельная ветка `codex/offline-licensing-setup`, без merge/deploy. Live rulesets API вернул 403 (GitHub требует Pro/public); защита main не считается подтверждённой этим запросом и не изменялась.
+- Compatibility, docs, whitespace PASS. Перед коммитом дополняется обязательная browser matrix: Firefox/WebKit/mobile Chromium/mobile WebKit; Chromium 13/13 уже подтверждён на том же source.
+- Следующее: дождаться browser результатов, commit/push, проверить exact remote SHA и CI.
+
+### Browser matrix перед commit
+- Firefox 13/13 PASS и WebKit 13/13 PASS на неизменном source `b99a3cd766e1b1847be5881a9ff9eb909b5e60539feebb5e391053981e0034d0`; `.cache/commit-browser-matrix.log`.
+- Первый mobile Chromium: 12/13 PASS, WebDAV UI test превысил 5s ожидания заголовка после сохранения draft. PATCH 204 и контрольный GET 200 подтвердили сохранение; trace содержит задержку routed journal response 4875ms. Это наблюдение, окончательная причина не установлена. Failure trace сохранён в `.cache/commit-browser-failure/`.
+- Выполняется повтор mobile Chromium + mobile WebKit без изменения реализации, assertions или таймаутов. Первый запуск повтора не получил доступ к Docker socket в sandbox; повтор с разрешённым доступом запущен.
+
+### Готовность к отправке
+- Повтор завершился exit 0: mobile Chromium 13/13 PASS, mobile WebKit 13/13 PASS; `.cache/commit-mobile-retry.log`. Issuer issue/renewal workflow и оба setup wizard workflow повторно PASS.
+- Все пять browser profiles имеют PASS по 13 сценариев на неизменном source; первичный timeout сохранён выше и не скрывается. Код и таймауты для повтора не менялись.
+- Проверки перед commit завершены. Следующий шаг: commit и push ветки, сверка remote HEAD, запуск CI на опубликованном commit. Production deployment не выполняется.
+
+### Публикация изменений
+- Реализация закоммичена: `d56627048ab921ab1a2ba60489958805906b975d` (`feat(licensing): add offline licenses, issuer portal and setup wizards`), 121 файл.
+- Push в `origin/codex/offline-licensing-setup` успешен; `git ls-remote` подтвердил совпадение remote SHA с этим commit.
+- Эта запись фиксируется отдельным docs commit. CI запускается на финальном HEAD после его push; результат CI требует отдельной проверки и не объявлен PASS. Локальные результаты относятся к source fingerprint выше.
+- Main не изменён, PR/merge и production deployment не выполнялись. Следующее: оценить CI финального HEAD перед последующим PR/merge.
+
+## Запрос слияния — 2026-10-14
+- Пользователь поручил слияние; целевая ветка main, squash через PR после зелёных gates.
+- На `37c9b66` functional CI ещё выполняется; CodeQL jobs завершились configuration error при чтении workflow run. Исправлено job-level `actions: read`.
+- Live API: private=true, Code Scanning analyses HTTP 403 (not enabled). Владелец уведомлён о необходимости включения доступности сервиса; visibility/billing/gates не менялись.
+- Следующее: проверить минимальный workflow diff, commit/push, создать PR и оценить CI. Слияние до устранения блокера не выполняется; production deployment не разрешён.
+
+### PR и восстановление GitHub checks
+- Создан [PR #28](https://github.com/elnemir/p2p-files/pull/28), base main. Исправление CodeQL `61acf3b` отправлено; repository policy, actionlint, docs и whitespace PASS.
+- После ответа владельца live API показывает visibility=public, disabled=false; Code Scanning analyses снова доступны. Видимость агент не менял. Во время перехода первый push получил временный Repository is disabled, повторный push успешен. Предыдущий 403 снят изменением внешнего состояния.
+- PR mergeable, ожидаются новые обязательные checks на последнем HEAD; старые анализы main не засчитываются за проверку PR. Дождаться PASS, проверить findings и squash merge без обхода gates.
+
+### CI PR #28: исправление upgrade fixture
+- На HEAD `4635556` CodeQL/security/dependency-review/repository-policy/supply-chain PASS. Четыре анализа merge candidate `e9a10e1` (parents baseline + HEAD): 0 findings, пустые errors/warnings; открытых alerts нет.
+- Functional CI 38571690958 прошёл browser и ingress, затем остановился в upgrade: explicit EXPECTED_MIGRATIONS не включал 0021. Исправлен allowlist без ослабления assertions, документация 16→21 синхронизирована.
+- Classic branch protection API вернул 404; code scanning ruleset 24884645 active. Настройки не изменялись; вручную соблюдаются все обязательные checks до merge.
+- Следующее: local upgrade drill, push и новый CI; merge пока не выполнен.
+
+- Локальный upgrade дополнительно выявил устаревший текст ожидаемого отказа unknown migration: новый read-only preflight отклоняет её раньше Migrate. Assertion уточнён до `database contains unknown newer migrations`; добавлена проверка completed setup latch существующей установки, причины backup обновлены до schema-21.
+
+- Local upgrade drill PASS, exit 0: `.cache/merge-upgrade-retry.log`, source `d70d2e0253ccb18b1a7b56cf7dedeb3e8549646d8d40179792064d44602d3b60`, HEAD 4635556 + исправленный test/docs diff. 16→21, backup до/после, unknown migration/wrong KEK rejection, setup latch, payload/session/replay и explicit reopen подтверждены. Следующий шаг: публикация исправления и CI точного нового HEAD.

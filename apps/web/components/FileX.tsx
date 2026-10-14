@@ -59,7 +59,12 @@ async function requestAPI<T = unknown>(
   });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new ApiError(data.code || `http_${response.status}`, response.status);
+    throw new ApiError(
+      ["license_restricted", "invalid_license"].includes(data.message)
+        ? data.message
+        : data.code || `http_${response.status}`,
+      response.status,
+    );
   }
   return response.status === 204 ? (undefined as T) : await response.json();
 }
@@ -272,6 +277,14 @@ export default function FileX({ mode = "owner" }: { mode?: Mode }) {
     }).format(new Date(s));
   const message = (code: string) =>
     ({
+      license_restricted: t(
+        "Действие ограничено лицензией. Обратитесь к администратору: проверьте срок, функции и доступный лимит.",
+        "The license restricts this action. Ask an administrator to check expiry, features and available quota.",
+      ),
+      invalid_license: t(
+        "Лицензия не прошла проверку подписи или не подходит этой установке.",
+        "The license signature or installation binding is invalid.",
+      ),
       maintenance: t(
         "Сервис находится на обслуживании. Администратор проверяет восстановление.",
         "The service is under maintenance. An administrator is reviewing recovery.",

@@ -6,6 +6,7 @@ import (
 	"filex.local/filex/internal/auth"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/domain"
+	"filex.local/filex/internal/licensing"
 	"filex.local/filex/internal/maintenance"
 	"filex.local/filex/internal/transfer"
 	"fmt"
@@ -28,6 +29,7 @@ type davAccess struct {
 	app                    *App
 	owner, transfer, token string
 	credential             string
+	paid                   bool
 	tokens                 map[string]bool
 	settings               config.Settings
 }
@@ -56,6 +58,9 @@ func (a *App) createWebDAVCredential(w http.ResponseWriter, r *http.Request, p a
 	defer tx.Rollback(r.Context())
 	var id string
 	if e = tx.QueryRow(r.Context(), "SELECT id::text FROM transfers WHERE id::text=$1 AND owner_id=$2 AND state='draft' AND NOT frozen FOR UPDATE", r.PathValue("id"), p.ID).Scan(&id); e != nil {
+		return e
+	}
+	if _, e = licensing.Guard(r.Context(), tx, "webdav"); e != nil {
 		return e
 	}
 	token := auth.Token()
@@ -174,7 +179,7 @@ func (a *App) serveWebDAV(w http.ResponseWriter, r *http.Request) error {
 			if _, _, e := davPath(r.URL, c.MaxPathBytes); e != nil {
 				return e
 			}
-			d := davAccess{app: a, owner: p.ID, transfer: id, token: token, settings: c}
+			d := davAccess{app: a, owner: p.ID, transfer: id, token: token, settings: c, paid: r.Method == "PUT" || r.Method == "MOVE" || r.Method == "MKCOL" || r.Method == "PROPPATCH" || r.Method == "LOCK"}
 			if e := d.check(r.Context()); e != nil {
 				return e
 			}
@@ -255,6 +260,11 @@ func (d davAccess) check(ctx context.Context) error {
 }
 
 func (d davAccess) guard(ctx context.Context, tx pgx.Tx) error {
+	if d.paid {
+		if _, e := licensing.Guard(ctx, tx, "webdav"); e != nil {
+			return e
+		}
+	}
 	var id string
 	e := tx.QueryRow(ctx, `SELECT t.id::text FROM api_tokens t JOIN users u ON u.id=t.user_id WHERE t.token_hash=$1 AND t.user_id=$2 AND t.revoked_at IS NULL AND t.expires_at>clock_timestamp() AND t.auth_epoch=u.auth_epoch AND NOT u.disabled AND $3=ANY(t.scopes) FOR SHARE OF t,u`, auth.Digest(d.token), d.owner, "webdav:"+d.transfer).Scan(&id)
 	if errors.Is(e, pgx.ErrNoRows) {

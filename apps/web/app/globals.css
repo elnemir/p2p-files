@@ -1686,3 +1686,35 @@ button.danger {
 .login-stack .identity-login {
   margin-bottom: 0;
 }
+
+.license-panel {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.license-panel > button {
+  justify-self: start;
+}
+.license-panel label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.license-panel dl {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.license-panel dt {
+  font-weight: 600;
+}
+.license-panel dd {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.license-panel textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  resize: vertical;
+}

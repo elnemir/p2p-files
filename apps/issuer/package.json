@@ -1,0 +1,22 @@
+{
+  "name": "@filex/issuer",
+  "version": "0.1.0-dev",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3002",
+    "build": "next build --webpack",
+    "start": "next start --port 3002",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "@types/react": "19.3.0",
+    "@types/node": "26.6.5",
+    "@types/react-dom": "19.3.0"
+  }
+}

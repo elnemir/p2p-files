@@ -74,7 +74,7 @@ def images():
     trivy=tool('trivy')
     identifier=uuid.uuid4().hex[:10]
     targets=[]
-    for name in ['api','web','postgres','redis','traefik']:
+    for name in ['api','web','postgres','redis','traefik','issuer','issuer-web']:
         tag=f'filex-scan-{identifier}-{name}'
         run(['docker','build','-f',f'deploy/Dockerfile.{name}','-t',tag,'.'])
         image=run(['docker','image','inspect','--format','{{.Id}}',tag],capture_output=True).stdout.strip()

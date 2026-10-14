@@ -14,6 +14,7 @@ import (
 var ErrCredentials = errors.New("invalid credentials")
 var ErrForbidden = errors.New("forbidden")
 var ErrRate = errors.New("rate limited")
+var ErrConflict = errors.New("setup already completed")
 var ErrInvalid = errors.New("invalid input")
 var work = make(chan struct{}, 4)
 

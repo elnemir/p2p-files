@@ -86,3 +86,10 @@
 
 ## UX USER/ADMIN: доставлено через PR #26
 [ADR-015](adr/015-product-ux.md) и [руководство](product-ux.md) описывают навигацию, иконки, формы Settings v1, TTL controls, reauth, приватность при смене сессии и четыре новых снимка. Старые DTO сохранены, `/editor` добавляет контекст формы, API/worker/CLI содержат стандартную IANA database. [PR #26](https://github.com/elnemir/p2p-files/pull/26) объединён в main `28a6b4a`; обязательные local/PR/main gates PASS на своём source — [архив доставки](sessions/2026-10-14-product-ux-delivered.md). Полный [тур](screen-tour.md) переснят 2026-10-14. Production guard и внешние release задачи остаются прежними.
+
+## LIC-01–06: коммерческое лицензирование — локальная реализация
+Запрос 2026-10-14: подписка и бессрочная лицензия, закрытая панель издателя, offline verification. [Спецификация и матрица будущих проверок](licensing.md), [ADR-016](adr/016-offline-licensing.md). Последовательность: согласование policy/crypto → формат/schema/verifier → панель/signer → импорт/control plane → все quota/feature guards → release entitlement/recovery → полная квалификация. Локально реализованы verifier, quota guards, импорт, отдельные OIDC панель и signer, release entitlement. Проверки и эксплуатация описаны в [runbook](licensing-operations.md); внешние условия и полный release DoD остаются отдельно. Существующие DEV/EXT/REL blockers не снимаются.
+
+## Веб-настройка первого запуска
+
+[Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.

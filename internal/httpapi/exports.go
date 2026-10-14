@@ -6,6 +6,7 @@ import (
 	"filex.local/filex/internal/auth"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/domain"
+	"filex.local/filex/internal/licensing"
 	"filex.local/filex/internal/transfer"
 	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
@@ -44,6 +45,9 @@ func (a *App) exportRoutes(m *http.ServeMux) {
 			return auth.ErrRate
 		}
 		id := domain.NewID()
+		if _, e = licensing.Guard(r.Context(), tx, ""); e != nil {
+			return e
+		}
 		if _, e = tx.Exec(r.Context(), "INSERT INTO export_jobs(id,owner_id,kind,format,compression,auth_epoch) SELECT $1,id,$3,$4,$5,auth_epoch FROM users WHERE id=$2 AND NOT disabled AND ($3='user' OR role='admin')", id, p.ID, v.Kind, v.Format, v.Compression); e != nil {
 			return e
 		}

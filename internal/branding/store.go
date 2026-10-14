@@ -6,6 +6,7 @@ import (
 	"errors"
 	"filex.local/filex/internal/audit"
 	"filex.local/filex/internal/auth"
+	"filex.local/filex/internal/licensing"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"strconv"
@@ -62,6 +63,9 @@ func (s Store) Apply(ctx context.Context, p auth.Principal, expected int64, c Co
 		return Revision{}, auth.ErrForbidden
 	}
 	if e != nil {
+		return Revision{}, e
+	}
+	if _, e = licensing.Guard(ctx, tx, "white_label"); e != nil {
 		return Revision{}, e
 	}
 	current, e := Current(ctx, tx)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Build and probe a disposable local Compose stack; never targets another project."""
+from license_fixture import new_fixture
 import base64
 import json
 import os
@@ -14,6 +15,7 @@ import uuid
 root = Path(__file__).resolve().parents[1]
 project = 'filex-smoke-' + uuid.uuid4().hex[:10]
 env = dict(os.environ, POSTGRES_PASSWORD=secrets.token_hex(24), MASTER_KEK=base64.b64encode(secrets.token_bytes(32)).decode())
+env.update(new_fixture()['env'])
 command = ['docker','compose','--project-name',project,'-f',str(root/'deploy/compose.yaml')]
 def compose(*args, **kwargs):
     return subprocess.run(command+list(args),cwd=root,env=env,check=True,text=True,**kwargs)

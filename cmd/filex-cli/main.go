@@ -32,6 +32,9 @@ func run() error {
 	jsonOutput = slices.Contains(os.Args, "--json")
 	// Operational commands return JSON by default; accept the explicit flag too.
 	os.Args = slices.DeleteFunc(os.Args, func(v string) bool { return v == "--json" })
+	if handled, e := licenseCLI(os.Args[1:]); handled {
+		return e
+	}
 	if handled, e := upgradeCLI(os.Args[1:]); handled {
 		return e
 	}

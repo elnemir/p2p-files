@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filex.invalid/schemas/issuersetup-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "issuer",
+    "clientId",
+    "clientSecret",
+    "requiredAcr",
+    "subject"
+  ],
+  "properties": {
+    "issuer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "clientId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "clientSecret": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "requiredAcr": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    }
+  }
+}

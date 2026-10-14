@@ -20,10 +20,11 @@
 npm ci
 python3 scripts/init-dev.py
 make up
+python3 scripts/activate-dev-license.py
 curl --fail http://localhost:8090/api/v1/status
 ```
 
-`npm ci` устанавливает workspace dependencies строго по lockfile с обязательными peer/engine checks. Перед установкой нужен Node 26 из `.nvmrc`; engine другого major отклоняется. `npm run check:dependencies` проверяет полный peer tree, согласованность runtime/types и сроки поддержки; `npm run test:toolchain` — negative/a11y регрессии. Root TypeScript 5.9.3 обслуживает parser/OpenAPI, отдельный app compiler — 7.0.2; подробности в [dependency remediation](dependency-remediation.md). `init-dev.py` создаёт только локальный `.env` mode 0600 с независимыми случайными POSTGRES_PASSWORD и MASTER_KEK; существующий файл не перезаписывается. Не выводить его содержимое в общий лог. `make up` собирает пять runtime images и запускает шесть сервисов: postgres, redis, api, worker, web, traefik. API/worker используют один image. Холодная сборка Traefik может занимать несколько минут.
+`npm ci` устанавливает workspace dependencies строго по lockfile с обязательными peer/engine checks. Перед установкой нужен Node 26 из `.nvmrc`; engine другого major отклоняется. `npm run check:dependencies` проверяет полный peer tree, согласованность runtime/types и сроки поддержки; `npm run test:toolchain` — negative/a11y регрессии. Root TypeScript 5.9.3 обслуживает parser/OpenAPI, отдельный app compiler — 7.0.2; подробности в [dependency remediation](dependency-remediation.md). `init-dev.py` создаёт локальный `.env` mode 0600 с независимыми POSTGRES_PASSWORD/MASTER_KEK и public build trust, а private fixture key — только `.cache/dev-license.json` mode 0600. Файлы не перезаписываются. После запуска применяется подписанная суточная dev license; это не production entitlement. [Подробности лицензирования](licensing-operations.md). Не выводить его содержимое в общий лог. `make up` собирает пять runtime images и запускает шесть сервисов: postgres, redis, api, worker, web, traefik. API/worker используют один image. Холодная сборка Traefik может занимать несколько минут.
 
 Startup: config → PG migrations → KEK sentinel/settings → development provisioning трёх storage purposes → HTTP/worker. Payload/artifacts/backups используют отдельные volumes. Бизнес-состояние хранится в PostgreSQL. После readiness открыть http://localhost:8090.
 
@@ -81,3 +82,7 @@ make down
 
 ## Native client tests и документация
 Штатные macOS/Linux DAV backend tests запускаются отдельно от обычного Go/HTTP набора. Требования, Dockerfile GVfs и Windows PowerShell-сценарий — [WebDAV](webdav-upload.md). Windows пока ожидает выделенного стенда. Для UI использовать disposable capture; полный MP4 и изображения обновляются вместе по [tour-maintenance](tour-maintenance.md), озвучка неизменившихся глав берётся из проверенного кеша. Capture требует также Go из go.mod для одноразового SAML signer; внешние identity providers и TTS API для самой съёмки не нужны.
+
+## Веб-настройка первого запуска
+
+[Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.

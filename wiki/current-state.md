@@ -15,7 +15,7 @@ SSO доставлен через [PR #25](https://github.com/elnemir/p2p-files/
 - TLS/ACME configuration, ingress policy, controlled upgrade, contracts/types, scanners/fuzz/browser/load/DR и fail-closed release evidence.
 - [Native WebDAV](webdav-upload.md): owner draft чтение, условная атомарная замена, PG locks/If, metadata, encrypted staging/cleanup, инструкции трёх ОС. Publish/recipient semantics сохранены.
 
-Контракт: **123 REST/tus операций + WebDAV wire profile; 19 migrations; 15 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
+Контракт: **128 REST/tus операций + WebDAV wire profile; 21 migrations; 17 ADR**. Redis ephemeral, PG authoritative. Scanner — расширяемый Go interface, внешний антивирусный сервис не настроен. Карта — [repository map](repository-map.md), потоки — [архитектура](architecture.md).
 
 ## Проверено и не подтверждено
 | Область | Текущая граница | Что ещё требуется |
@@ -23,7 +23,7 @@ SSO доставлен через [PR #25](https://github.com/elnemir/p2p-files/
 | UX USER/ADMIN | 13/13 local gates, 62 PG/race, 60 browser cases, 10 reviewed visual baselines; [evidence](history/product-ux-evidence-2026-10-13.md) | PR #26 merged, main CI PASS; реальные устройства/AT и внешняя приёмка отдельно |
 | SAML/OIDC/LDAP | 13/13 local gates, 61 PG/race, 45 browser cases; protocol TLS/signature, JIT/link/reauth/replay/revoke/restore/rotation | PR #25 merged и main CI PASS; конкретные tenants/DC отдельно; локальные fixtures не означают внешнюю приёмку |
 | White labeling | 13/13 local gates, 56 PG/race и 40 browser cases; SSR/ETag/assets/CAS/audit/restore/PDF/SMTP | PR #24 merged, PR checks PASS; реальные устройства и независимая приёмка не заявлены |
-| Требования | 32 MUST, 27 verified/5 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
+| Требования | 35 MUST, 27 verified/8 partial в traceability | Полная release acceptance, не автоматическая смена partial по green CI |
 | Native WebDAV | macOS mount_webdav и настоящий Linux GVfs: полный файловый цикл, multi-chunk hash, server-created GET; 15 профильных HTTP/PG/race tests | Windows **ожидает стенда**; Office/KDE/davfs2 не квалифицированы |
 | WebDAV regression | 13 локальных gates и PR #23/main CI PASS; 51 integration и 35 browser cases; macOS/GVfs повторно PASS в [исторической квалификации](sessions/2026-10-13-webdav-merged.md) | Performance smoke; неповторившаяся задержка WebKit сохранена в диагностике |
 | Node 26 | Runtime/types/CI/policy, clean install и 57 toolchain tests PASS; все 13 local gates, 53 integration и 35 browser PASS на source из [архива](sessions/2026-10-13-node26-delivered.md); PR #22 и main CI PASS | Для нового diff требуется новая квалификация; это не production acceptance |
@@ -49,3 +49,13 @@ ID задач раскрыты в [implementation plan](implementation-plan.md);
 Владелец подтвердил: «Окружение ещё не подготовлено; зафиксировать внешние блокеры». Все 14 записей [release-acceptance.json](../contracts/release-acceptance.json) pending. Адреса, аккаунты, сроки, ответственные лица и SLA не придуманы. [План приёмки](environment-acceptance.md) позволяет подготовить их без повторного проектирования.
 
 `make release-check` только проверяет полноту, не включает production. `internal/config/config.go` принимает только development/test. Проектирование замены этого guard — DEV-01; запуск реальной инфраструктуры и production deploy требуют отдельной команды владельца. Подмена APP_ENV на development на production сервере не является закрытием задачи.
+
+## Лицензирование — локальный diff 2026-10-14
+
+Утверждённая модель subscription/perpetual реализована: клиент проверяет JWS отдельным vendor Ed25519 public key без сети; PostgreSQL сериализует import/revision/epoch, user и transfer quota. Истечение закрывает новые платные операции, сохраняя lifecycle существующих передач. Панель издателя, её PostgreSQL и signer развёртываются отдельно; private key отсутствует в клиентских образах и web API. FR-017/SEC-008 добавлены к исходным 32 требованиям. [Runbook](licensing-operations.md) описывает конфигурацию, поток данных, проверки и ограничения; прежние внешние release blockers сохраняются.
+
+Локальная проверка licensing завершена на source `94cd90bc4595599ca880ad7596c478292f76f0ee1e4a11e33f86a3f420346cbc`: recorded make check PASS; 13 Chromium + issuer browser PASS; PG negative/concurrency/fault/recovery/restore проверки и scans описаны с границами в [session](session.md). Это не production допуск и не закрытие внешних release blockers.
+
+## Веб-мастера первого запуска — 2026-10-14
+
+[FileX /setup и issuer /issuer/setup](first-run-setup.md) настраивают уже запущенные контейнеры. Временный host capability, atomic ADMIN completion, immutable encrypted issuer OIDC config; private signing key в веб не передаётся. FR-018: локальный scope реализован, external MFA/TLS/security acceptance отдельно. Актуальный hash/checks — [session](session.md).

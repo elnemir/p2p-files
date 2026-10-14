@@ -15,7 +15,7 @@
 - Промежуточный export snapshot должен сохранять **значения**, а не только IDs; гибридная модель должна гарантировать consistent view и crash safety.
 - Обязательный backup PostgreSQL перед restore, но не автоматически перед startup migrations; restore-test вручную, без напоминаний.
 - Отчёты имеют canonical report hash, document content hash (без собственного поля) и отдельный artifact SHA-256; не смешивать эти понятия.
-- Ed25519 только SHA256SUMS; подписанный manifest хранится в ZIP без отдельного meta.json; ключ в PEM/SPKI, fingerprint SHA-256(DER/SPKI), сверка через независимый канал.
+- Instance Ed25519 только SHA256SUMS; отдельный vendor профиль лицензий — ADR-016; подписанный manifest хранится в ZIP без отдельного meta.json; ключ в PEM/SPKI, fingerprint SHA-256(DER/SPKI), сверка через независимый канал.
 - Публичная `/verify-report` принимает reportId/revision/canonical hash, не подтверждает admin reports, при trash/purge — neutral not found.
 - Нет IPv6 requirement, нет PWA, нет сторонней аналитики, нет внешнего proxy, нет auto production deploy.
 
@@ -59,3 +59,11 @@ Design вопросы completion, export snapshot, partial delivery и crypto is
 
 ## Дополнение владельца: SAML/OIDC/LDAP
 2026-10-13 разрешена реализация корпоративного входа/регистрации, подтверждены Keycloak, Entra ID/AD, Google Workspace и другие IdP/LDAP. [ADR-014](adr/014-federated-auth.md): провайдеры настраиваются ADMIN, JIT только USER, no implicit email linking; local password fallback сохраняется. Конкретные tenant credentials не предоставлены.
+
+## Офлайн-лицензирование: утверждено и реализовано
+2026-10-14 владелец утвердил subscription + perpetual, закрытую веб-панель, отдельный vendor Ed25519 key, лимиты пользователей/передачи/функций и continuity после expiry. [Спецификация](licensing.md), [ADR-016](adr/016-offline-licensing.md), [реализация и эксплуатация](licensing-operations.md). Instance ZIP keys не переиспользуются. Остаточные риски offline/root/clone/clock не объявлены принятыми автоматически.
+
+## Подтверждение владельца — 2026-10-14
+Владелец явно утвердил отдельный Ed25519 ключ издателя, политику истечения и ограничения по пользователям, размеру передачи и функциям; поручил реализацию лицензирования и закрытой веб-панели. Это снимает ранее указанный блокер согласования crypto/license policy. Реализация начата; внешний review, остаточные риски и production deployment автоматически не приняты.
+
+- [ADR-017 — First-run web setup](adr/017-first-run-wizards.md): временный host token, atomic completion, отдельный issuer config key; только уже запущенные контейнеры.

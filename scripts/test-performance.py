@@ -6,6 +6,7 @@ Reported times measure this fixture, never an SLA or production RPO/RTO.
 """
 import base64,concurrent.futures,csv,gzip,hashlib,http.client,json,os,platform,secrets,subprocess,tempfile,threading,time,uuid,zipfile
 from pathlib import Path
+from license_fixture import new_fixture, activate
 from urllib.parse import urlsplit
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -49,6 +50,8 @@ def test_load_and_recovery():
     OUT.mkdir(parents=True,exist_ok=True)
     project='filex-performance-'+uuid.uuid4().hex[:10]
     env=dict(os.environ,POSTGRES_PASSWORD=secrets.token_hex(24),MASTER_KEK=base64.b64encode(secrets.token_bytes(32)).decode())
+    license_fixture=new_fixture()
+    env.update(license_fixture["env"])
     measurements=[];stop=threading.Event();samples=[];thread=None
     hardware=json.loads(subprocess.check_output(['docker','info','--format','{{json .}}'],text=True))
     evidence={'profile':{'payloadMiB':size_mib,'exportRows':rows,'chunkBytes':4*MIB,'concurrency':8,'providers':['local','synthetic-s3-tls']},'hardware':{k:hardware.get(k) for k in ['OSType','Architecture','NCPU','MemTotal','KernelVersion','Driver']},'hostPlatform':platform.platform(),'measurements':measurements}
@@ -100,6 +103,7 @@ def test_load_and_recovery():
                     stop.wait(.5)
             thread=threading.Thread(target=sample,daemon=True);thread.start()
             password=secrets.token_urlsafe(24)
+            activate(dc,license_fixture)
             cli('user','create',value={'email':'load@example.test','password':password,'role':'admin'})
             login,_=owner.expect('POST','/api/v1/auth/login',200,{'email':'load@example.test','password':password});owner.csrf=login['csrfToken']
             principal,_=owner.expect('GET','/api/v1/auth/me',200);uid=principal['id']

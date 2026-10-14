@@ -1,0 +1,52 @@
+{
+  "asyncapi": "3.0.0",
+  "info": {
+    "title": "FileX issuer durable signing queue",
+    "version": "1.0.0"
+  },
+  "channels": {
+    "signing": {
+      "address": "issuer_outbox",
+      "description": "PostgreSQL durable queue. A row is approved atomically with its audit event; signer uses FOR UPDATE SKIP LOCKED. No external broker.",
+      "messages": {
+        "issuance": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "issuanceId",
+              "completedAt"
+            ],
+            "properties": {
+              "issuanceId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "completedAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "Z$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "operations": {
+    "sign": {
+      "action": "receive",
+      "channel": {
+        "$ref": "#/channels/signing"
+      }
+    }
+  }
+}

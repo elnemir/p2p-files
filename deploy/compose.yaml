@@ -28,10 +28,17 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
+      args:
+        FILEX_LICENSE_TRUST: ${FILEX_LICENSE_TRUST:?Configure vendor public trust or an isolated qualification fixture}
+        FILEX_RELEASE_TRUST: ${FILEX_RELEASE_TRUST:?Configure release public trust}
+        FILEX_RELEASE_METADATA: ${FILEX_RELEASE_METADATA:-}
+        FILEX_RELEASE_SOURCE: ${FILEX_RELEASE_SOURCE:-}
     environment:
       APP_ENV: development
       DATABASE_URL: postgres://filex:${POSTGRES_PASSWORD}@postgres:5432/filex?sslmode=disable
       MASTER_KEK: ${MASTER_KEK:?Run scripts/init-dev.py first}
+      FILEX_SETUP_TOKEN_HASH: ${FILEX_SETUP_TOKEN_HASH:-}
+      FILEX_SETUP_EXPIRES_AT: ${FILEX_SETUP_EXPIRES_AT:-}
       HTTP_ADDR: 0.0.0.0:8080
       INTERNAL_ADDR: 0.0.0.0:9090
       DEV_PAYLOAD_ROOT: /data/payload
@@ -53,6 +60,11 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.api
+      args:
+        FILEX_LICENSE_TRUST: ${FILEX_LICENSE_TRUST:?Configure vendor public trust or an isolated qualification fixture}
+        FILEX_RELEASE_TRUST: ${FILEX_RELEASE_TRUST:?Configure release public trust}
+        FILEX_RELEASE_METADATA: ${FILEX_RELEASE_METADATA:-}
+        FILEX_RELEASE_SOURCE: ${FILEX_RELEASE_SOURCE:-}
     entrypoint: [filex-worker]
     environment:
       APP_ENV: development

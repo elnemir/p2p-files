@@ -6,6 +6,7 @@ import addFormats from "ajv-formats";
 import path from "node:path";
 
 await SwaggerParser.validate("contracts/openapi.json");
+await SwaggerParser.validate("contracts/issuer-openapi.json");
 const schemas = new Ajv({ strict: true });
 addFormats(schemas);
 for (const name of await readdir("contracts/schemas")) {
@@ -23,3 +24,6 @@ const { document, diagnostics } = await parser.parse(await readFile("contracts/a
 const errors = diagnostics.filter(d => d.severity === 0);
 if (!document || errors.length) throw new Error(JSON.stringify(errors));
 console.log("OpenAPI 3.1 and AsyncAPI 3.0 validation passed.");
+
+const issuerEvents=await parser.parse(await readFile("contracts/issuer-asyncapi.json","utf8"),{source:path.resolve("contracts/issuer-asyncapi.json")});
+if(!issuerEvents.document || issuerEvents.diagnostics.some(d=>d.severity===0)) throw new Error(JSON.stringify(issuerEvents.diagnostics));

@@ -11,6 +11,7 @@ import (
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/files"
 	"filex.local/filex/internal/keyring"
+	"filex.local/filex/internal/licensing"
 	"filex.local/filex/internal/maintenance"
 	"filex.local/filex/internal/operations"
 	"filex.local/filex/internal/settings"
@@ -97,6 +98,12 @@ func failure(w http.ResponseWriter, e error) {
 		code, name = 503, "maintenance"
 	case errors.Is(e, maintenance.ErrRestart):
 		code, name = 503, "restart_required"
+	case errors.Is(e, licensing.ErrDenied):
+		code, name = 403, "forbidden"
+	case errors.Is(e, licensing.ErrInvalid):
+		code, name = 400, "invalid_input"
+	case errors.Is(e, licensing.ErrConflict):
+		code, name = 409, "conflict"
 	case errors.Is(e, branding.ErrInvalid):
 		code, name = 400, "invalid_input"
 	case errors.Is(e, branding.ErrConflict):
@@ -125,7 +132,14 @@ func failure(w http.ResponseWriter, e error) {
 	if code == 429 {
 		w.Header().Set("Retry-After", "60")
 	}
-	_ = reply(w, code, map[string]string{"code": name, "message": name})
+	message := name
+	if errors.Is(e, licensing.ErrDenied) {
+		message = "license_restricted"
+	}
+	if errors.Is(e, licensing.ErrInvalid) {
+		message = "invalid_license"
+	}
+	_ = reply(w, code, map[string]string{"code": name, "message": message})
 }
 func (a *App) protect(scope string, admin bool, fn action) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -185,6 +199,7 @@ func (a *App) protect(scope string, admin bool, fn action) http.HandlerFunc {
 }
 func (a *App) Handler() http.Handler {
 	mux := http.NewServeMux()
+	a.setupRoutes(mux)
 	mux.Handle("GET /api/v1/status", Public(a.DB))
 	mux.HandleFunc("GET /api/v1/banner", func(w http.ResponseWriter, r *http.Request) {
 		c, e := database.Settings(r.Context(), a.DB)
@@ -358,6 +373,7 @@ func (a *App) Handler() http.Handler {
 	a.treeRoutes(mux)
 	a.operationsRoutes(mux)
 	a.brandingRoutes(mux)
+	a.licenseRoutes(mux)
 	a.identityRoutes(mux)
 	a.organizationRoutes(mux)
 	a.exportRoutes(mux)
@@ -449,10 +465,26 @@ func (a *App) createToken(w http.ResponseWriter, r *http.Request, p auth.Princip
 			return auth.ErrInvalid
 		}
 	}
+	tx, e := a.DB.Begin(r.Context())
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback(context.Background())
+	for _, scope := range v.Scopes {
+		if strings.HasSuffix(scope, ":write") {
+			if _, e = licensing.Guard(r.Context(), tx, ""); e != nil {
+				return e
+			}
+			break
+		}
+	}
 	token := auth.Token()
 	var id string
-	e := a.DB.QueryRow(r.Context(), "INSERT INTO api_tokens(id,user_id,token_hash,scopes,auth_epoch,expires_at) VALUES(gen_random_uuid(),$1,$2,$3,$4,clock_timestamp()+make_interval(secs=>$5)) RETURNING id::text", p.ID, auth.Digest(token), v.Scopes, p.Epoch, v.TTL).Scan(&id)
+	e = tx.QueryRow(r.Context(), "INSERT INTO api_tokens(id,user_id,token_hash,scopes,auth_epoch,expires_at) VALUES(gen_random_uuid(),$1,$2,$3,$4,clock_timestamp()+make_interval(secs=>$5)) RETURNING id::text", p.ID, auth.Digest(token), v.Scopes, p.Epoch, v.TTL).Scan(&id)
 	if e != nil {
+		return e
+	}
+	if e = tx.Commit(r.Context()); e != nil {
 		return e
 	}
 	return reply(w, 201, map[string]string{"id": id, "token": token})

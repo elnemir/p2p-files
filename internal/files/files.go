@@ -11,6 +11,7 @@ import (
 	"filex.local/filex/internal/cryptobox"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/keyring"
+	"filex.local/filex/internal/licensing"
 	"filex.local/filex/internal/storage"
 	"filex.local/filex/internal/transfer"
 	"github.com/jackc/pgx/v5"
@@ -148,6 +149,9 @@ func (s Service) Append(ctx context.Context, owner, id string, offset int64, dat
 	}
 	var epoch int64
 	e = s.mutate(ctx, f.TransferID, f.Path, func(tx pgx.Tx) error {
+		if e := licensing.AppendQuota(ctx, tx, id, offset+int64(len(data))); e != nil {
+			return e
+		}
 		return tx.QueryRow(ctx, `UPDATE files SET upload_epoch=upload_epoch+1,write_lease_until=clock_timestamp()+interval '60 seconds' WHERE id=$1 AND upload_offset=$2 AND upload_epoch<1048576 AND state='uploading' AND (write_lease_until IS NULL OR write_lease_until<clock_timestamp()) RETURNING upload_epoch`, id, offset).Scan(&epoch)
 	})
 	if errors.Is(e, pgx.ErrNoRows) {
@@ -194,6 +198,9 @@ func (s Service) Append(ctx context.Context, owner, id string, offset int64, dat
 		if e = s.WriteGuard(ctx, tx); e != nil {
 			return 0, e
 		}
+	}
+	if e = licensing.AppendQuota(ctx, tx, id, offset+int64(len(data))); e != nil {
+		return 0, e
 	}
 	tag, e := tx.Exec(ctx, "UPDATE files SET upload_offset=upload_offset+$3,write_lease_until=NULL WHERE id=$1 AND upload_epoch=$2 AND write_lease_until>clock_timestamp() AND upload_offset=$4 AND state='uploading'", id, epoch, len(data), offset)
 	if e != nil {
