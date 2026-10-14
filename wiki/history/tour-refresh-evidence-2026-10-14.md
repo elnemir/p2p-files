@@ -40,3 +40,5 @@ Windows WebDAV **ожидает стенда**. SAML signer одноразовы
 
 ## Подготовка commit/push/merge
 По команде владельца повторно выполнены `check`, `source`, `compatibility`: PASS на staged source `f74a78d67d771cb7ee1663f0ed951c8a3a61a8e883426be94dbdb1fcd6879122`, sourceUnchanged=true. Старый fingerprint учитывал ещё отслеживаемые удалённые PNG как deleted; после staging этих удалений их paths исключены из набора. Media bytes/hash остаются прежними. Source scan проверил историю и подготовленные файлы; secrets/HIGH/CRITICAL не найдены. Полная регрессия кандидата обязательна в PR CI перед squash merge, затем отдельно проверяется main CI.
+
+Доставка: [PR #27](https://github.com/elnemir/p2p-files/pull/27), исходный commit `a629583`. Точный head/merge commit и итоговые CI run links публикуются в PR; не выводить их из одного локального gate.

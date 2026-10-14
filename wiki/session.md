@@ -4,7 +4,9 @@
 Актуализировать полный фото- и видеотур FileX, добавить отсутствующие разделы, озвучить через ElevenLabs и обновить документацию; по следующей команде владельца — commit, push и squash merge после зелёных проверок.
 
 ## Status
-Завершено локально 2026-10-14 в `codex/tour-refresh`, baseline main `28a6b4a0aac2ed23c7699ec35e468f59255949b7`. [MP4 7:56](tour/filex-tour.mp4), [71 кадр / 26 глав](screen-tour.md), [галерея](tour/index.html). Код приложения не изменён. Владелец разрешил commit/push/merge; начата доставка через защищённый PR. Подготовленный Git snapshot прошёл повторные check/source/compatibility; все required CI должны пройти до squash merge. Предыдущая [доставка UX](sessions/2026-10-14-product-ux-delivered.md) сохранена отдельно.
+Фото/видеотур завершён: [MP4 7:56](tour/filex-tour.mp4), [71 кадр / 26 глав](screen-tour.md), [галерея](tour/index.html). Доставка по команде владельца — [PR #27](https://github.com/elnemir/p2p-files/pull/27), ветка `codex/tour-refresh`, baseline `28a6b4a`. Commit реализации `a629583` отправлен. Runtime не изменён; check/source/compatibility для подготовленного snapshot PASS. Предыдущая [доставка UX](sessions/2026-10-14-product-ux-delivered.md) сохранена отдельно.
+
+Для возобновления сначала прочитать состояние PR #27 и Actions для его merge commit: статус queued/running не считать PASS, прошлые запуски не переносить на новый head. Squash merge разрешён только после required checks и CodeQL без блокирующих findings; после него отдельно проверяется main CI. Окончательные commit/run IDs и результат доставки сохраняются в описании PR и приватном `.cache/tour/refresh-20261014/delivery/delivered.json`.
 
 ## Completed steps
 - Пересняты USER/recipient/ADMIN и WebDAV; добавлены report trash/restore/history, Settings draft/validate/apply, SSO forms и настоящая локальная SAML JIT-регистрация USER, white labeling apply/reset и public/mobile brand.
@@ -19,7 +21,7 @@
 - Перед commit повторно PASS: check/source/compatibility на staged source `f74a78d67d771cb7ee1663f0ed951c8a3a61a8e883426be94dbdb1fcd6879122`. Разница с прежним hash вызвана снятием удалённых PNG из Git index; bytes оставшихся media неизменны. Gitleaks history/worktree не нашёл секретов.
 
 ## Next steps
-Завершить commit/PR gates для точного кандидата, выполнить push/squash merge и отдельно проверить main CI по правилам репозитория. После будущих изменений UI обновлять reviewed plan и запись по [runbook](tour-maintenance.md). Windows и внешние environments принять отдельно при появлении стендов.
+Если PR #27 ещё открыт — завершить required CI и squash merge, затем проверить main CI. Если PR уже merged и оба workflow main успешны — доставка завершена; повторно создавать PR или переписывать историю не нужно. После будущих изменений UI обновлять reviewed plan и запись по [runbook](tour-maintenance.md). Windows и внешние environments принять отдельно при появлении стендов.
 
 ## Decisions
 Только синтетические данные и одноразовый локальный стенд. TTS получает лишь тексты экскурсии. API-квота отдельно от web credits и в этой задаче не проверялась. Старый narration cache сохранён; новый private journal — `.cache/tour/elevenlabs-web-Liza-20261014`. Runtime/API/env/migrations/crypto/production guard не менялись.
