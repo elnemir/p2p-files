@@ -67,3 +67,9 @@
 - Повтор завершился exit 0: mobile Chromium 13/13 PASS, mobile WebKit 13/13 PASS; `.cache/commit-mobile-retry.log`. Issuer issue/renewal workflow и оба setup wizard workflow повторно PASS.
 - Все пять browser profiles имеют PASS по 13 сценариев на неизменном source; первичный timeout сохранён выше и не скрывается. Код и таймауты для повтора не менялись.
 - Проверки перед commit завершены. Следующий шаг: commit и push ветки, сверка remote HEAD, запуск CI на опубликованном commit. Production deployment не выполняется.
+
+### Публикация изменений
+- Реализация закоммичена: `d56627048ab921ab1a2ba60489958805906b975d` (`feat(licensing): add offline licenses, issuer portal and setup wizards`), 121 файл.
+- Push в `origin/codex/offline-licensing-setup` успешен; `git ls-remote` подтвердил совпадение remote SHA с этим commit.
+- Эта запись фиксируется отдельным docs commit. CI запускается на финальном HEAD после его push; результат CI требует отдельной проверки и не объявлен PASS. Локальные результаты относятся к source fingerprint выше.
+- Main не изменён, PR/merge и production deployment не выполнялись. Следующее: оценить CI финального HEAD перед последующим PR/merge.
