@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"filex.local/filex/internal/licensing"
 	"io"
 	"net/http"
 	"strconv"
@@ -51,6 +52,9 @@ func (d davAccess) put(w http.ResponseWriter, r *http.Request, name string) (res
 		return e
 	}
 	guard := func(ctx context.Context, tx pgx.Tx) error {
+		if _, e := licensing.Guard(ctx, tx, "webdav"); e != nil {
+			return e
+		}
 		if e := d.guard(ctx, tx); e != nil {
 			return e
 		}
@@ -99,7 +103,11 @@ func (d davAccess) put(w http.ResponseWriter, r *http.Request, name string) (res
 		}
 	}()
 	reserve := func(length int64) (string, error) {
-		u, e := service.CreateStaged(r.Context(), d.owner, d.transfer, name, length, d.settings, func(tx pgx.Tx, _ string) error {
+		reserveCtx := r.Context()
+		if size < 0 && len(staged) == 0 {
+			reserveCtx = licensing.WithStreaming(reserveCtx)
+		}
+		u, e := service.CreateStaged(reserveCtx, d.owner, d.transfer, name, length, d.settings, func(tx pgx.Tx, _ string) error {
 			if e := d.parentExists(r.Context(), tx, name); e != nil {
 				return e
 			}

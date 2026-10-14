@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useEffectEvent, useState } from "react";
 import type { Api, Schema, Response } from "../lib/api-types";
+import LicensePanel from "./LicensePanel";
 import BrandingPanel from "./BrandingPanel";
 import IdentityProvidersPanel from "./IdentityProvidersPanel";
 import OperationsPanel from "./OperationsPanel";
@@ -105,6 +106,11 @@ export default function AdminPanel({
             icon: "key",
           },
           {
+            id: "license",
+            label: t("Лицензия", "License"),
+            icon: "key",
+          },
+          {
             id: "appearance",
             label: t("Оформление", "Appearance"),
             icon: "paint",
@@ -129,6 +135,9 @@ export default function AdminPanel({
       >
         {t("Обновить", "Refresh")}
       </button>
+      <div hidden={section !== "license"}>
+        <LicensePanel api={api} t={t} />
+      </div>
       <div hidden={section !== "appearance"}>
         <BrandingPanel api={api} t={t} busy={busy} />
       </div>

@@ -8,7 +8,7 @@
 
 - Go/Next.js/PostgreSQL/Redis/Traefik/Compose/Local/S3, single origin. PG authoritative; Redis ephemeral.
 - Immutable publish, TTL от publishedAt, hard deadline, server-observed one-time consume, atomic ZIP, leases/fencing, freeze/forensic.
-- USER без recipient correlation/IP/UA; ADMIN audit/reauth отдельно. KEK вне БД; классы ключей; Ed25519 только SHA256SUMS.
+- USER без recipient correlation/IP/UA; ADMIN audit/reauth отдельно. KEK вне БД; классы ключей; Instance Ed25519 подписывает SHA256SUMS; отдельный vendor Ed25519 для лицензий утверждён в ADR-016.
 - Restore с verified pre-backup, сохранением ops control plane, новой generation/restart, reconciliation и явным reopen. Физически удалённый payload backup БД не возвращает.
 - R-01–06/лицензии принимаются владельцем; production deployment — только отдельной командой.
 

@@ -2,6 +2,7 @@
 """One disposable Compose project per browser; never share restored state across engines."""
 import base64,json,os,secrets,subprocess,time,urllib.request,uuid
 from pathlib import Path
+from license_fixture import new_fixture, activate, renewal
 root=Path(__file__).resolve().parents[1]
 projects=os.environ.get('FILEX_E2E_PROJECTS','chromium,firefox,webkit,mobile-chromium,mobile-webkit').split(',')
 allowed={'chromium','firefox','webkit','mobile-chromium','mobile-webkit'}
@@ -24,6 +25,8 @@ try:
   output=root/'.cache/evidence/browser'/browser
   output.mkdir(parents=True,exist_ok=True)
   env=dict(os.environ,FILEX_BROWSER_WS=f'ws://127.0.0.1:{port}/',FILEX_BROWSER_PLATFORM='linux',POSTGRES_PASSWORD=secrets.token_hex(24),MASTER_KEK=base64.b64encode(secrets.token_bytes(32)).decode(),FILEX_E2E_EMAIL='browser@example.test',FILEX_E2E_PASSWORD=secrets.token_urlsafe(24),FILEX_E2E_ADMIN='ops-admin@example.test',FILEX_E2E_PROJECT=project,FILEX_E2E_OUTPUT_DIR=str(output),PLAYWRIGHT_BROWSERS_PATH=str(root/'.cache/browsers'))
+  license_fixture=new_fixture()
+  env.update(license_fixture['env'])
   cmd=['docker','compose','--env-file','/dev/null','--project-name',project,'-f',str(root/'deploy/compose.yaml')]
   def compose(*args,**kwargs):return subprocess.run(cmd+list(args),cwd=root,env=env,check=True,text=True,**kwargs)
   try:
@@ -35,6 +38,8 @@ try:
     except OSError:pass
     time.sleep(1)
    else:raise RuntimeError('API did not become ready')
+   previous_license=activate(compose,license_fixture)
+   env['FILEX_E2E_LICENSE_RENEWAL']=renewal(license_fixture,previous_license)
    compose('exec','-T','api','filex-cli','user','create',input=json.dumps({'email':env['FILEX_E2E_EMAIL'],'password':env['FILEX_E2E_PASSWORD'],'role':'user'}),stdout=subprocess.DEVNULL)
    compose('exec','-T','api','filex-cli','user','create','--json',input=json.dumps({'email':env['FILEX_E2E_ADMIN'],'password':env['FILEX_E2E_PASSWORD'],'role':'admin'}),stdout=subprocess.DEVNULL)
    args=['npx','playwright','test','--project',browser]
@@ -43,5 +48,7 @@ try:
    print(f'PASS: {browser} transfer/reports/restore, a11y, keyboard, responsive and visual acceptance.',flush=True)
   finally:
    compose('down','--volumes','--remove-orphans')
+ subprocess.run(['python3','scripts/test-issuer-browser.py'],cwd=root,env=dict(os.environ,FILEX_BROWSER_WS=f'ws://127.0.0.1:{port}/',NEXT_TELEMETRY_DISABLED='1'),check=True,timeout=240)
+ subprocess.run(['python3','scripts/test-issuer-browser.py'],cwd=root,env=dict(os.environ,FILEX_BROWSER_WS=f'ws://127.0.0.1:{port}/',NEXT_TELEMETRY_DISABLED='1',FILEX_SETUP_BROWSER='1'),check=True,timeout=240)
 finally:
  subprocess.run(['docker','rm','--force',server],check=True,stdout=subprocess.DEVNULL)

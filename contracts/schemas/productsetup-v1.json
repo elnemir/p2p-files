@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filex.invalid/schemas/productsetup-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "email",
+    "password"
+  ],
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "password": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 1024
+    }
+  }
+}

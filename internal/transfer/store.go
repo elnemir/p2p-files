@@ -3,6 +3,7 @@ package transfer
 import (
 	"context"
 	"errors"
+	"filex.local/filex/internal/licensing"
 	"time"
 
 	"filex.local/filex/internal/config"
@@ -50,12 +51,23 @@ func (s *Store) CreateDraft(ctx context.Context, owner string) (Draft, error) {
 		return Draft{}, ErrNotFound
 	}
 	d := Draft{ID: domain.NewID(), Revision: 1}
-	_, err := s.db.Exec(ctx, "INSERT INTO transfers(id,owner_id) VALUES($1,$2)", d.ID, owner)
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return Draft{}, err
+	}
+	defer tx.Rollback(context.Background())
+	if _, err = licensing.Guard(ctx, tx, ""); err != nil {
+		return Draft{}, err
+	}
+	_, err = tx.Exec(ctx, "INSERT INTO transfers(id,owner_id) VALUES($1,$2)", d.ID, owner)
 	var e *pgconn.PgError
 	if errors.As(err, &e) && e.Code == "23503" {
 		return Draft{}, ErrNotFound
 	}
-	return d, err
+	if err != nil {
+		return d, err
+	}
+	return d, tx.Commit(ctx)
 }
 
 func lockDraft(ctx context.Context, tx pgx.Tx, owner, id string) (int64, error) {
@@ -140,12 +152,16 @@ func (s *Store) reserveUpload(ctx context.Context, owner, id, path string, size 
 	if err != nil {
 		return Upload{}, err
 	}
+	if err = licensing.TransferQuota(ctx, tx, id, key, licensing.ReservedBytes(ctx, size)); err != nil {
+		return Upload{}, err
+	}
+	licensePath := key
 	u := Upload{ID: domain.NewID(), Revision: revision + 1}
 	u.ObjectKey = u.ID
 	if staged {
 		key = "#staged:" + u.ID
 	}
-	if _, err = tx.Exec(ctx, "INSERT INTO files(id,transfer_id,path,path_key,size,object_key) VALUES($1,$2,$3,$4,$5,$6)", u.ID, id, path, key, size, u.ObjectKey); err != nil {
+	if _, err = tx.Exec(ctx, "INSERT INTO files(id,transfer_id,path,path_key,size,object_key,license_bytes,license_path_key) VALUES($1,$2,$3,$4,$5,$6,$7,$8)", u.ID, id, path, key, size, u.ObjectKey, licensing.ReservedBytes(ctx, size), licensePath); err != nil {
 		return Upload{}, err
 	}
 	if staged {
@@ -189,6 +205,10 @@ func (s *Store) BeginFinalizeWith(ctx context.Context, owner, id, fileID string,
 	if err != nil {
 		return 0, err
 	}
+	if _, err = licensing.Guard(ctx, tx, ""); err != nil {
+		return 0, err
+	}
+
 	var filePath string
 	if err = tx.QueryRow(ctx, "SELECT path FROM files WHERE id=$1 AND transfer_id=$2", fileID, id).Scan(&filePath); err != nil {
 		return 0, err
@@ -249,6 +269,10 @@ func (s *Store) FinalizeWith(ctx context.Context, owner, id, fileID, sha256 stri
 	if err != nil {
 		return 0, err
 	}
+	if _, err = licensing.Guard(ctx, tx, ""); err != nil {
+		return 0, err
+	}
+
 	var filePath string
 	if err = tx.QueryRow(ctx, "SELECT path FROM files WHERE id=$1 AND transfer_id=$2", fileID, id).Scan(&filePath); err != nil {
 		return 0, err
@@ -332,6 +356,9 @@ func (s *Store) PublishWithRequest(ctx context.Context, owner, id string, expect
 		return Published{}, ErrConflict
 	}
 	if err = CheckDAVLocks(ctx, tx, id, "", true); err != nil {
+		return Published{}, err
+	}
+	if err = licensing.TransferQuota(ctx, tx, id, "", 0); err != nil {
 		return Published{}, err
 	}
 	var staging bool

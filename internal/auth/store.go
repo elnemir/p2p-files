@@ -10,6 +10,7 @@ import (
 	"errors"
 	"filex.local/filex/internal/audit"
 	"filex.local/filex/internal/domain"
+	"filex.local/filex/internal/licensing"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"slices"
@@ -53,6 +54,14 @@ func Token() string {
 }
 func Digest(s string) string { b := sha256.Sum256([]byte(s)); return hex.EncodeToString(b[:]) }
 func (s *Store) CreateUser(ctx context.Context, actor, email, password, role string) (string, error) {
+	return s.createUser(ctx, actor, email, password, role, false)
+}
+
+func (s *Store) SetupAdmin(ctx context.Context, email, password string) (string, error) {
+	return s.createUser(ctx, "host_setup", email, password, "admin", true)
+}
+
+func (s *Store) createUser(ctx context.Context, actor, email, password, role string, first bool) (string, error) {
 	email, e := Email(email)
 	if e != nil {
 		return "", e
@@ -70,6 +79,22 @@ func (s *Store) CreateUser(ctx context.Context, actor, email, password, role str
 		return "", e
 	}
 	defer tx.Rollback(context.Background())
+	var completed bool
+	if e = tx.QueryRow(ctx, "SELECT completed FROM ops_setup WHERE singleton FOR UPDATE").Scan(&completed); e != nil {
+		return "", e
+	}
+	if first {
+		var exists bool
+		if e = tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM users)").Scan(&exists); e != nil {
+			return "", e
+		}
+		if completed || exists {
+			return "", ErrConflict
+		}
+	}
+	if e = licensing.UserSlot(ctx, tx, (actor == "host_cli" || first) && role == "admin"); e != nil {
+		return "", e
+	}
 	if _, e = tx.Exec(ctx, "INSERT INTO users(id,email,role,password_hash) VALUES($1,$2,$3,$4)", id, email, role, hash); e != nil {
 		return "", e
 	}
@@ -77,6 +102,9 @@ func (s *Store) CreateUser(ctx context.Context, actor, email, password, role str
 		return "", e
 	}
 	if e = audit.Append(ctx, tx, s.Key, actor, "user.created", id); e != nil {
+		return "", e
+	}
+	if _, e = tx.Exec(ctx, "UPDATE ops_setup SET completed=true WHERE singleton"); e != nil {
 		return "", e
 	}
 	return id, tx.Commit(ctx)

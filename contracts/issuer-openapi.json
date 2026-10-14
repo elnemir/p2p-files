@@ -1,0 +1,1485 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "FileX private license issuer",
+    "version": "1.0.0",
+    "description": "Isolated vendor service. Named OIDC subjects and MFA required. Customer instances never contact this service."
+  },
+  "paths": {
+    "/issuer/api/session": {
+      "get": {
+        "summary": "Read the current authorized operator",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role, fresh MFA, Origin or CSRF rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issuer/api/issuances": {
+      "get": {
+        "summary": "List immutable issuance history",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Issuance"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role, fresh MFA, Origin or CSRF rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Approve an idempotent issuance for the isolated signer",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Issuance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role, fresh MFA, Origin or CSRF rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Issue"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/issuer/api/issuances/{id}": {
+      "get": {
+        "summary": "Download an issued license",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Compact JWS license artifact"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role, fresh MFA, Origin or CSRF rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            }
+          }
+        ]
+      }
+    },
+    "/issuer/api/logout": {
+      "post": {
+        "summary": "Revoke the current session",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "loggedOut"
+                  ],
+                  "properties": {
+                    "loggedOut": {
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role, fresh MFA, Origin or CSRF rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency or revision conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/issuer/auth/login": {
+      "get": {
+        "summary": "Start OIDC MFA authorization",
+        "security": [],
+        "responses": {
+          "302": {
+            "description": "Redirect"
+          },
+          "401": {
+            "description": "Invalid identity response"
+          },
+          "403": {
+            "description": "MFA or subject rejected"
+          },
+          "429": {
+            "description": "Flow capacity reached"
+          },
+          "503": {
+            "description": "Unavailable"
+          }
+        }
+      }
+    },
+    "/issuer/auth/callback": {
+      "get": {
+        "summary": "Consume a bound OIDC authorization response",
+        "security": [],
+        "responses": {
+          "303": {
+            "description": "Redirect"
+          },
+          "401": {
+            "description": "Invalid identity response"
+          },
+          "403": {
+            "description": "MFA or subject rejected"
+          },
+          "429": {
+            "description": "Flow capacity reached"
+          },
+          "503": {
+            "description": "Unavailable"
+          }
+        },
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/issuer/api/setup": {
+      "get": {
+        "x-implementation": "implemented",
+        "description": "Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.",
+        "summary": "Read first-run state",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Current state; no secrets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "disabled",
+                        "pending",
+                        "complete"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Disabled, expired, token or Origin rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Setup already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or identity provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "x-implementation": "implemented",
+        "description": "Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.",
+        "summary": "Complete first-run setup once",
+        "security": [
+          {
+            "setupToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current state; no secrets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "disabled",
+                        "pending",
+                        "complete"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Disabled, expired, token or Origin rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Setup already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or identity provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IssuerSetup"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Claims": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "product",
+          "issuer",
+          "licenseId",
+          "entitlementId",
+          "revision",
+          "customerId",
+          "installationId",
+          "kind",
+          "issuedAt",
+          "notBefore",
+          "expiresAt",
+          "updatesUntil",
+          "supportUntil",
+          "limits",
+          "features"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "product": {
+            "const": "filex"
+          },
+          "issuer": {
+            "const": "filex-vendor"
+          },
+          "licenseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "kind": {
+            "enum": [
+              "subscription",
+              "perpetual"
+            ]
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "notBefore": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatesUntil": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "supportUntil": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "maxEnabledUsers",
+              "maxTransferBytes"
+            ],
+            "properties": {
+              "maxEnabledUsers": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxTransferBytes": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "features": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "webdav",
+                "federated_auth",
+                "white_label"
+              ]
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "subscription"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "Z$"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "expiresAt": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Issue": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "idempotencyKey",
+          "claims"
+        ],
+        "properties": {
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "claims": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schemaVersion",
+              "product",
+              "issuer",
+              "licenseId",
+              "entitlementId",
+              "revision",
+              "customerId",
+              "installationId",
+              "kind",
+              "issuedAt",
+              "notBefore",
+              "expiresAt",
+              "updatesUntil",
+              "supportUntil",
+              "limits",
+              "features"
+            ],
+            "properties": {
+              "schemaVersion": {
+                "const": 1
+              },
+              "product": {
+                "const": "filex"
+              },
+              "issuer": {
+                "const": "filex-vendor"
+              },
+              "licenseId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "entitlementId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "revision": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "customerId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+              },
+              "installationId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+              },
+              "kind": {
+                "enum": [
+                  "subscription",
+                  "perpetual"
+                ]
+              },
+              "issuedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              "notBefore": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              "expiresAt": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "Z$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "updatesUntil": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              "supportUntil": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              "limits": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "maxEnabledUsers",
+                  "maxTransferBytes"
+                ],
+                "properties": {
+                  "maxEnabledUsers": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maxTransferBytes": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "features": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "webdav",
+                    "federated_auth",
+                    "white_label"
+                  ]
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "subscription"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "Z$"
+                    }
+                  }
+                },
+                "else": {
+                  "properties": {
+                    "expiresAt": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "Session": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "role",
+          "csrfToken",
+          "authenticatedAt"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "viewer",
+              "issuer",
+              "security_admin"
+            ]
+          },
+          "csrfToken": {
+            "type": "string"
+          },
+          "authenticatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          }
+        }
+      },
+      "Issuance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "state",
+          "claims",
+          "sha256",
+          "createdAt",
+          "keyId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "state": {
+            "enum": [
+              "approved",
+              "issued",
+              "signing_failed"
+            ]
+          },
+          "claims": {
+            "$ref": "#/components/schemas/Claims"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "keyId": {
+            "type": "string"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        }
+      },
+      "IssuerSetup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issuer",
+          "clientId",
+          "clientSecret",
+          "requiredAcr",
+          "subject"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "clientId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "clientSecret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "requiredAcr": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        }
+      },
+      "SetupStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "disabled",
+              "pending",
+              "complete"
+            ]
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "issuerSession"
+      },
+      "setupToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Setup-Token",
+        "description": "Host-provisioned random token; expiring and disabled permanently after completion."
+      }
+    }
+  },
+  "security": [
+    {
+      "session": []
+    }
+  ]
+}

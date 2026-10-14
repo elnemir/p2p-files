@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Офлайн-лицензирование
+
+- Subscription/perpetual, отдельная Ed25519 vendor подпись, ADMIN preview/import и host CLI; migration 0020 сохраняет license identity/revision/clock в operations control plane.
+- Общие PG guards ограничивают enabled users, transfer bytes и DAV/SSO/branding; expiry сохраняет старую recipient выдачу, one-time/TTL/freeze и recovery.
+- Отдельные закрытая Next.js панель, Go OIDC MFA API и signer, immutable/idempotent issuance с transactional outbox. Private key не входит в клиентскую поставку и web API.
+- Подписанные release metadata ограничивают обновления до migration; ephemeral signed fixtures используются в локальных проверках. [Эксплуатация и ограничения](wiki/licensing-operations.md), текущие результаты — wiki/session.md.
+
 ## Unreleased — Полный тур, 2026-10-14
 
 - Пересняты 71 скриншот и 26 видеоглав актуального USER/ADMIN: настройки draft/validate/apply, история и восстановление отчёта, формы OIDC/SAML/LDAP, настоящий локальный SAML-вход/регистрация USER, white labeling и публичный мобильный бренд.
@@ -104,3 +111,9 @@
 ### Remaining
 - Внешнее окружение не подготовлено (решение владельца 2026-10-11): real host/DNS/ACME/SMTP/S3/backups/KEK/checkpoints и target load/DR acceptance заблокированы. Реальные browser/device/assistive-technology, независимый review, лицензии и R-01–06 остаются открытыми. Production bootstrap отклоняется.
 - Local fixtures не доказывают совместимость реальных SMTP/S3 accounts. CI реализации фазы 7 подтверждён для 7dce226; статус последующих изменений — в session. Production deployment не выполнялся, residual risks не приняты. См. [историю evidence](wiki/history/development-evidence-2026-10-11.md) и [session](wiki/session.md).
+
+## First-run web setup — 2026-10-14
+
+- FileX `/setup`: временный host token, первый ADMIN и monotonic completion latch.
+- Issuer `/issuer/setup`: OIDC/MFA/subject, encrypted immutable configuration, отдельный config key; vendor seed остаётся signer-only.
+- Responsive формы, bounded contracts, race/fault/restart проверки; [runbook](wiki/first-run-setup.md). Production guard сохранён.

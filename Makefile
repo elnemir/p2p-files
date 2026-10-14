@@ -23,6 +23,7 @@ lint:
 test:
 	go test ./...
 	npm run test:contracts
+	python3 scripts/test_setup_access.py
 	python3 scripts/test_production_config.py
 	python3 scripts/test_contract_compatibility.py
 	python3 scripts/test_acceptance.py
@@ -33,6 +34,7 @@ test:
 test-race:
 	go test -race ./...
 	npm run test:contracts
+	python3 scripts/test_setup_access.py
 	python3 scripts/test_production_config.py
 	python3 scripts/test_contract_compatibility.py
 	python3 scripts/test_acceptance.py

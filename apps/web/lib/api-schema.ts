@@ -63,6 +63,50 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/admin/license": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read offline license state and installation request identity
+     * @description Read offline license state and installation request identity. ADMIN cookie session with reauthentication within five minutes is required.
+     */
+    get: operations["getAdminLicense"];
+    /**
+     * Apply a signed offline license with epoch CAS
+     * @description ADMIN reauthentication, Origin and CSRF required. Signature, installation binding and monotonic entitlement revision are checked. Invalid replacement preserves active rights. Future licenses remain pending until notBefore. ADMIN cookie session with reauthentication within five minutes is required.
+     */
+    put: operations["putAdminLicense"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/admin/license/preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify a candidate offline license without applying it
+     * @description Verify a candidate offline license without applying it. ADMIN cookie session with reauthentication within five minutes is required.
+     */
+    post: operations["postAdminLicensePreview"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/banner": {
     parameters: {
       query?: never;
@@ -2155,6 +2199,320 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/setup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read first-run state
+     * @description Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Current state; no secrets */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {unknown} */
+              state: "disabled" | "pending" | "complete";
+            };
+          };
+        };
+        /** @description Invalid input */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Disabled, expired, token or Origin rejected */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Setup already completed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Capacity reached */
+        429: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Internal failure */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Database or identity provider unavailable */
+        503: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+    put?: never;
+    /**
+     * Complete first-run setup once
+     * @description Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          Origin: string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["ProductSetup"];
+        };
+      };
+      responses: {
+        /** @description Current state; no secrets */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              /** @enum {unknown} */
+              state: "disabled" | "pending" | "complete";
+            };
+          };
+        };
+        /** @description Invalid input */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Disabled, expired, token or Origin rejected */
+        403: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Setup already completed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Capacity reached */
+        429: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Internal failure */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+        /** @description Database or identity provider unavailable */
+        503: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json":
+              | {
+                  /** @enum {string} */
+                  state:
+                    | "disabled"
+                    | "complete"
+                    | "invalid_input"
+                    | "identity_unavailable"
+                    | "setup_failed"
+                    | "unavailable";
+                }
+              | components["schemas"]["Error"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2670,6 +3028,56 @@ export interface components {
       /** Format: date-time */
       createdAt: string;
     };
+    LicenseClaims: {
+      /** @constant */
+      schemaVersion: 1;
+      /** @constant */
+      product: "filex";
+      /** @constant */
+      issuer: "filex-vendor";
+      /** Format: uuid */
+      licenseId: string;
+      /** Format: uuid */
+      entitlementId: string;
+      revision: number;
+      customerId: string;
+      /** Format: uuid */
+      installationId: string;
+      /** @enum {unknown} */
+      kind: "subscription" | "perpetual";
+      /** Format: date-time */
+      issuedAt: string;
+      /** Format: date-time */
+      notBefore: string;
+      expiresAt: string | null;
+      /** Format: date-time */
+      updatesUntil: string;
+      /** Format: date-time */
+      supportUntil: string;
+      limits: {
+        maxEnabledUsers: number | null;
+        maxTransferBytes: number | null;
+      };
+      features: ("webdav" | "federated_auth" | "white_label")[];
+    } & unknown;
+    LicenseStatus: {
+      /** Format: uuid */
+      installationId: string;
+      epoch: number;
+      /** @enum {string} */
+      state:
+        | "missing"
+        | "active"
+        | "expired"
+        | "invalid"
+        | "not_yet_valid"
+        | "clock_suspect"
+        | "update_not_entitled";
+      claims: components["schemas"]["LicenseClaims"] | null;
+      pending: components["schemas"]["LicenseClaims"] | null;
+      enabledUsers: number;
+      overLimit: boolean;
+    };
     IdentityConfig: {
       trustEmail: boolean;
       hostedDomain: string;
@@ -2723,6 +3131,15 @@ export interface components {
       password: string;
       /** Format: date-time */
       expiresAt: string;
+    };
+    ProductSetup: {
+      /** Format: email */
+      email: string;
+      password: string;
+    };
+    SetupStatus: {
+      /** @enum {unknown} */
+      state: "disabled" | "pending" | "complete";
     };
     "manifest-v1": {
       /** @constant */
@@ -2960,6 +3377,305 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["BrandRevision"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getAdminLicense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LicenseStatus"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  putAdminLicense: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication. */
+        Origin?: string;
+        /** @description Required with cookie authentication; obtained at login. Not required for bearer requests. */
+        "X-CSRF-Token"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          envelope: string;
+          expectedEpoch: number;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LicenseStatus"];
+        };
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  postAdminLicensePreview: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication. */
+        Origin?: string;
+        /** @description Required with cookie authentication; obtained at login. Not required for bearer requests. */
+        "X-CSRF-Token"?: string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          envelope: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LicenseClaims"];
         };
       };
       /** @description Invalid input */

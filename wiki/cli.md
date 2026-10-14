@@ -69,3 +69,7 @@ filex-verify --public-key trusted.pem --fingerprint <sha256-DER-SPKI> --verify-f
 По умолчанию: ZIP structure + sorted SHA256SUMS + Ed25519 signature + соответствие embedded key независимо полученному trusted PEM. Payload bytes не читаются. `--verify-files` дополнительно сверяет каждый файл по SHA-256. Fingerprint lowercase hex; несовпадение всегда ошибка. Embedded public key сам по себе не является trust anchor.
 
 Success JSON: `{"status":"verified","manifestFiles":2,"filesChecked":false}`. Exit 0 — success, 1 — verification failure, 2 — usage/key file error. Default success утверждает подлинность manifest, не целостность payload на диске.
+
+## Офлайн-лицензия установки
+
+`filex-cli license status` возвращает installationId, epoch, state, текущие/pending права и usage. `filex-cli license apply` читает JSON stdin `{"envelope":"<compact JWS>","expectedEpoch":1}` и возвращает новое состояние. Команды предназначены доверенному host/container оператору; импорт пишет audit и проверяет подпись, installation binding, monotonic revision и epoch CAS. Они удерживают maintenance shared lock; обновлять права нужно до закрытия gate для миграции. Неверный файл не заменяет текущую лицензию. [Runbook, ключи и формат](licensing-operations.md).

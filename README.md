@@ -12,6 +12,7 @@
 npm ci
 python3 scripts/init-dev.py
 make up
+python3 scripts/activate-dev-license.py
 ```
 
 Локальный адрес: http://localhost:8090. Необходимые инструменты, первый ADMIN и остановка без удаления данных — [локальный запуск](wiki/development.md). Перед изменениями прочитать [AGENTS](AGENTS.md), [архитектуру](wiki/architecture.md), [план дальнейшей разработки](wiki/implementation-plan.md) и [workflow](wiki/development-workflow.md).
@@ -23,3 +24,7 @@ PostgreSQL — источник истины, Redis — ephemeral. Код propri
 [Правила участия](CONTRIBUTING.md) · [Сообщить об уязвимости](SECURITY.md) · [Настройка репозитория](wiki/repository-governance.md).
 
 Нативный WebDAV: [подключение macOS/Linux/Windows и статус проверки](wiki/webdav-upload.md). Windows ожидает стенда. [Скрин-тур и единый MP4](wiki/screen-tour.md) включают этот workflow.
+
+### Первоначальная настройка в браузере
+
+Для уже запущенных контейнеров доступны FileX `/setup` и портал `/issuer/setup`: временный bootstrap-токен, первый администратор / OIDC MFA, автоматическое закрытие мастера. [Подготовка токена, переменные и восстановление](wiki/first-run-setup.md).

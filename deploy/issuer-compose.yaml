@@ -1,0 +1,74 @@
+name: filex-issuer
+services:
+  postgres:
+    build: {context: .., dockerfile: deploy/Dockerfile.postgres}
+    environment:
+      POSTGRES_USER: issuer_owner
+      POSTGRES_PASSWORD: ${ISSUER_OWNER_PASSWORD:?Set owner database password}
+      POSTGRES_DB: filex_issuer
+    volumes: [issuer_pg:/var/lib/postgresql]
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U issuer_owner -d filex_issuer]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    profiles: [setup]
+    build: {context: .., dockerfile: deploy/Dockerfile.issuer}
+    command: [migrate]
+    environment:
+      ISSUER_DATABASE_URL: postgres://issuer_owner:${ISSUER_OWNER_PASSWORD}@postgres:5432/filex_issuer?sslmode=disable
+      ISSUER_APP_PASSWORD: ${ISSUER_APP_PASSWORD:?Set application database password}
+      ISSUER_SIGNER_PASSWORD: ${ISSUER_SIGNER_PASSWORD:?Set signer database password}
+    depends_on: {postgres: {condition: service_healthy}}
+    networks: [database]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  api:
+    build: {context: .., dockerfile: deploy/Dockerfile.issuer}
+    environment:
+      ISSUER_DATABASE_URL: postgres://filex_issuer_app:${ISSUER_APP_PASSWORD}@postgres:5432/filex_issuer?sslmode=disable
+      ISSUER_LISTEN: 0.0.0.0:8082
+      ISSUER_CONFIG_KEY: ${ISSUER_CONFIG_KEY:-}
+      ISSUER_SETUP_TOKEN_HASH: ${ISSUER_SETUP_TOKEN_HASH:-}
+      ISSUER_SETUP_EXPIRES_AT: ${ISSUER_SETUP_EXPIRES_AT:-}
+      ISSUER_ORIGIN: ${ISSUER_ORIGIN:?HTTPS issuer origin required}
+      ISSUER_OIDC_URL: ${ISSUER_OIDC_URL:-}
+      ISSUER_OIDC_CLIENT_ID: ${ISSUER_OIDC_CLIENT_ID:-}
+      ISSUER_OIDC_CLIENT_SECRET: ${ISSUER_OIDC_CLIENT_SECRET:-}
+      ISSUER_MFA_ACR: ${ISSUER_MFA_ACR:-}
+      ISSUER_OPERATORS: ${ISSUER_OPERATORS:-}
+    ports: [127.0.0.1:8082:8082]
+    networks: [database, identity]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  signer:
+    build: {context: .., dockerfile: deploy/Dockerfile.issuer}
+    entrypoint: [filex-license-signer]
+    environment:
+      ISSUER_DATABASE_URL: postgres://filex_issuer_signer:${ISSUER_SIGNER_PASSWORD}@postgres:5432/filex_issuer?sslmode=disable
+      ISSUER_KEY_ID: ${ISSUER_KEY_ID:?Signing key identifier required}
+      ISSUER_SIGNING_KEY_FILE: /run/issuer.key
+    volumes:
+      - ${ISSUER_SIGNING_KEY_FILE:?Absolute path to private signing seed}:/run/issuer.key:ro
+    networks: [database]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  web:
+    build: {context: .., dockerfile: deploy/Dockerfile.issuer-web}
+    ports: [127.0.0.1:3002:3000]
+    networks: [presentation]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+networks:
+  database: {internal: true}
+  identity: {}
+  presentation: {internal: true}
+volumes:
+  issuer_pg: {}

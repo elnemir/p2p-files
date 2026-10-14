@@ -5,6 +5,7 @@ import (
 	"errors"
 	"filex.local/filex/internal/config"
 	"filex.local/filex/internal/database"
+	"filex.local/filex/internal/licensing"
 	"filex.local/filex/internal/maintenance"
 	"filex.local/filex/internal/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +22,21 @@ func Open(ctx context.Context) (config.Bootstrap, *pgxpool.Pool, error) {
 	defer cancel()
 	p, err := database.Connect(ctx, c.DatabaseURL)
 	if err != nil {
+		return c, nil, err
+	}
+	// A matching schema must remain recoverable after license corruption or an
+	// ineligible binary replacement. Paid guards still deny all new work; only
+	// schema-changing upgrades need entitlement before touching the database.
+	plan, err := database.CheckUpgrade(ctx, p)
+	if err != nil {
+		p.Close()
+		return c, nil, err
+	}
+	if len(plan.Pending) > 0 {
+		err = licensing.CheckUpgrade(ctx, p)
+	}
+	if err != nil {
+		p.Close()
 		return c, nil, err
 	}
 	if err = database.Migrate(ctx, p); err != nil {

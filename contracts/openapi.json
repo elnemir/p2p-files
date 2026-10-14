@@ -389,6 +389,416 @@
         }
       }
     },
+    "/api/v1/admin/license": {
+      "get": {
+        "operationId": "getAdminLicense",
+        "summary": "Read offline license state and installation request identity",
+        "description": "Read offline license state and installation request identity. ADMIN cookie session with reauthentication within five minutes is required.",
+        "x-implementation": "implemented",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "x-required-scope": "admin:settings"
+      },
+      "put": {
+        "operationId": "putAdminLicense",
+        "summary": "Apply a signed offline license with epoch CAS",
+        "description": "ADMIN reauthentication, Origin and CSRF required. Signature, installation binding and monotonic entitlement revision are checked. Invalid replacement preserves active rights. Future licenses remain pending until notBefore. ADMIN cookie session with reauthentication within five minutes is required.",
+        "x-implementation": "implemented",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required with cookie authentication; obtained at login. Not required for bearer requests."
+          }
+        ],
+        "x-required-scope": "admin:settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "envelope": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16384
+                  },
+                  "expectedEpoch": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "envelope",
+                  "expectedEpoch"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/license/preview": {
+      "post": {
+        "operationId": "postAdminLicensePreview",
+        "summary": "Verify a candidate offline license without applying it",
+        "description": "Verify a candidate offline license without applying it. ADMIN cookie session with reauthentication within five minutes is required.",
+        "x-implementation": "implemented",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseClaims"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Must equal configured publicOrigin for all cookie and public authentication requests; not required for bearer authentication."
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required with cookie authentication; obtained at login. Not required for bearer requests."
+          }
+        ],
+        "x-required-scope": "admin:settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "envelope": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 16384
+                  }
+                },
+                "required": [
+                  "envelope"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/banner": {
       "get": {
         "operationId": "getBanner",
@@ -17962,6 +18372,502 @@
         ],
         "x-required-scope": "transfers:write"
       }
+    },
+    "/api/v1/setup": {
+      "get": {
+        "x-implementation": "implemented",
+        "description": "Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.",
+        "summary": "Read first-run state",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Current state; no secrets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "disabled",
+                        "pending",
+                        "complete"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Disabled, expired, token or Origin rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Setup already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or identity provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "x-implementation": "implemented",
+        "description": "Synchronous first-run setup with a host-provisioned expiring capability and durable completion latch. No asynchronous events are emitted.",
+        "summary": "Complete first-run setup once",
+        "security": [
+          {
+            "setupToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current state; no secrets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "state"
+                  ],
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "disabled",
+                        "pending",
+                        "complete"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Disabled, expired, token or Origin rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Setup already completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Database or identity provider unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state"
+                      ],
+                      "properties": {
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "disabled",
+                            "complete",
+                            "invalid_input",
+                            "identity_unavailable",
+                            "setup_failed",
+                            "unavailable"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductSetup"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -20002,6 +20908,237 @@
           "createdAt"
         ]
       },
+      "LicenseClaims": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "product",
+          "issuer",
+          "licenseId",
+          "entitlementId",
+          "revision",
+          "customerId",
+          "installationId",
+          "kind",
+          "issuedAt",
+          "notBefore",
+          "expiresAt",
+          "updatesUntil",
+          "supportUntil",
+          "limits",
+          "features"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": 1
+          },
+          "product": {
+            "const": "filex"
+          },
+          "issuer": {
+            "const": "filex-vendor"
+          },
+          "licenseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "entitlementId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "customerId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "installationId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+          },
+          "kind": {
+            "enum": [
+              "subscription",
+              "perpetual"
+            ]
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "notBefore": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatesUntil": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "supportUntil": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "Z$"
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "maxEnabledUsers",
+              "maxTransferBytes"
+            ],
+            "properties": {
+              "maxEnabledUsers": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxTransferBytes": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "features": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "webdav",
+                "federated_auth",
+                "white_label"
+              ]
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "subscription"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "Z$"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "expiresAt": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "LicenseStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "installationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "missing",
+              "active",
+              "expired",
+              "invalid",
+              "not_yet_valid",
+              "clock_suspect",
+              "update_not_entitled"
+            ]
+          },
+          "claims": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LicenseClaims"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pending": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LicenseClaims"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enabledUsers": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overLimit": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "installationId",
+          "epoch",
+          "state",
+          "claims",
+          "pending",
+          "enabledUsers",
+          "overLimit"
+        ]
+      },
       "IdentityConfig": {
         "type": "object",
         "additionalProperties": false,
@@ -20211,6 +21348,42 @@
           "password",
           "expiresAt"
         ]
+      },
+      "ProductSetup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 1024
+          }
+        }
+      },
+      "SetupStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "disabled",
+              "pending",
+              "complete"
+            ]
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -20238,6 +21411,12 @@
         "type": "http",
         "scheme": "basic",
         "description": "Username filex and a short-lived credential bound to one draft; never the account password. Used only by the x-webdav protocol."
+      },
+      "setupToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Setup-Token",
+        "description": "Host-provisioned random token; expiring and disabled permanently after completion."
       }
     }
   },

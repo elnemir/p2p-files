@@ -15,10 +15,13 @@
 | [apps/web/app](../apps/web/app/) | Next.js страницы owner/recipient/help/status/verify; layout/styles |
 | [apps/web/components](../apps/web/components/) | FileX, AdminPanel, ApplicationSettings, Controls, WebDAVPanel, OperationsPanel и AdminExportsPanel; RU/EN, themes, пользовательские workflows |
 
+| [cmd/filex-issuer](../cmd/filex-issuer/), [cmd/filex-license-signer](../cmd/filex-license-signer/), [apps/issuer](../apps/issuer/) | Отдельный vendor контур: OIDC MFA, выпуск/история/продление, private key только у signer |
+
 ## Доменные компоненты
 
 | Изменение | Код и данные | Проверки / документация |
 |---|---|---|
+| Офлайн-лицензирование | [licensing](../internal/licensing/), [issuer](../internal/issuer/), migration 0020, LicensePanel | [Модель](licensing.md), [runbook](licensing-operations.md); quota/race/fault/crypto/role/browser tests |
 | Auth/roles/scopes/CSRF | [auth](../internal/auth/), [httpapi/app.go](../internal/httpapi/app.go), identity migrations | app/closure integration, [security](security.md) |
 | Typed settings/ingress | [config](../internal/config/), [settings](../internal/settings/), [networkpolicy](../internal/networkpolicy/), httpapi/network.go | config/network unit и network integration, [ingress](production-ingress.md) |
 | Draft/publish/tree/retention | [domain](../internal/domain/), [transfer](../internal/transfer/), httpapi/transfers/tree/organization | repository/retention/closure integration, [core design](core-design.md), [states](state-machines.md) |
@@ -65,3 +68,7 @@
 
 ## UX основных сценариев
 [ADR-015](adr/015-product-ux.md), [руководство](product-ux.md): общие controls/confirmation, sidebar, typed Settings v1, recipient terminal state. Проверки — [product-ux.spec.ts](../scripts/e2e/product-ux.spec.ts).
+
+## Веб-настройка первого запуска
+
+[Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.

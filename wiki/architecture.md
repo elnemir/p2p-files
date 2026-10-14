@@ -59,3 +59,11 @@ ADMIN имеет аудируемые forensic/recovery полномочия, н
 
 ## Внешние identity authorities
 [ADR-014](adr/014-federated-auth.md): ADMIN config → OIDC/SAML/LDAP verification → provider+stable subject → local PG users/sessions. Config/flows используют существующий configuration DEK. USER-only JIT, явный link, browser-bound state/PKCE/nonce, local role/disabled authority; AsyncAPI не меняется. [Поток и эксплуатация](federated-auth.md).
+
+## Офлайн-лицензирование
+
+Утверждённая модель subscription/perpetual реализована: клиент проверяет JWS отдельным vendor Ed25519 public key без сети; PostgreSQL сериализует import/revision/epoch, user и transfer quota. Истечение закрывает новые платные операции, сохраняя lifecycle существующих передач. Панель издателя, её PostgreSQL и signer развёртываются отдельно; private key отсутствует в клиентских образах и web API. FR-017/SEC-008 добавлены к исходным 32 требованиям. [Runbook](licensing-operations.md) описывает конфигурацию, поток данных, проверки и ограничения; прежние внешние release blockers сохраняются.
+
+## Веб-настройка первого запуска
+
+[Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.

@@ -1633,5 +1633,141 @@
       }
     ],
     "gap": "На кандидате 7dce226 source и пять runtime images имели 0 HIGH/CRITICAL; SBOM/secret/license inventory подготовлены. LGPL optional libvips/MPL dev-only axe, состав поставки/лицензия проекта, R-01–06 и independent review требуют DEV-03/EXT-06–07; нужен свежий scan окончательного кандидата."
+  },
+  {
+    "id": "FR-017",
+    "requirement": "Офлайн subscription/perpetual, панель издателя, лимиты и безопасное истечение.",
+    "phase": 8,
+    "status": "partial",
+    "implementation": [
+      "internal/licensing/store.go",
+      "internal/httpapi/licensing.go",
+      "apps/web/components/LicensePanel.tsx",
+      "internal/issuer/store.go",
+      "apps/issuer/app/page.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-017-1",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseLifecycleAndQuotas"
+      },
+      {
+        "id": "T-FR-017-2",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseConcurrentLastUser"
+      },
+      {
+        "id": "T-FR-017-3",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseBootstrapAndFutureRenewal"
+      },
+      {
+        "id": "T-FR-017-4",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseExpiryPreservesDelivery"
+      },
+      {
+        "id": "T-FR-017-5",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseDAVReplacementAndFeature"
+      },
+      {
+        "id": "T-FR-017-6",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseCorruptionRecoveryBeforeMigration"
+      },
+      {
+        "id": "T-FR-017-7",
+        "path": "internal/httpapi/licensing_integration_test.go",
+        "name": "TestIntegrationLicenseHighWaterSurvivesRestore"
+      }
+    ],
+    "gap": "Локальная реализация и проверки; независимый review, реальный MFA IdP, production key custody/escrow и окончательная release qualification остаются внешними условиями."
+  },
+  {
+    "id": "SEC-008",
+    "requirement": "Отдельный vendor key, строгие подписи, PG guards, MFA и isolated signer.",
+    "phase": 8,
+    "status": "partial",
+    "implementation": [
+      "internal/licensing/license.go",
+      "internal/licensing/release.go",
+      "internal/issuer/auth.go",
+      "internal/issuer/store.go",
+      "internal/issuer/roles.go",
+      "internal/database/migrations/0020_offline_licensing.sql"
+    ],
+    "tests": [
+      {
+        "id": "T-SEC-008-1",
+        "path": "internal/licensing/license_test.go",
+        "name": "TestSignatureTampering"
+      },
+      {
+        "id": "T-SEC-008-2",
+        "path": "internal/licensing/license_test.go",
+        "name": "TestSignedMalformedClaims"
+      },
+      {
+        "id": "T-SEC-008-3",
+        "path": "internal/licensing/license_test.go",
+        "name": "TestReleaseEntitlementAndDomainSeparation"
+      },
+      {
+        "id": "T-SEC-008-4",
+        "path": "internal/issuer/store_integration_test.go",
+        "name": "TestIntegrationIssuerConcurrentIssueAndSignerFault"
+      },
+      {
+        "id": "T-SEC-008-5",
+        "path": "internal/issuer/auth_integration_test.go",
+        "name": "TestIntegrationIssuerOIDCMFAAndCSRF"
+      },
+      {
+        "id": "T-SEC-008-6",
+        "path": "internal/issuer/roles_integration_test.go",
+        "name": "TestIntegrationIssuerDatabaseRoleIsolation"
+      }
+    ],
+    "gap": "Локальная реализация и проверки; независимый review, реальный MFA IdP, production key custody/escrow и окончательная release qualification остаются внешними условиями."
+  },
+  {
+    "id": "FR-018",
+    "requirement": "Защищённые веб-мастера первичной настройки запущенных FileX и issuer контейнеров.",
+    "phase": 7,
+    "status": "partial",
+    "implementation": [
+      "internal/setup/http.go",
+      "internal/httpapi/setup.go",
+      "internal/auth/store.go",
+      "internal/database/migrations/0021_first_run_setup.sql",
+      "internal/issuer/setup.go",
+      "apps/web/components/SetupWizard.tsx",
+      "apps/issuer/app/setup/page.tsx"
+    ],
+    "tests": [
+      {
+        "id": "T-FR-018-1",
+        "path": "internal/setup/http_test.go",
+        "name": "TestCapabilityOriginExpiryAndDisabled"
+      },
+      {
+        "id": "T-FR-018-2",
+        "path": "internal/httpapi/setup_integration_test.go",
+        "name": "TestIntegrationSetupAtomicRaceReplayAndFault"
+      },
+      {
+        "id": "T-FR-018-3",
+        "path": "internal/issuer/setup_integration_test.go",
+        "name": "TestIntegrationIssuerSetupEncryptedRaceRestart"
+      },
+      {
+        "id": "T-FR-018-4",
+        "path": "scripts/setup-browser.mjs",
+        "name": "Both setup wizards"
+      }
+    ],
+    "gap": "Локальные API/PG/browser проверки; реальный IdP/MFA/TLS, independent review и production acceptance отдельно."
   }
 ]

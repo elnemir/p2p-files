@@ -9,6 +9,7 @@ import (
 	"filex.local/filex/internal/cryptobox"
 	"filex.local/filex/internal/domain"
 	"filex.local/filex/internal/keyring"
+	"filex.local/filex/internal/licensing"
 	"github.com/jackc/pgx/v5"
 	"time"
 )
@@ -199,6 +200,9 @@ func (s Store) LDAPSession(ctx context.Context, f Flow, ttl int64) (auth.Session
 	return result, tx.Commit(ctx)
 }
 func (s Store) finish(ctx context.Context, tx pgx.Tx, f Flow, ttl int64) (auth.Session, error) {
+	if _, e := licensing.Guard(ctx, tx, "federated_auth"); e != nil {
+		return auth.Session{}, e
+	}
 	p, e := s.provider(ctx, tx, f.ProviderID, false)
 	if e != nil {
 		return auth.Session{}, e
@@ -246,6 +250,9 @@ func (s Store) finish(ctx context.Context, tx pgx.Tx, f Flow, ttl int64) (auth.S
 		if userID == "" {
 			if !p.Config.AllowRegistration {
 				return auth.Session{}, auth.ErrCredentials
+			}
+			if e = licensing.UserSlot(ctx, tx, false); e != nil {
+				return auth.Session{}, e
 			}
 			userID = domain.NewID()
 			tag, e := tx.Exec(ctx, "INSERT INTO users(id,email,role) VALUES($1,$2,'user') ON CONFLICT DO NOTHING", userID, proof.Email)

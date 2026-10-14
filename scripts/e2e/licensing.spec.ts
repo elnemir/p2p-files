@@ -1,0 +1,31 @@
+import {test,expect} from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import {evidencePath} from './evidence';
+
+test('admin imports offline renewal and rejects modified signature without changing rights',async({page})=>{
+ await page.goto('/');
+ await page.getByLabel('Email',{exact:true}).fill(process.env.FILEX_E2E_ADMIN!);
+ await page.getByLabel('Пароль',{exact:true}).fill(process.env.FILEX_E2E_PASSWORD!);
+ await page.getByRole('button',{name:'Войти',exact:true}).click();
+ await page.getByRole('button',{name:'Администрирование',exact:true}).click();
+ await page.getByRole('navigation',{name:'Разделы администрирования'}).getByRole('button',{name:'Лицензия',exact:true}).click();
+ await page.getByRole('button',{name:'Проверить состояние',exact:true}).click();
+ await expect(page.getByText('Действует',{exact:true})).toBeVisible();
+ const before=await (await page.request.get('/api/v1/admin/license')).json();
+ const request=page.waitForEvent('download');await page.getByRole('button',{name:'Скачать запрос лицензии',exact:true}).click();expect((await request).suggestedFilename()).toBe('filex-installation.json');
+ await page.getByLabel('Подписанный файл лицензии',{exact:true}).setInputFiles({name:'renewal.jws',mimeType:'text/plain',buffer:Buffer.from(process.env.FILEX_E2E_LICENSE_RENEWAL!)});
+ await page.getByRole('button',{name:'Проверить перед применением',exact:true}).click();
+ await expect(page.getByRole('button',{name:'Применить лицензию',exact:true})).toBeVisible();
+ const applied=page.waitForResponse(r=>r.url().endsWith('/admin/license')&&r.request().method()==='PUT');
+ await page.getByRole('button',{name:'Применить лицензию',exact:true}).click();expect((await applied).status()).toBe(200);
+ const after=await (await page.request.get('/api/v1/admin/license')).json();expect(after.epoch).toBe(before.epoch+1);expect(after.claims.revision).toBe(2);
+ const parts=process.env.FILEX_E2E_LICENSE_RENEWAL!.split('.');parts[2]=(parts[2][0]==='A'?'B':'A')+parts[2].slice(1);
+ await page.getByLabel('Содержимое лицензии',{exact:true}).fill(parts.join('.'));
+ const rejected=page.waitForResponse(r=>r.url().endsWith('/admin/license/preview'));
+ await page.getByRole('button',{name:'Проверить перед применением',exact:true}).click();expect((await rejected).status()).toBe(400);
+ await expect(page.getByRole('button',{name:'Применить лицензию',exact:true})).toHaveCount(0);
+ expect((await (await page.request.get('/api/v1/admin/license')).json()).epoch).toBe(after.epoch);
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+ await page.screenshot({path:evidencePath('license-mobile.png'),fullPage:true});
+});

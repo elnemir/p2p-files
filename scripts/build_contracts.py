@@ -63,6 +63,15 @@ add('GET','/status','Read aggregate service status',Status,description='Aggregat
 add('GET','/branding','Read public installation branding',BrandRevision,description='Public nonsecret presentation only; no configuration secrets, actor or history. No-store. Revision zero uses built-in defaults. Palette text contrast and image budgets are validated on apply.')
 add('GET','/admin/branding','Read the current branding revision',BrandRevision)
 add('PUT','/admin/branding','Apply a branding revision',BrandRevision,obj({'expectedRevision':I,'value':Branding}),description='Atomic compare-and-swap and audit. Requires current ADMIN cookie session, fresh reauthentication, Origin and CSRF. Invalid input does not change branding; concurrent/stale revisions return 409. Reset by applying built-in defaults as a new revision. Request limit 600 KiB.')
+from licensing_contracts import outputs as license_contracts
+D['LicenseClaims']=license_contracts()['contracts/schemas/license-v1.json'].copy()
+D['LicenseClaims'].pop('$schema')
+D['LicenseClaims'].pop('$id')
+LicenseStatus=define('LicenseStatus',{'installationId':U,'epoch':I,'state':enum('missing','active','expired','invalid','not_yet_valid','clock_suspect','update_not_entitled'),'claims':null(ref('LicenseClaims')),'pending':null(ref('LicenseClaims')),'enabledUsers':I,'overLimit':B})
+LicenseEnvelope={'type':'string','minLength':1,'maxLength':16384}
+add('GET','/admin/license','Read offline license state and installation request identity',LicenseStatus)
+add('POST','/admin/license/preview','Verify a candidate offline license without applying it',ref('LicenseClaims'),obj({'envelope':LicenseEnvelope}))
+add('PUT','/admin/license','Apply a signed offline license with epoch CAS',LicenseStatus,obj({'envelope':LicenseEnvelope,'expectedEpoch':I}),description='ADMIN reauthentication, Origin and CSRF required. Signature, installation binding and monotonic entitlement revision are checked. Invalid replacement preserves active rights. Future licenses remain pending until notBefore.')
 add('GET','/banner','Read the global announcement',obj({'ru':S,'en':S}))
 add('POST','/auth/login','Sign in with email and password',Session,obj({'email':S,'password':password}),description='Requires exact publicOrigin. Sets HttpOnly SameSite=Strict filexSession cookie. Generic errors and durable per-IP/per-email throttling prevent enumeration. Client IP uses the socket peer unless a configured single Traefik hop supplies valid forwarded headers; network allowlist/proxy/HTTPS guards apply before login. Store csrfToken for unsafe requests.')
 add('GET','/auth/me','Read current principal',Principal)
@@ -279,6 +288,10 @@ identity_schema=copy.deepcopy(D['IdentityConfig'])
 outputs['contracts/schemas/identity-provider-v1.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/identity-provider-v1.json',**identity_schema}
 outputs['contracts/schemas/branding-v1.json']={'$schema':'https://json-schema.org/draft/2020-12/schema','$id':'https://filex.invalid/schemas/branding-v1.json',**branding_schema}
 outputs['contracts/asyncapi.json']=asyncapi
+from licensing_contracts import outputs as licensing_outputs
+outputs.update(licensing_outputs())
+from setup_contracts import extend as setup_contracts
+setup_contracts(outputs)
 for path,value in outputs.items():
  result=json.dumps(value,ensure_ascii=False,indent=2)+'\n';target=root/path
  if '--check' in sys.argv:

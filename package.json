@@ -6,17 +6,18 @@
     "node": "26.x"
   },
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "apps/issuer"
   ],
   "scripts": {
     "contracts": "node scripts/check_contracts.mjs",
     "test:contracts": "node --test scripts/contracts.test.mjs scripts/e2e-contracts.test.mjs",
     "check:dependencies": "node scripts/check_dependencies.mjs",
     "test:toolchain": "node --test scripts/dependencies.test.mjs scripts/lint.test.mjs",
-    "typecheck": "npm run typecheck --workspace @filex/web",
-    "build": "npm run build --workspace @filex/web",
-    "lint": "eslint apps/web --max-warnings 0",
-    "format:check": "prettier --check \"apps/web/**/*.{ts,tsx,css}\"",
+    "typecheck": "npm run typecheck --workspace @filex/web && npm run typecheck --workspace @filex/issuer",
+    "build": "npm run build --workspace @filex/web && npm run build --workspace @filex/issuer",
+    "lint": "eslint apps/web apps/issuer --max-warnings 0",
+    "format:check": "prettier --check \"apps/{web,issuer}/**/*.{ts,tsx,css}\"",
     "generate:types": "node scripts/check_generated_types.mjs --write",
     "check:types": "node scripts/check_generated_types.mjs"
   },

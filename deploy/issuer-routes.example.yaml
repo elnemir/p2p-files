@@ -1,0 +1,20 @@
+# Merge these routers into the operator's HTTPS Traefik configuration.
+# The operator configures TLS certificates and substitutes the exact issuer host.
+http:
+  routers:
+    issuer-api:
+      rule: Host(`licenses.example.invalid`) && (PathPrefix(`/issuer/api/`) || PathPrefix(`/issuer/auth/`))
+      service: issuer-api
+      priority: 100
+      tls: {}
+    issuer-web:
+      rule: Host(`licenses.example.invalid`) && PathPrefix(`/issuer`)
+      service: issuer-web
+      tls: {}
+  services:
+    issuer-api:
+      loadBalancer:
+        servers: [{url: 'http://127.0.0.1:8082'}]
+    issuer-web:
+      loadBalancer:
+        servers: [{url: 'http://127.0.0.1:3002'}]

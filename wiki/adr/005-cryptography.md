@@ -20,3 +20,6 @@ KEK → unwrap class DEK → derive object keys → authenticate header/chunk �
 
 ## Ограничения
 FXP1 — первый зафиксированный payload format до первого релиза. Экспериментальные ciphertext ранних локальных срезов не являются поддерживаемым release format; нельзя открывать такой storage новым binary без отдельной миграции. Restore/reconciliation и KEK rewrap/recovery CLI реализованы фазой 6; key budgets и fresh-instance recovery описаны в [ADR-006](006-operations-recovery.md). Не выводить ключи/секреты в logs. Randomness, UUID и независимые backup KEK остаются частью trust model. Нормативные primitives: [Go cipher](https://pkg.go.dev/crypto/cipher), [RFC5869](https://www.rfc-editor.org/rfc/rfc5869).
+
+## Утверждённое расширение 2026-10-14
+Отдельный vendor Ed25519 профиль license/release metadata согласован владельцем в [ADR-016](016-offline-licensing.md). Он не переиспользует instance ZIP signing key, не шифрует клиентские данные и не меняет этот payload contract. Private vendor key отсутствует у клиента; [эксплуатация](../licensing-operations.md).

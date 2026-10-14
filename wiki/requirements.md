@@ -2,7 +2,7 @@
 
 ## Контекст, область и приёмка
 
-Все 32 MUST ниже входят в согласованный MVP: 16 FR, 7 SEC, 5 OPS, 4 NFR. Перенос документации 2026-10-11 не меняет их формулировок. Реализация/тесты — [generated matrix](test-matrix.md), семантика — [decisions](decisions.md) и ADR, текущие границы — [current state](current-state.md). `verified` в матрице связан с локальным evidence; выпуск требует полной [приёмки](acceptance-criteria.md). Исключения и принятие рисков не выполняются автоматически.
+Исходные 32 MUST ниже входят в согласованный MVP: 16 FR, 7 SEC, 5 OPS, 4 NFR. Перенос документации 2026-10-11 не меняет их формулировок. Реализация/тесты — [generated matrix](test-matrix.md), семантика — [decisions](decisions.md) и ADR, текущие границы — [current state](current-state.md). `verified` в матрице связан с локальным evidence; выпуск требует полной [приёмки](acceptance-criteria.md). Исключения и принятие рисков не выполняются автоматически.
 
 Нет согласованного отдельного урезанного релиза, организационной tenancy/billing или production SLA. Исходное интервью до вопроса 978 отсутствует, поэтому эти записи являются доступным нормативным baseline. Новое требование проходит решение владельца и traceability, а не добавляется по предположению.
 
@@ -30,7 +30,7 @@
 - **SEC-001**: USER/ADMIN, email login, Argon2id, password history, no forced periodic rotation, login history, anti-enumeration, CSRF, session management, granular API scopes.
 - **SEC-002**: tamper-evident audit, integrity checks, incidents, checkpoints, security reports, no user-controlled audit purge.
 - **SEC-003**: KEK bootstrap, class DEKs, key rotation, encrypted configuration secrets, encrypted ArtifactStorage/BackupProvider, chunked AEAD payload encryption when enabled.
-- **SEC-004**: Ed25519 signs only ZIP checksum manifest, signing key encrypted in PostgreSQL, historical public keys forever, offline Go verifier CLI.
+- **SEC-004**: Instance Ed25519 signs only ZIP checksum manifest; separate vendor Ed25519 keys sign offline licenses (approved ADR-016), signing key encrypted in PostgreSQL, historical public keys forever, offline Go verifier CLI.
 - **SEC-005**: strict TLS/Traefik/ACME, CSP/no-referrer/no-store, secrets redaction, no body/raw query logging, SSRF controls, trust only Traefik forwarding, IPv4 required.
 - **SEC-006**: freeze transfer/file indefinitely, forensic plaintext/ZIP for ADMIN and raw ciphertext only for integrity failures, with re-auth/reason/audit; USER not notified.
 - **SEC-007**: file integrity_failed/storage_missing fail closed; file-level freeze blocks Download all; admin repair/check/force delete semantics.
@@ -51,3 +51,17 @@
 
 ## Дополнение владельца: внешняя аутентификация
 2026-10-13 запрошены вход и регистрация через SAML/OIDC/LDAP, в том числе Keycloak, Entra ID/AD, Google Workspace и generic IdP/LDAP. [ADR-014](adr/014-federated-auth.md) расширяет SEC-001/003/005, OPS-001/003 и NFR-001/003 без автоматической выдачи ADMIN и auto-link по email. Внешняя приёмка конкретных tenants отличается от локальных protocol fixtures.
+
+## Дополнение владельца: коммерческое офлайн-лицензирование
+2026-10-14 владелец утвердил подписку и бессрочную лицензию, закрытую веб-панель, отдельный vendor Ed25519, expiry policy и метрики пользователей/размера/функций. [Модель](licensing.md), [ADR-016](adr/016-offline-licensing.md), [эксплуатация](licensing-operations.md). Добавлены FR-017/SEC-008 и generated contracts/tests; исходные 32 MUST сохраняются.
+
+## Коммерческое расширение, утверждено 2026-10-14
+
+Дополняет 32 baseline MUST двумя требованиями; не отменяет внешнюю приёмку первоначального MVP.
+
+- **FR-017**: subscription/perpetual offline лицензии, отдельная закрытая панель издателя, immutable выдача/renewal, ADMIN preview/import; лимиты enabled users/transfer bytes и webdav/federated_auth/white_label; expiry запрещает новые paid writes, сохраняя ранее опубликованную выдачу/retention и recovery.
+- **SEC-008**: vendor Ed25519 ключ отсутствует у клиента и web API издателя; strict JWS/schema/pinned trust, installation/revision/CAS/clock checks, PG concurrency guards, отдельная signed release metadata и запрет неподходящего upgrade до migrations; issuer OIDC MFA/allowlist/CSRF и изолированный signer с durable outbox. Anti-root/anti-clone/немедленный offline revoke не обещаются.
+
+## **FR-018** — Первичная веб-настройка
+
+Уже запущенные FileX/issuer предоставляют opt-in мастер, защищённый временным host token и exact Origin. ADMIN и завершение атомарны; issuer OIDC config encrypted/immutable. Повторное создание, гонка и crash не переоткрывают мастер. [Поток, ограничения и host prerequisites](first-run-setup.md).

@@ -45,3 +45,13 @@ test('branding contract is public-only and matches the shared defaults',async()=
  assert.deepEqual(api.paths['/api/v1/admin/branding'].put.security,[{session:[]}]);
  assert.equal(api.paths['/api/v1/admin/branding'].put['x-required-scope'],'admin:settings');
 });
+test('setup contracts describe both first-run and maintenance failures without exposing secrets',async()=>{
+ const api=await load('contracts/openapi.json');
+ const schema=api.paths['/api/v1/setup'].get.responses['503'].content['application/json'].schema;
+ const local=new Ajv({strict:false});addFormats(local);
+ local.addSchema({$id:'https://filex.invalid/setup-contract',components:api.components});
+ const rewritten=JSON.parse(JSON.stringify(schema).replaceAll('#/components/','https://filex.invalid/setup-contract#/components/'));
+ const validate=local.compile(rewritten);
+ for(const value of [{state:'unavailable'},{code:'maintenance',message:'maintenance'},{code:'restart_required',message:'restart_required'}])assert.equal(validate(value),true);
+ assert.equal(validate({state:'unavailable',clientSecret:'unexpected'}),false);
+});

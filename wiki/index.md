@@ -60,3 +60,10 @@ FileX — приватная передача файлов: владелец п�
 
 ## Удобство системы
 [Ревью и сценарии USER/ADMIN](product-ux.md), [ADR-015](adr/015-product-ux.md).
+
+## Коммерческое лицензирование
+[Модель офлайн-лицензирования и закрытая панель генератора](licensing.md), [ADR-016](adr/016-offline-licensing.md). Реализованы subscription + perpetual, офлайн enforcement и отдельная панель издателя. [Эксплуатация, ключи и границы проверки](licensing-operations.md).
+
+## Веб-настройка первого запуска
+
+[Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.

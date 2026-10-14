@@ -62,6 +62,7 @@ func setup(t *testing.T) (*Store, *pgxpool.Pool, string, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	installTestLicense(t, p)
 	owner, other := domain.NewID(), domain.NewID()
 	if _, err = p.Exec(ctx, "INSERT INTO users(id,email,role) VALUES($1,'a@example.test','user'),($2,'b@example.test','user')", owner, other); err != nil {
 		t.Fatal(err)

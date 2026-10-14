@@ -55,6 +55,7 @@ func integrationAppWithKEK(t *testing.T, kek []byte) (*App, *pgxpool.Pool) {
 	if e = database.Migrate(ctx, p); e != nil {
 		t.Fatal(e)
 	}
+	installTestLicense(t, p)
 	a, e := New(p, kek)
 	if e != nil {
 		t.Fatal(e)

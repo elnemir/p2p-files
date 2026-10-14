@@ -7,6 +7,7 @@ import http.client
 import json
 import os
 from pathlib import Path
+from license_fixture import new_fixture, activate
 import secrets
 import subprocess
 import tarfile
@@ -18,7 +19,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = '28ab4f36e15a0b5e052b23e0f058bdda7a1c9d12'
-EXPECTED_MIGRATIONS = ['0017_native_webdav.sql', '0018_branding.sql', '0019_federated_auth.sql']
+EXPECTED_MIGRATIONS = ['0017_native_webdav.sql', '0018_branding.sql', '0019_federated_auth.sql', '0020_offline_licensing.sql']
 
 
 class Client:
@@ -67,6 +68,8 @@ def wait_for_database(read, expected, label, timeout=10):
 def test_controlled_image_upgrade():
     project = 'filex-upgrade-' + uuid.uuid4().hex[:10]
     env = dict(os.environ, POSTGRES_PASSWORD=secrets.token_hex(24), MASTER_KEK=base64.b64encode(secrets.token_bytes(32)).decode())
+    license_fixture=new_fixture()
+    env.update(license_fixture['env'])
     images = [project + '-baseline', project + '-candidate']
     with tempfile.TemporaryDirectory(prefix=project + '-') as directory:
         work = Path(directory)
@@ -129,7 +132,7 @@ def test_controlled_image_upgrade():
         samples, stop, sampler = [], threading.Event(), None
         try:
             for context, tag in [(baseline, images[0]), (ROOT, images[1])]:
-                subprocess.run(['docker', 'build', '--file', str(context / 'deploy/Dockerfile.api'), '--tag', tag, str(context)], cwd=ROOT, check=True)
+                subprocess.run(['docker', 'build', *[arg for k,v in license_fixture['env'].items() for arg in ['--build-arg', k+'='+v]], '--file', str(context / 'deploy/Dockerfile.api'), '--tag', tag, str(context)], cwd=ROOT, check=True)
             dc('baseline', 'up', '--detach', '--build', '--wait', '--wait-timeout', '120')
             port = int(dc('baseline', 'port', 'traefik', '8080', capture_output=True).stdout.strip().rsplit(':', 1)[1])
             owner = Client(port)
@@ -215,6 +218,7 @@ def test_controlled_image_upgrade():
             if sql("SELECT mode FROM ops_control") == 'open':
                 raise RuntimeError('failed key check reopened gate')
             dc('candidate', 'up', '--detach', '--no-deps', '--force-recreate', 'api', 'worker', 'web')
+            activate(lambda *args, **kwargs: dc('candidate', *args, **kwargs),license_fixture)
             for _ in range(60):
                 try:
                     if owner.request('GET', '/api/v1/auth/me')[0] == 200:
