@@ -84,3 +84,13 @@
 - Создан [PR #28](https://github.com/elnemir/p2p-files/pull/28), base main. Исправление CodeQL `61acf3b` отправлено; repository policy, actionlint, docs и whitespace PASS.
 - После ответа владельца live API показывает visibility=public, disabled=false; Code Scanning analyses снова доступны. Видимость агент не менял. Во время перехода первый push получил временный Repository is disabled, повторный push успешен. Предыдущий 403 снят изменением внешнего состояния.
 - PR mergeable, ожидаются новые обязательные checks на последнем HEAD; старые анализы main не засчитываются за проверку PR. Дождаться PASS, проверить findings и squash merge без обхода gates.
+
+### CI PR #28: исправление upgrade fixture
+- На HEAD `4635556` CodeQL/security/dependency-review/repository-policy/supply-chain PASS. Четыре анализа merge candidate `e9a10e1` (parents baseline + HEAD): 0 findings, пустые errors/warnings; открытых alerts нет.
+- Functional CI 38571690958 прошёл browser и ingress, затем остановился в upgrade: explicit EXPECTED_MIGRATIONS не включал 0021. Исправлен allowlist без ослабления assertions, документация 16→21 синхронизирована.
+- Classic branch protection API вернул 404; code scanning ruleset 24884645 active. Настройки не изменялись; вручную соблюдаются все обязательные checks до merge.
+- Следующее: local upgrade drill, push и новый CI; merge пока не выполнен.
+
+- Локальный upgrade дополнительно выявил устаревший текст ожидаемого отказа unknown migration: новый read-only preflight отклоняет её раньше Migrate. Assertion уточнён до `database contains unknown newer migrations`; добавлена проверка completed setup latch существующей установки, причины backup обновлены до schema-21.
+
+- Local upgrade drill PASS, exit 0: `.cache/merge-upgrade-retry.log`, source `d70d2e0253ccb18b1a7b56cf7dedeb3e8549646d8d40179792064d44602d3b60`, HEAD 4635556 + исправленный test/docs diff. 16→21, backup до/после, unknown migration/wrong KEK rejection, setup latch, payload/session/replay и explicit reopen подтверждены. Следующий шаг: публикация исправления и CI точного нового HEAD.
