@@ -1,40 +1,33 @@
 # Session State
 
 ## Task
-По команде владельца: commit, push и squash merge подготовленного UX USER/ADMIN через PR после зелёных обязательных gates и CI.
+Актуализировать полный фото- и видеотур FileX, добавить отсутствующие разделы, озвучить через ElevenLabs и обновить документацию; по следующей команде владельца — commit, push и squash merge после зелёных проверок.
 
 ## Status
-Реализация UX отправлена в [PR #26](https://github.com/elnemir/p2p-files/pull/26): основной commit `64ef93f`, документационный `ac084c2`, база main `c221369`. Первый final head ac084c2 прошёл security/supply-chain/repository-policy, но browser 59/60 из-за доказанной гонки тестового GET до PUT=204. Порядок quiet-hours E2E исправлен; runtime/API/contracts не менялись.
+Фото/видеотур завершён: [MP4 7:56](tour/filex-tour.mp4), [71 кадр / 26 глав](screen-tour.md), [галерея](tour/index.html). Доставка по команде владельца — [PR #27](https://github.com/elnemir/p2p-files/pull/27), ветка `codex/tour-refresh`, baseline `28a6b4a`. Commit реализации `a629583` отправлен. Runtime не изменён; check/source/compatibility для подготовленного snapshot PASS. Предыдущая [доставка UX](sessions/2026-10-14-product-ux-delivered.md) сохранена отдельно.
 
-Исправленный source SHA-256 `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396` получил **13/13 локальных gates PASS**, **62/62 PG/race и 60/60 browser** без skips/flaky/retries. Полный browser gate 627.7 s, performance smoke 32 MiB / 2000 rows. Подробности и первоначальный failure сохранены в [evidence](history/product-ux-evidence-2026-10-13.md).
-
-Точный актуальный head/merge SHA, CI и итог доставки сохраняются в описании PR #26 и связанных Actions; при восстановлении прочитать их. Локальный PASS не подменяет CI, production deployment не входит в команду.
+Для возобновления сначала прочитать состояние PR #27 и Actions для его merge commit: статус queued/running не считать PASS, прошлые запуски не переносить на новый head. Squash merge разрешён только после required checks и CodeQL без блокирующих findings; после него отдельно проверяется main CI. Окончательные commit/run IDs и результат доставки сохраняются в описании PR и приватном `.cache/tour/refresh-20261014/delivery/delivered.json`.
 
 ## Completed steps
-- После CI failure исправлен доказанный порядок чтения quiet hours; повторены все 13 gates. Один startup CA failure ingress сохранён отдельно; полный повтор на новом стенде PASS без изменений TLS guards, точная причина единичного отказа не установлена.
-- По явной команде владельца завершены все 13 локальных gates, создан и отправлен UX commit; открыт PR #26. Audit GitHub settings: matchesPolicy=true, differences=[]. Текущие CI и merge подтверждаются GitHub readback, не предположением на момент записи wiki.
-- Выполнен нормативный startup и обзор USER/recipient/ADMIN; добавлены [ADR-015](adr/015-product-ux.md), threat/state/architecture/crypto review и [инструкция UX](product-ux.md).
-- Реализованы sidebar/mobile navigation, иконки бренда, тематические ADMIN разделы и reauth на месте, компактные действия файлов, loading/empty/error и подтверждения удаления/отзыва.
-- Публикация ведёт через загрузку, настройку доступа и review. Presets/slider/точный TTL учитывают активную политику, название сохраняется с прежним message, review закрепляет revision и закрывается после чужого изменения.
-- Добавлен owner-scoped GET `/transfers/{id}/editor`; старый strict Transfer DTO сохранён. Contracts/types и generated traceability matrix синхронизированы; 123 REST/tus operations, 19 migrations, 15 ADR.
-- Settings v1 имеет полную обычную форму и expert JSON, draft/validate/explicit CAS apply/rollback, сохранение ввода при ошибке/конфликте и предупреждение о смене сети. Добавлены timezone/quiet hours, SMTP TLS/port selectors и выбор подходящего storage target.
-- API/worker/CLI включают стандартную Go IANA database: timezone работает в минимальном runtime image.
-- Поиск, owner API responses и recipient session защищены от поздних ответов. Неверный пароль reauth сохраняет сессию; её отзыв очищает workspace и busy. Старое действие не возвращает данные и не меняет busy нового аккаунта. Это проверено без navigation/reload с удержанным настоящим editor response.
-- DEV-05 закрыт локально: completed/revoke/expiry очищают recipient controls, временная сеть сохраняет resume, новая capability не подменяется старой cookie. Реальный ZIP и отмена его клиентского старта с последующим продолжением проверены.
-- Просмотрены 10 visual baselines и четыре новых снимка в `wiki/ux`. Полная матрица: Chromium, Firefox, WebKit, mobile Chromium и mobile WebKit — по 12/12; keyboard/axe/reflow, RU/EN и темы. Существующий narrated MP4 остаётся исторической записью от 2026-10-12.
-- Обновлены current state, implementation plan, тематические руководства, testing, changelog, evidence и session. Все 93 Markdown страницы связаны, 32 требования трассируются, whitespace check PASS.
+- Пересняты USER/recipient/ADMIN и WebDAV; добавлены report trash/restore/history, Settings draft/validate/apply, SSO forms и настоящая локальная SAML JIT-регистрация USER, white labeling apply/reset и public/mobile brand.
+- Изолированный capture: 71 PNG / 26 глав / 16 assertions; project/volumes/signer удалены. Application source `76574e49e37a5fdfd1bbd7e935c9e22691222070a912f1260ca058e3d53bcc42`.
+- ElevenLabs Liza: 18 точных reuse + 8 новых, 6915 символов, все MP3 сверены с text/hash. Credits 4870→2484. Последняя запись получена из History без повторного синтеза после предложения подписки.
+- MP4: 476,24 s, 15 971 458 bytes, SHA-256 `c04f6620d8f2e099e6bb184309157dcd7ea5fff7a65a14c3e01d6bc49f1a7bac`; 104 captions, 26 embedded chapters. Все 71 PNG и девять видеофреймов просмотрены; gallery desktop/mobile просмотрена.
+- Исправлен выявленный audio overshoot. Финальный decode PASS, −17,9 LUFS / LRA 2,7 LU / true peak −0,5 dBFS. Gallery QA PASS: 77 checksums, axe, playback/seek, keyboard/search/filter и unsafe URL rejection.
+- Reviewed capture plan и негативные tests защищают от неполной/устаревшей записи; PNG сначала staging, generated output обновляется renderer.
+- Обновлены README, MEMORY, index/current-state/plan, UX/branding/SSO, testing/map/development, tour-maintenance, documentation audit и changelog. 95 Markdown / 32 requirement links PASS.
+- `acceptance.py run check` PASS: source `f9738f63b5a290f90554821fc1d6f9ed19f90dac562d1db850c9a6e71df72bc2`, sourceUnchanged=true. 13 tour tests и остальные проверки make check прошли.
+
+- Перед commit повторно PASS: check/source/compatibility на staged source `f74a78d67d771cb7ee1663f0ed951c8a3a61a8e883426be94dbdb1fcd6879122`. Разница с прежним hash вызвана снятием удалённых PNG из Git index; bytes оставшихся media неизменны. Gitleaks history/worktree не нашёл секретов.
 
 ## Next steps
-- Исправление теста и свежая квалификация подготовлены для commit/push в тот же PR #26. Текущее состояние доставки сверить с PR, затем продолжить до green CI/merge/main verification.
-- При восстановлении сначала прочитать [PR #26](https://github.com/elnemir/p2p-files/pull/26) и его итоговую запись доставки. Если открыт — дождаться зелёных required checks и выполнить уже разрешённый squash merge exact head. Если merged — сверить merge SHA, main CI/CodeQL и fast-forward локального main; не создавать повторную реализацию или PR.
-- Последующие результаты CI/main сохраняются в итоговой записи PR, связанной из этой сессии и [evidence](history/product-ux-evidence-2026-10-13.md). Документационный commit не меняет source fingerprint.
-- Продолжить внешнюю приёмку по [плану](environment-acceptance.md): реальные устройства/AT, SSO tenants, Windows WebDAV и инфраструктура.
+Если PR #27 ещё открыт — завершить required CI и squash merge, затем проверить main CI. Если PR уже merged и оба workflow main успешны — доставка завершена; повторно создавать PR или переписывать историю не нужно. После будущих изменений UI обновлять reviewed plan и запись по [runbook](tour-maintenance.md). Windows и внешние environments принять отдельно при появлении стендов.
 
 ## Decisions
-Расширены существующие brand-aware SVG/UI без новых библиотек, env или migrations. Старые contracts, PostgreSQL authority, USER/ADMIN privacy, immutable publish, one-time/atomic ZIP, reauth, CAS и криптография сохранены. API adapter отбрасывает ответы предыдущего owner session до action callback; action generation изолирует busy. Функциональные browser tests проверяют HTTP result перед DOM state; общие timeout/retries и assertions не ослаблены.
+Только синтетические данные и одноразовый локальный стенд. TTS получает лишь тексты экскурсии. API-квота отдельно от web credits и в этой задаче не проверялась. Старый narration cache сохранён; новый private journal — `.cache/tour/elevenlabs-web-Liza-20261014`. Runtime/API/env/migrations/crypto/production guard не менялись.
 
 ## Context
-[Requirements](requirements.md), [architecture](architecture.md), [workflow](development-workflow.md), [implementation plan](implementation-plan.md), [white labeling](white-label.md), [SSO](federated-auth.md). Изменены frontend, owner editor reader, API/worker/CLI timezone embedding, contracts, regression tests, capture navigation и wiki. Предыдущий SSO срез [доставлен отдельно](sessions/2026-10-13-federated-auth-delivered.md).
+[Полные evidence и диагностика](history/tour-refresh-evidence-2026-10-14.md), [обслуживание тура](tour-maintenance.md), [UX](product-ux.md), [white labeling](white-label.md), [SSO](federated-auth.md), [план](implementation-plan.md). Raw evidence — `.cache/tour/refresh-20261014/`, `.cache/tour/qa/`, `.cache/tour/raw/`; не коммитить synthetic sessions/credentials.
 
 ## Risks / blockers
-Все внешние release blockers и production guard сохранены. Windows WebDAV **ожидает стенда**. Локальные Linux browser engines/mobile emulation не заменяют реальные устройства и независимый security review. UNKNOWN GO-2026-5932 остаётся видимым; FileX govulncheck не выявил affected symbols/imported packages. Inventory не означает принятия лицензий владельцем. Production deployment не выполнялся.
+Windows WebDAV **ожидает стенда**. Реальные IdP tenants, SMTP/S3 и физические устройства не проверялись; локальный SAML signer явно обозначен. Внешние 5 partial MUST / 14 решений сохраняются. Эта задача не выполняла production deployment или полную повторную квалификацию 13 release gates. Тайминги субтитров приблизительные внутри главы, без provider word alignment.

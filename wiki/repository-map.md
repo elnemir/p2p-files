@@ -39,7 +39,7 @@
 | [scripts/build_contracts.py](../scripts/build_contracts.py) | contracts/openapi.json, webdav.json, asyncapi.json, schemas; затем `npm run generate:types` → apps/web/lib/api-schema.ts |
 | [contracts/traceability.json](../contracts/traceability.json) | `python3 scripts/traceability.py` → wiki/test-matrix.md |
 | [contracts/release-acceptance.json](../contracts/release-acceptance.json) | Pending/accepted решения reviewer/owner → release readiness; не приложение |
-| [scripts/tour](../scripts/tour/) | Изолированный capture → реальные PNG/видеозаписи → Milena или narrate.py (ElevenLabs cache) → озвученный MP4, manifest, галерея и [скрин-тур](screen-tour.md); [пересъёмка и QA](tour-maintenance.md) |
+| [scripts/tour](../scripts/tour/) | Изолированный capture → plan.json/validate.py проверяют полноту → точный текст и SHA-256 кеша ElevenLabs Liza → MP4/PNG/VTT/manifest/галерея и [скрин-тур](screen-tour.md). Source templates и [правила пересъёмки/QA](tour-maintenance.md); API cache и локальная Milena остаются отдельными вариантами |
 | [scripts/acceptance.py](../scripts/acceptance.py), [Makefile](../Makefile) | 13 source-bound gates → .cache/evidence/gates; [testing](testing.md) |
 | [deploy](../deploy/), [production_config.py](../scripts/production_config.py) | Пять runtime images, dev Compose и offline production config; no deployment |
 | [.github/dependency-policy.json](../.github/dependency-policy.json), [check_dependencies.mjs](../scripts/check_dependencies.mjs) | Reviewed Node/Redis timeline → engine/types/images/installed graph guard; [ADR-012](adr/012-node26-runtime.md), [negative tests](../scripts/dependencies.test.mjs) |

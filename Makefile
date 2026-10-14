@@ -28,7 +28,7 @@ test:
 	python3 scripts/test_acceptance.py
 	python3 -m unittest discover -s scripts -p test_s3_fixture.py
 	python3 -m unittest discover -s scripts -p test_upgrade_harness.py
-	python3 -m unittest discover -s scripts -p test_tour_narration.py
+	python3 -m unittest discover -s scripts -p 'test_tour_*.py'
 
 test-race:
 	go test -race ./...
@@ -38,7 +38,7 @@ test-race:
 	python3 scripts/test_acceptance.py
 	python3 -m unittest discover -s scripts -p test_s3_fixture.py
 	python3 -m unittest discover -s scripts -p test_upgrade_harness.py
-	python3 -m unittest discover -s scripts -p test_tour_narration.py
+	python3 -m unittest discover -s scripts -p 'test_tour_*.py'
 
 test-integration:
 	@test -n "$$FILEX_TEST_DATABASE_URL" || (echo 'FILEX_TEST_DATABASE_URL is required; use make integration-docker for an isolated database'; exit 1)

@@ -10,6 +10,7 @@ import shutil
 import subprocess
 
 from narrate import load_audio, load_web_narration
+from validate import validate_capture
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / '.cache/tour/raw'
@@ -65,6 +66,12 @@ def caption_lines(text, limit=83):
 
 def gallery(data):
     template = (ROOT / 'scripts/tour/gallery.html').read_text()
+    count = len(data['screens'])
+    noun = 'скриншот' if count % 10 == 1 and count % 100 != 11 else 'скриншота' if 2 <= count % 10 <= 4 and not 12 <= count % 100 <= 14 else 'скриншотов'
+    template = (template.replace('__SCREEN_COUNT__', str(count))
+                .replace('__SCREEN_NOUN__', noun)
+                .replace('__CHAPTER_COUNT__', str(len(data['chapters'])))
+                .replace('__RECORDED_AT__', data['recordedAt'][:10]))
     serialized = json.dumps(data, ensure_ascii=False).replace('<', r'\u003c')
     (OUT / 'index.html').write_text(template.replace('/* MANIFEST */', serialized))
     shutil.copyfile(ROOT / 'scripts/tour/gallery.css', OUT / 'gallery.css')
@@ -80,8 +87,9 @@ def markdown(data):
              'Цель — дать новому пользователю и инженеру полный маршрут по основным разделам без запуска приложения.', '',
              f'Видеоряд записан во время действий браузера; ожидания сокращены, темп отдельных фрагментов подстроен под озвучку: {data.get("narration", "macOS Milena, synthesized Russian")}. '
              'Подписи добавлены за пределами интерфейса. PNG сохранены без ретуши. Мобильные кадры — эмуляция viewport Chromium, не физические устройства.', '',
-             'ZIP, QR, PDF, JSON, CSV, backup/restore, сверка и открытие доступа выполнены на стенде. '
-             'S3/SMTP/webhook/миграция провайдеров/ротация/forensic показаны как формы, без внешней операции. '
+             'ZIP, QR, PDF, JSON, CSV, корзина/восстановление отчёта, настройки draft/validate/apply, брендинг и backup/restore выполнены на стенде. '
+             'Корпоративный вход и создание USER проверены настоящим SAML callback с одноразовым локальным signer; показанная учебная IdP-страница не является интерфейсом коммерческого провайдера. '
+             'OIDC/LDAP/S3/SMTP/webhook/миграция провайдеров/ротация/forensic показаны как формы, без внешней операции. '
              'Временные ресурсы после записи удалены; ссылки из кадров больше не действуют. '
              'Глава WebDAV показывает настройки трёх ОС и реальный PUT в черновик; фактическая проверка Windows ожидает стенда. '
              'Тур не закрывает [внешнюю приёмку](environment-acceptance.md), 5 partial MUST или 14 pending decisions.', '',
@@ -134,13 +142,12 @@ def main():
     if not (args.narration_dir or args.web_narration_dir) and not shutil.which('say'):
         raise SystemExit('Provide --narration-dir/--web-narration-dir or install macOS say; --gallery-only reuses shipped media')
     source = json.loads((RAW / 'capture.json').read_text())
-    if not source.get('passed') or len(source['chapters']) != 20 or len(source['screens']) != 48:
-        raise SystemExit('Capture is incomplete; fix the scenario before rendering')
-    # Retire stale numbered captures only after the complete new capture passed.
-    expected_screens = {screen['file'] for screen in source['screens']}
-    for stale in (OUT / 'screenshots').glob('*.png'):
-        if str(stale.relative_to(OUT)) not in expected_screens:
-            stale.unlink()
+    source['capturePlanSHA256'] = validate_capture(source)
+    # Incomplete capture or narration must leave the previously shipped tour intact.
+    for screen in source['screens']:
+        image = RAW / screen['file']
+        if image.is_symlink() or not image.is_file():
+            raise ValueError('Missing original capture screenshot')
     external = None
     audio_sources = {}
     if args.narration_dir:
@@ -204,9 +211,9 @@ def main():
                    f'pad=1440:1080:0:56:color=0x132f31,'
                    f'drawtext=fontfile={args.font}:textfile={title}:fontcolor=white:fontsize=25:x=28:y=14,'
                    f'ass={ass},tpad=stop_mode=clone:stop_duration=2')
-        # Leave codec headroom after resampling; AAC can overshoot loudnorm's intermediate peak.
+        # Keep 6 dB of sample headroom: sharp TTS transients can overshoot after AAC encoding.
         audio_filter = ('loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,'
-                        'alimiter=limit=0.707946:level=false:latency=true,apad') if external else 'apad'
+                        'alimiter=limit=0.501187:level=false:latency=true,apad') if external else 'apad'
         run([args.ffmpeg, '-hide_banner', '-loglevel', 'error', '-y', '-ss', f'{ch["start"]:.3f}',
              '-t', f'{original:.3f}', '-i', RAW / ch['video'], '-i', audio,
              '-vf', filters, '-af', audio_filter, '-t', f'{duration:.3f}', '-c:v', 'libx264',
@@ -227,6 +234,13 @@ def main():
          '-i', meta, '-map', '0:v', '-map', '0:a', '-map_metadata', '1', '-map_chapters', '1',
          '-c', 'copy', '-movflags', '+faststart', OUT / 'filex-tour.mp4'])
     (OUT / 'captions.ru.vtt').write_text('\n'.join(subtitles))
+    expected_screens = {screen['file'] for screen in source['screens']}
+    (OUT / 'screenshots').mkdir(parents=True, exist_ok=True)
+    for screen in source['screens']:
+        shutil.copyfile(RAW / screen['file'], OUT / screen['file'])
+    for stale in (OUT / 'screenshots').glob('*.png'):
+        if str(stale.relative_to(OUT)) not in expected_screens:
+            stale.unlink()
     public = {k: v for k, v in source.items() if k != 'chapters'}
     narration = f'ElevenLabs {external["voiceName"].strip()}, synthesized Russian' if external else f'macOS {args.voice}, synthesized Russian'
     public.update(chapters=chapters, duration=round(offset, 2), narration=narration,

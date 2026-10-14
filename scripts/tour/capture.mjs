@@ -2,14 +2,16 @@
 import { chromium, expect } from '@playwright/test';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
+import { inflateRawSync } from 'node:zlib';
 import { promisify } from 'node:util';
 import path from 'node:path';
 
 const command = promisify(execFile);
 const root = process.cwd();
 const raw = path.join(root, '.cache/tour/raw');
-const output = path.join(root, 'wiki/tour');
+const output = raw; // Publish only a complete capture during rendering.
 const baseURL = 'http://localhost:8090';
 const password = process.env.FILEX_TOUR_PASSWORD;
 const project = process.env.FILEX_TOUR_PROJECT;
@@ -26,10 +28,14 @@ const applicationFiles = (await command('git', ['ls-files', '--cached', '--other
 const applicationHash = createHash('sha256');
 for (const name of [...new Set(applicationFiles)].sort()) applicationHash.update(name + '\0').update(await readFile(name)).update('\0');
 manifest.applicationSourceSHA256 = applicationHash.digest('hex');
+manifest.capturePlanSHA256 = createHash('sha256').update(await readFile('scripts/tour/plan.json')).digest('hex');
 manifest.applicationSourceScope = 'Sorted unique git ls-files --cached --others --exclude-standard apps cmd internal migrations deploy go.mod go.sum package.json package-lock.json; path+NUL+bytes+NUL';
 const sessions = [];
 const errors = [];
 let current;
+let identityFixture;
+let fixtureRead;
+let provider;
 const button = (p, name) => p.getByRole('button', { name, exact: true });
 const heading = (p, name) => p.getByRole('heading', { name, exact: true });
 const pause = (p, ms = 650) => p.waitForTimeout(ms);
@@ -115,6 +121,7 @@ try {
   await chapter(owner, 'Черновик и загрузка', 'Создаём передачу «Айдентика Север: материалы для клиента». Пока это черновик, можно менять название, состав и пути файлов. Загружаем три демонстрационных документа. При обрыве повторный выбор тех же файлов продолжит загрузку.', async p => {
     await draft(p, 'Айдентика «Север» · материалы для клиента');
     await shot(p, 'draft', 'Черновик передачи', 'В черновике редактируется название, работает выбор файлов и каталогов, drag-and-drop и возобновление загрузки. После публикации состав и пути фиксируются.', 'Владелец');
+    await p.getByText('Загрузить в определённую папку', { exact: true }).click();
     await p.getByLabel('Папка назначения (необязательно)').fill('Север/Документы');
     await upload(p, [
       textFile('Начните здесь.txt', 'Демонстрационные материалы студии «Север».\nВсе имена и содержимое вымышлены.\n1. Прочитайте концепцию.\n2. Согласуйте этапы.\n'),
@@ -161,6 +168,10 @@ try {
   await chapter(owner, 'Проверка и публикация', 'Перед публикацией выбираем срок доступа и защиту ссылки. В этом примере действует ПИН-код и срок сорок восемь часов. Экран проверки предупреждает: набор станет неизменяемым, а успешная серверная выдача расходует доступ. Публикация сама по себе не подтверждает доставку письма.', async p => {
     await focus(p, heading(p, 'Доступ к передаче'));
     await p.getByLabel('PIN или пароль для ссылок (необязательно)').fill('482619');
+    await button(p, '3 дня').click();
+    await p.getByRole('slider').focus();
+    await p.getByRole('slider').press('ArrowRight');
+    await expect(p.getByLabel('Срок доступа, часов')).toHaveValue('73');
     await p.getByLabel('Срок доступа, часов').fill('48');
     await shot(p, 'access', 'Настройки доступа', 'Общая ссылка включена; доступ ограничен 48 часами и PIN. Персональные email-ссылки поддерживаются, но в этом локальном сценарии адресаты не добавляются и SMTP не используется.', 'Владелец');
     await button(p, 'Проверить перед публикацией').click();
@@ -185,11 +196,15 @@ try {
     await shot(p, 'recipient-mobile', 'Получение с телефона', 'Тот же сценарий в viewport 390 × 844: вертикальный список и действия скачивания. Это эмуляция размера в Chromium, не испытание на физическом телефоне.', 'Получатель', { fullPage: true });
     await p.setViewportSize(manifest.viewport);
   });
-  await chapter(recipient, 'ZIP и завершённая выдача', 'Нажимаем «Скачать всё ZIP». Браузер действительно сохраняет архив. После завершения всей передачи прежняя ссылка больше не открывает файлы: повторный вход отклоняется даже с правильным ПИН-кодом. Завершение означает передачу всех байтов сервером, а сохранение на своём диске получатель проверяет самостоятельно.', async p => {
+  await chapter(recipient, 'ZIP и завершённая выдача', 'Нажимаем «Скачать всё ZIP». Браузер сохраняет архив, а интерфейс сообщает о завершении доступа и убирает кнопки скачивания. Повторный вход по прежней ссылке отклоняется даже с правильным ПИН-кодом. Сервер подтверждает передачу всех байтов; сохранение файла на своём диске получатель проверяет самостоятельно.', async p => {
     await download(p, button(p, 'Скачать всё ZIP'), 'transfer.zip');
     await expect.poll(async () => (await (await owner.page.request.get(`/api/v1/transfers/${transferId}`)).json()).state,
       { timeout: 45000 }).toBe('completed');
     expect((await p.request.get('/api/v1/recipient/files')).status()).toBe(401);
+    if (await button(p, 'Обновить список').isVisible()) await button(p, 'Обновить список').click();
+    await expect(heading(p, 'Доступ к файлам завершён')).toBeVisible();
+    await expect(button(p, 'Скачать всё ZIP')).toHaveCount(0);
+    await shot(p, 'recipient-completed', 'Выдача завершена', 'После настоящего ZIP интерфейс очищает файлы и кнопки скачивания. Повторная выдача запрещена сервером; причины других отказов не раскрываются.', 'Получатель');
     // Adding a fragment to the current URL is a same-document navigation.
     await p.goto('about:blank');
     await p.goto(recipientLink);
@@ -213,6 +228,20 @@ try {
     await expect(heading(p, 'Журнал скачиваний')).toBeVisible();
     await focus(p, heading(p, 'Журнал скачиваний'));
     await shot(p, 'journal', 'Журнал владельца', 'Общий результат: время, число файлов, объём и состояние выдачи. Интерфейс прямо указывает, что получатели не идентифицируются в пользовательском журнале.', 'Отчёты и задачи');
+  });
+  await chapter(owner, 'История отчётов и корзина', 'Отчёт можно временно убрать в корзину и восстановить. Его история сохраняет оба действия, а контрольная сумма остаётся прежней. Удаление содержимого навсегда — отдельная операция. В нашем примере выполняем только обратимый цикл и проверяем восстановленный отчёт.', async p => {
+    await tab(p, 'Отчёты');
+    const row = p.locator('.list-row').filter({ hasText: 'Пользовательский' });
+    await button(row, 'В корзину').click();
+    await expect(button(row, 'Восстановить')).toBeVisible();
+    await top(p);
+    await shot(p, 'report-trash', 'Корзина отчётов', 'Настоящая ревизия перемещена в корзину. Доступно восстановление; необратимое удаление отдельно раскрывается и в туре не выполняется.', 'Отчёты и задачи');
+    await button(row, 'Восстановить').click();
+    await expect(button(row, 'В корзину')).toBeVisible();
+    await row.getByRole('button', { name: /Пользовательский.*#1/ }).click();
+    await focus(p, heading(p, 'Ревизия отчёта'));
+    await shot(p, 'report-history', 'История восстановления', 'История ревизии содержит перемещение в корзину и восстановление. Следующий шаг сравнит исходный JSON с публичной контрольной суммой.', 'Отчёты и задачи');
+    manifest.assertions.push('Report trashed/restored through UI; original JSON verified after restoration');
   });
   const publicPage = await session('public');
   await chapter(publicPage, 'Публичная проверка отчёта', 'Проверку отчёта можно открыть без входа. Сначала получаем публичные данные по идентификатору, затем выбираем скачанный JSON. Браузер вычисляет его контрольную сумму. В нашем примере она совпадает; содержимое не требуется отправлять для локального сравнения.', async p => {
@@ -252,6 +281,16 @@ try {
     await tab(p, 'Уведомления');
     await shot(p, 'notifications', 'Лента событий', 'Уведомления относятся к состояниям передач и задач. Внешние письма не отправляются: в демонстрационном окружении SMTP не настроен.', 'Настройки');
     await tab(p, 'Настройки');
+    await p.getByLabel('Часовой пояс IANA', { exact: true }).selectOption('Europe/Moscow');
+    await p.getByLabel('Включить тихие часы', { exact: true }).check();
+    await p.getByLabel('Тихие часы: с', { exact: true }).selectOption('23');
+    await p.getByLabel('Тихие часы: до', { exact: true }).selectOption('7');
+    const saved = p.waitForResponse(r => r.url().endsWith('/notification-preferences') && r.request().method() === 'PUT');
+    await button(p, 'Сохранить').click();
+    expect((await saved).status()).toBe(204);
+    await expect(p.getByRole('status')).toContainText('Настройки сохранены');
+    expect(await (await p.request.get('/api/v1/notification-preferences')).json()).toMatchObject({ timezone: 'Europe/Moscow', quietStart: 23, quietEnd: 7 });
+    await top(p);
     await shot(p, 'preferences', 'Личные настройки', 'Локаль, часовой пояс и каналы уведомлений задаются в кабинете. Тихие часы и дайджест регулируют email-уведомления после подключения SMTP.', 'Настройки');
   });
   await chapter(owner, 'Безопасность учётной записи', 'Чувствительные действия требуют свежего подтверждения пароля. В настройках видны сеансы и история входов. API-токену можно выдать только нужные права и ограниченный срок; секрет показывается один раз. В туре новый токен не создаём.', async p => {
@@ -265,11 +304,12 @@ try {
     await shot(p, 'webhooks', 'Webhook-интеграция', 'Для webhook задаётся HTTPS URL. Реальный endpoint не подключён; экран показывает форму, а не подтверждение внешней доставки.', 'Настройки');
   });
   await chapter(owner, 'Тёмная тема и мобильный интерфейс', 'Интерфейс поддерживает светлую, тёмную и системную темы. Посмотрим настройки на узком экране. Это та же рабочая сессия и те же данные; проверка размера выполнена в браузере, без физического устройства.', async p => {
+    await button(p, 'Уведомления и язык').click();
     await p.getByLabel('Тема', { exact: true }).selectOption('dark');
     await top(p);
     await shot(p, 'dark', 'Тёмная тема', 'Тема переключена штатным селектором. Текст и формы сняты с реального UI без ретуши.', 'Настройки');
     await p.setViewportSize({ width: 390, height: 844 });
-    await shot(p, 'settings-mobile', 'Настройки на телефоне', 'Мобильное представление верхней части настроек в тёмной теме, 390 × 844. Полная страница остаётся доступна прокруткой.', 'Настройки');
+    await shot(p, 'settings-mobile', 'Настройки на телефоне', 'Полная страница личных настроек в тёмной теме, 390 × 844: часовой пояс и тихие часы сохранены на сервере.', 'Настройки', { fullPage: true });
     await p.setViewportSize(manifest.viewport);
     await p.getByLabel('Тема', { exact: true }).selectOption('light');
   });
@@ -347,18 +387,183 @@ try {
     await focus(p, heading(p, 'Ротация ключей'));
     await shot(p, 'keys', 'Ключи и удержание', 'Ротация разделена по классам ключей. Ниже расположено удержание объектов с обязательной причиной. Тур не выполняет ненужную ротацию или реальное расследование.', 'Администрирование');
   });
-  await chapter(admin, 'Расследование, SMTP и системные настройки', 'Для расследования предусмотрены отдельные действия и причина; экспертная выдача не равна обычному скачиванию получателя. Ниже находятся SMTP и типизированные настройки приложения. Здесь показаны формы: реальные почтовые реквизиты и внешние адресаты отсутствуют.', async p => {
+  await chapter(admin, 'Безопасность и почта', 'Управление пользователями, удержание файлов и экспертные операции собраны в разделе безопасности. Чувствительные действия требуют причины и подтверждения личности. В настройках почты выбор защищённого соединения подставляет подходящий порт. Реальные почтовые реквизиты здесь не используются.', async p => {
+    await focus(p, heading(p, 'Массовые действия администратора'));
+    await shot(p, 'admin-users', 'Управление пользователями', 'Администратор управляет локальными аккаунтами и массовыми действиями с обязательной причиной. В туре действующие демонстрационные аккаунты не блокируются.', 'Администрирование');
     await focus(p, heading(p, 'Экспертная проверка файлов'));
     await shot(p, 'forensic', 'Экспертные операции', 'Forensic flow имеет собственные условия и аудит; ZIP требует удержания. В туре снята форма без получения пользовательских payload через административный обход.', 'Администрирование');
     await button(p, 'Почта').click();
+    await p.getByLabel('TLS', { exact: true }).selectOption('smtps');
+    await expect(p.getByLabel('Порт', { exact: true })).toHaveValue('465');
     await focus(p, heading(p, 'SMTP'));
     await shot(p, 'smtp', 'Настройка SMTP', 'Поля SMTP оставлены без рабочих credentials. Пустая форма не подтверждает проверку соединения или доставку письма.', 'Администрирование');
-    await button(p, 'Параметры системы').click();
-    await focus(p, heading(p, 'Настройки приложения'));
-    await shot(p, 'app-settings', 'Типизированные настройки', 'Форма загружает активную ревизию. Сроки, лимиты и MIME policy задаются полями; JSON доступен в экспертном режиме. Проверка черновика и применение разделены; изменения в production не выполнялись.', 'Администрирование');
     await button(p, 'Безопасность и аудит').click();
     await focus(p, heading(p, 'Журнал безопасности'));
     await shot(p, 'audit', 'Журнал безопасности', 'Блок запускает проверку целостности журнала безопасности; сами записи здесь не перечислены. Административные действия фиксируются сервером, а контрольные точки скачиваются в разделе эксплуатации.', 'Администрирование');
+  });
+  await chapter(admin, 'Системные настройки: проверить и применить', 'Лимиты, сроки и правила файлов задаются обычной формой. Для точных значений есть поля и списки, а для специалистов — режим JSON. Сначала сохраняем и проверяем черновик. Он ещё не действует. Отдельное подтверждение применяет ревизию; история позволяет вернуться к прежним настройкам.', async p => {
+    await button(p, 'Параметры системы').click();
+    const panel = p.getByRole('region', { name: 'Настройки приложения', exact: true });
+    const original = (await (await p.request.get('/api/v1/admin/settings')).json()).find(v => v.active);
+    await panel.getByLabel('Максимум файлов в передаче', { exact: true }).fill('500');
+    await panel.getByLabel('Режим проверки типов', { exact: true }).selectOption('deny');
+    await panel.getByLabel('MIME-типы, по одному на строку', { exact: true }).fill('application/x-msdownload');
+    await focus(p, panel);
+    await shot(p, 'app-settings', 'Лимиты и правила файлов', 'Форма показывает активную ревизию. Меняем лимит на 500 файлов и запрещаем один MIME-тип в учебном окружении. Остальные параметры остаются прежними.', 'Системные настройки');
+    await button(panel, 'Сохранить и проверить').click();
+    await expect(panel.getByRole('status')).toContainText('Изменения ещё не применены');
+    expect((await (await p.request.get('/api/v1/admin/settings')).json()).find(v => v.active).revision).toBe(original.revision);
+    await focus(p, panel);
+    await shot(p, 'settings-validated', 'Проверенный черновик', 'Черновик прошёл серверную проверку, но активная конфигурация ещё не изменилась. Применение выполняется отдельным действием с проверкой базовой ревизии.', 'Системные настройки');
+    await panel.getByRole('button', { name: /^Применить настройки/ }).click();
+    await shot(p, 'settings-confirm', 'Подтверждение применения', 'Диалог подтверждает изменение настроек. Сетевую политику этот пример не меняет, поэтому эксплуатационный gate не закрывается.', 'Системные настройки');
+    await button(p.getByRole('dialog'), 'Применить').click();
+    await expect(panel.getByRole('status')).toContainText('Настройки применены');
+    expect((await (await p.request.get('/api/v1/admin/settings')).json()).find(v => v.active).value.maxFiles).toBe(500);
+    await panel.getByText('История ревизий и откат', { exact: true }).click();
+    await focus(p, panel.getByText('История ревизий и откат', { exact: true }));
+    await shot(p, 'settings-history', 'История системных настроек', 'Новая ревизия активна, прежняя остаётся в истории. Сервер подтвердил изменение maxFiles; без явного применения черновик не действует.', 'Системные настройки');
+    await button(panel, 'Экспертный JSON').click();
+    await focus(p, panel.getByLabel('Settings JSON', { exact: true }));
+    await shot(p, 'settings-json', 'Экспертный редактор', 'JSON представляет ту же типизированную конфигурацию. В примере он только прочитан; параллельного источника настроек нет.', 'Системные настройки');
+    await button(panel, 'Обычная форма').click();
+    await p.setViewportSize({ width: 390, height: 844 });
+    await focus(p, panel);
+    await shot(p, 'settings-form-mobile', 'Системные параметры на телефоне', 'Обычная форма доступна на узком экране; числовые поля и селекты сохраняют подписи. Это эмуляция viewport.', 'Системные настройки');
+    await p.setViewportSize(manifest.viewport);
+    manifest.assertions.push('Settings UI draft validated without activation, explicit CAS apply committed maxFiles=500; network settings preserved');
+  });
+  await chapter(admin, 'Корпоративный вход: OIDC, SAML и LDAP', 'Администратор подключает корпоративные провайдеры. Для OpenID Connect задаются издатель и клиент, для SAML — метаданные и сертификат подписи, для LDAP — каталог и постоянный идентификатор. Первый вход может создавать только пользователя. Роли остаются локальными; совпавший email не связывает аккаунты автоматически.', async p => {
+    await button(p, 'Корпоративный вход').click();
+    const panel = p.getByRole('region', { name: 'Провайдеры авторизации', exact: true });
+    await panel.getByLabel('Название кнопки входа', { exact: true }).fill('Компания · пример конфигурации');
+    await panel.getByLabel('Issuer URL (https://)', { exact: true }).fill('https://sso.example.test/realms/company');
+    await panel.getByLabel('Client ID', { exact: true }).fill('filex');
+    await focus(p, panel);
+    await shot(p, 'identity-oidc', 'OpenID Connect', 'Форма подключения Keycloak, Microsoft Entra ID, Google Workspace и других OIDC-провайдеров. Адрес example.test — иллюстрация; соединение и сохранение этого OIDC-примера не выполняются.', 'Корпоративный вход', { fullPage: true });
+    await focus(p, panel.getByLabel('Issuer URL (https://)', { exact: true }));
+    await shot(p, 'identity-oidc-fields', 'Параметры OIDC крупным планом', 'Issuer, Client ID, email claim и Google Workspace hd domain показаны отдельно. Client secret пуст; значения example.test не являются подключённым IdP.', 'Корпоративный вход');
+    await panel.getByLabel('Протокол', { exact: true }).selectOption('ldap');
+    await panel.getByLabel('LDAP URL (ldaps:// / ldap:// + StartTLS)', { exact: true }).fill('ldaps://directory.example.test:636');
+    await panel.getByLabel('Base DN', { exact: true }).fill('dc=example,dc=test');
+    await panel.getByLabel('Атрибут логина (uid / sAMAccountName)', { exact: true }).fill('sAMAccountName');
+    await panel.getByLabel('Постоянный идентификатор', { exact: true }).selectOption('objectGUID');
+    await focus(p, panel.getByLabel('LDAP URL (ldaps:// / ldap:// + StartTLS)', { exact: true }));
+    await shot(p, 'identity-ldap', 'LDAP и Active Directory', 'Показаны LDAPS, Base DN, атрибут логина и стабильный objectGUID. Пароль service bind не введён; доступ к настоящему AD/DC не выполняется.', 'Корпоративный вход');
+    identityFixture = spawn('go', ['run', './scripts/identity-fixture'], { env: process.env, stdio: ['pipe', 'pipe', 'pipe'] });
+    const lines = createInterface({ input: identityFixture.stdout })[Symbol.asyncIterator]();
+    let fixtureError = '';
+    identityFixture.stderr.on('data', d => { fixtureError += d.toString(); });
+    fixtureRead = async () => { const next = await lines.next(); if (next.done) throw new Error(`Local identity fixture stopped: ${fixtureError}`); return JSON.parse(next.value); };
+    const { metadata } = await fixtureRead();
+    await panel.getByLabel('Протокол', { exact: true }).selectOption('saml');
+    await panel.getByLabel('Название кнопки входа', { exact: true }).fill('Учебный SAML');
+    await panel.getByLabel('Metadata XML провайдера (с сертификатом подписи)', { exact: true }).fill(metadata);
+    await panel.getByLabel('Разрешить вход', { exact: true }).check();
+    await panel.getByLabel('Создавать USER при первом входе', { exact: true }).check();
+    await focus(p, panel);
+    await shot(p, 'identity-saml', 'SAML 2.0 и регистрация USER', 'Настраивается изолированный signer из browser tests. Metadata содержит только одноразовый публичный сертификат. Включены вход и регистрация USER; настоящего корпоративного tenant здесь нет.', 'Корпоративный вход');
+    await button(panel, 'Сохранить провайдера').click();
+    await expect(panel.getByRole('status')).toContainText('Провайдер сохранён');
+    provider = (await (await p.request.get('/api/v1/admin/identity-providers')).json()).find(v => v.config.name === 'Учебный SAML' && v.config.enabled);
+    expect(provider).toBeTruthy();
+    await focus(p, panel.getByRole('status'));
+    await shot(p, 'identity-saved', 'Провайдер сохранён', 'Сервер сохранил SAML-конфигурацию. Callback/metadata URL доступен для настройки IdP. Изменение провайдера отзывает прежние внешние сессии этого провайдера.', 'Корпоративный вход');
+  });
+  const corporate = await session('corporate');
+  await chapter(corporate, 'Первый вход через корпоративный аккаунт', 'На странице входа появилась корпоративная кнопка. Демонстрационный SAML-провайдер возвращает подписанное подтверждение, и FileX создаёт пользователя с обычными правами. В настройках видна связь с корпоративным аккаунтом. Это реальный локальный протокольный сценарий, а подключение вашего провайдера проверяется отдельно.', async p => {
+    let assertion = '', relay = '';
+    await p.route('https://identity-fixture.example.test/login?**', async route => {
+      const url = new URL(route.request().url());
+      relay = url.searchParams.get('RelayState');
+      const request = inflateRawSync(Buffer.from(url.searchParams.get('SAMLRequest'), 'base64')).toString();
+      const requestID = request.match(/\bID="([^"]+)"/)?.[1];
+      expect(requestID).toBeTruthy();
+      identityFixture.stdin.write(JSON.stringify({ RequestID: requestID, ACS: `${baseURL}/api/v1/auth/providers/${provider.id}/saml`, EntityID: `${baseURL}/api/v1/auth/providers/${provider.id}/metadata`, Email: 'colleague@example.test', Subject: 'tour-colleague' }) + '\n');
+      assertion = (await fixtureRead()).response;
+      await route.fulfill({ contentType: 'text/html', body: '<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Локальный учебный IdP</title></head><body><h1>Локальный учебный IdP</h1><p>Изолированный SAML signer для демонстрации. Это не интерфейс Keycloak, Entra ID или Google.</p></body></html>' });
+    });
+    await p.goto('/');
+    await expect(button(p, 'Войти через Учебный SAML')).toBeVisible();
+    await shot(p, 'corporate-login', 'Выбор корпоративного входа', 'Публичная кнопка появилась после настройки ADMIN. Локальный вход по email и паролю остаётся доступным.', 'Корпоративный вход');
+    await button(p, 'Войти через Учебный SAML').click();
+    await expect(heading(p, 'Локальный учебный IdP')).toBeVisible();
+    // Submit a real signed test assertion to the real callback, exactly as the browser fixture does.
+    await p.evaluate(({ acs, response, state }) => {
+      const form = document.createElement('form'); form.method = 'POST'; form.action = acs;
+      for (const [name, value] of Object.entries({ SAMLResponse: response, RelayState: state })) {
+        const input = document.createElement('input'); input.type = 'hidden'; input.name = name; input.value = value; form.appendChild(input);
+      }
+      document.body.appendChild(form); form.submit();
+    }, { acs: `${baseURL}/api/v1/auth/providers/${provider.id}/saml`, response: assertion, state: relay });
+    await expect(button(p, 'Новая передача')).toBeVisible();
+    expect(await (await p.request.get('/api/v1/auth/me')).json()).toMatchObject({ email: 'colleague@example.test', role: 'user' });
+    await expect(button(p, 'Администрирование')).toHaveCount(0);
+    await shot(p, 'corporate-account', 'Новый корпоративный пользователь', 'FileX проверил подпись и browser-bound flow, создал локальный USER и открыл пустой кабинет. Права ADMIN не выдаются из внешних claims.', 'Корпоративный вход');
+    await tab(p, 'Настройки');
+    await button(p, 'Аккаунт и безопасность').click();
+    await focus(p, heading(p, 'Корпоративные аккаунты'));
+    await shot(p, 'corporate-linked', 'Связь с корпоративным аккаунтом', 'Сохранённая identity связана со стабильным subject провайдера. Здесь доступно повторное подтверждение через IdP; автоматического связывания по email нет.', 'Корпоративный вход');
+    manifest.assertions.push('Local SAML signed response verified by real API; JIT colleague@example.test role=user, no ADMIN controls, linked identity visible');
+  });
+  await chapter(admin, 'White labeling: свой бренд без пересборки', 'Оформление всей установки меняется в панели администратора. Зададим название «Север», загрузим логотип и значок вкладки, выберем палитру и двухтоновые иконки. Светлый и тёмный предпросмотры показывают черновик до применения. После сохранения новый бренд появляется в кабинете и на публичных страницах. Исходное оформление можно вернуть отдельным применением.', async p => {
+    await p.getByText('Подтвердить личность', { exact: true }).click();
+    const reauth = p.locator('.reauth-panel');
+    await reauth.getByLabel('Текущий пароль', { exact: true }).fill(password);
+    const confirmed = p.waitForResponse(r => r.url().endsWith('/auth/reauth') && r.request().method() === 'POST');
+    await button(reauth, 'Подтвердить на 5 минут').click();
+    expect((await confirmed).status()).toBe(204);
+    await reauth.getByText('Подтвердить личность', { exact: true }).click();
+    await button(p, 'Оформление').click();
+    const panel = p.getByRole('region', { name: 'Брендинг и оформление', exact: true });
+    await panel.getByLabel('Название продукта', { exact: true }).fill('Север');
+    await panel.getByLabel('Описание на русском', { exact: true }).fill('Документы вашей команды');
+    await panel.getByLabel('Описание на английском', { exact: true }).fill('Documents for your team');
+    await panel.getByLabel('Подпись внизу страницы', { exact: true }).fill('Демонстрационный бренд · локальный тур');
+    await button(panel, 'Океан').click();
+    await panel.getByLabel('Стиль иконок', { exact: true }).selectOption('duotone');
+    const images = await p.evaluate(() => {
+      const logo = document.createElement('canvas'); logo.width = 240; logo.height = 64;
+      const ctx = logo.getContext('2d'); ctx.fillStyle = '#2455a4'; ctx.fillRect(0, 0, 240, 64);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 29px Arial'; ctx.fillText('СЕВЕР', 52, 43);
+      ctx.beginPath(); ctx.moveTo(18, 42); ctx.lineTo(30, 19); ctx.lineTo(42, 42); ctx.closePath(); ctx.fill();
+      const icon = document.createElement('canvas'); icon.width = icon.height = 64;
+      const c = icon.getContext('2d'); c.fillStyle = '#2455a4'; c.fillRect(0, 0, 64, 64);
+      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(12, 49); c.lineTo(32, 12); c.lineTo(52, 49); c.closePath(); c.fill();
+      return { logo: logo.toDataURL('image/png').split(',')[1], icon: icon.toDataURL('image/png').split(',')[1] };
+    });
+    for (const label of ['Светлый логотип', 'Тёмный логотип', 'Favicon']) {
+      await panel.getByLabel(label, { exact: true }).setInputFiles({ name: 'sever-demo.png', mimeType: 'image/png', buffer: Buffer.from(label === 'Favicon' ? images.icon : images.logo, 'base64') });
+    }
+    await focus(p, panel);
+    await shot(p, 'branding-editor', 'Название, логотип и иконки', 'Учебный бренд «Север»: название, описания, светлый/тёмный логотип, favicon и двухтоновые иконки. Изменения пока видны только в редакторе.', 'Оформление');
+    await focus(p, panel.getByText('Цветовые палитры', { exact: true }));
+    await shot(p, 'branding-palettes', 'Палитры и точные цвета', 'Готовые палитры и девять цветов каждого режима доступны в одном редакторе. В примере выбрана палитра «Океан»; проверка контраста не отключена.', 'Оформление');
+    await focus(p, panel.getByRole('region', { name: 'Светлый предпросмотр', exact: true }));
+    await shot(p, 'branding-preview', 'Два предпросмотра', 'Светлая и тёмная палитры проверяются до применения. Цвета проходят серверные ограничения контраста; произвольный CSS или JavaScript не принимаются.', 'Оформление');
+    const applied = p.waitForResponse(r => r.url().endsWith('/admin/branding') && r.request().method() === 'PUT');
+    await button(panel, 'Применить брендинг').click();
+    expect((await applied).status()).toBe(200);
+    await expect(panel.getByRole('status')).toContainText('Брендинг применён');
+    await expect(p.locator('header .brand')).toHaveAttribute('aria-label', 'Север');
+    await top(p);
+    await shot(p, 'branding-applied', 'Бренд применён', 'Реальная новая ревизия действует для всей установки. Шапка показывает загруженный логотип; интерфейс использует палитру и выбранный стиль иконок.', 'Оформление');
+  });
+  await chapter(publicPage, 'Бренд на публичных страницах', 'Получатели и гости видят тот же фирменный стиль. Переключение темы сохраняет читаемость, а мобильная версия показывает тот же продукт. Название также используется в новых письмах и PDF; ранее созданные отчёты сохраняют собственный снимок оформления.', async p => {
+    await p.goto('/help');
+    await expect(p.locator('header .brand')).toHaveAttribute('aria-label', 'Север');
+    await shot(p, 'branding-public', 'Публичная помощь под своим брендом', 'Новый гость получил применённое название и логотип через публичный branding DTO/SSR. Это отдельная браузерная сессия.', 'Оформление');
+    await p.getByLabel('Тема', { exact: true }).selectOption('dark');
+    await p.setViewportSize({ width: 390, height: 844 });
+    await shot(p, 'branding-mobile', 'Фирменная тёмная тема на телефоне', 'Загруженный тёмный логотип и палитра работают в мобильном viewport. Физическое устройство этим кадром не аттестуется.', 'Оформление');
+    await p.setViewportSize(manifest.viewport);
+    await p.getByLabel('Тема', { exact: true }).selectOption('light');
+    const panel = admin.page.getByRole('region', { name: 'Брендинг и оформление', exact: true });
+    await button(panel, 'Исходное оформление').click();
+    await expect(admin.page.locator('header .brand')).toHaveAttribute('aria-label', 'Север');
+    await button(panel, 'Применить брендинг').click();
+    await expect(admin.page.locator('header .brand')).toHaveAttribute('aria-label', 'FileX');
+    manifest.assertions.push('Branding: real PNG logos/favicon, palette+duotone draft/apply, independent public session light/dark/mobile, explicit reset committed');
   });
   await chapter(publicPage, 'Помощь, языки и статус', 'Завершим публичными страницами. Встроенная помощь объясняет передачу, одноразовое скачивание, проверку и восстановление после ошибок. Есть русский и английский интерфейс. Страница статуса показывает доступность сервиса; production-приёмка остаётся отдельной задачей.', async p => {
     await p.goto('/help');
@@ -380,6 +585,7 @@ try {
   }
   throw error;
 } finally {
+  if (identityFixture) { identityFixture.stdin.end(); identityFixture.kill(); }
   for (const s of sessions) {
     await s.context.close();
     await s.page.video().saveAs(path.join(raw, `${s.name}.webm`));
