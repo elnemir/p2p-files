@@ -6,15 +6,15 @@
 
 ## Базовые и целевые команды
 
-Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях: после native WebDAV, branding и SSO браузерный набор содержит 9 случаев на профиль (45 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
+Для WebDAV добавлены bounded XML/path fuzz, PG/race/fault/transport tests и отдельный UI сценарий во всех пяти профилях. Срез UX добавляет три USER/recipient/ADMIN сценария к native WebDAV, branding и SSO: набор содержит 12 случаев на профиль (60 суммарно). TLS ingress fixture также проверяет issuance/MKCOL/PUT/PROPFIND/DELETE/revoke через настоящий proxy после reviewed reconcile/reopen. Независимый rclone test запускается дополнительно при `FILEX_RCLONE_PATH` с явно установленным проверенным бинарником; иначе он явно skipped. Это dev/test tool, новая runtime dependency не добавляется. Команды/подтверждённые версии и ограничения — [WebDAV](webdav-upload.md); текущий source-bound результат — [session](session.md). Исторические счётчики в более ранних evidence не означают квалификацию нового среза.
 
 | Команда | Что проверяет | Требования / ограничение |
 |---|---|---|
 | make check | gofmt/vet/staticcheck, TS strict/ESLint/Prettier, Go race, contract/generator/Python negative tests, docs/traceability, Go/Next builds | Go/Node/Python; без тестового DB URL PG tests пропускаются |
-| make integration-docker | Все TestIntegration* с race на disposable PostgreSQL; 56 top-level tests (один требует FILEX_RCLONE_PATH) | Docker; каждый test получает отдельную schema, cleanup своего container |
+| make integration-docker | Все TestIntegration* с race на disposable PostgreSQL; 62 top-level tests (один требует FILEX_RCLONE_PATH) | Docker; каждый test получает отдельную schema, cleanup своего container |
 | make test-integration | Те же тесты через FILEX_TEST_DATABASE_URL | Только специально выделенная тестовая БД; URL обязателен |
 | make security | npm audit и govulncheck | Network; source reachable findings отдельно от module-only advisories |
-| make e2e | 5 Linux browser/emulation profiles × 9 scenarios = 45; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
+| make e2e | 5 Linux browser/emulation profiles × 12 scenarios = 60; contracts, axe/keyboard/responsive/visual | Docker, npm ci, свободный 8090; не реальные устройства |
 | make ingress | Настоящий Traefik/test CA, TLS, Host/forwarded/CIDR/secure cookie/reset/private endpoints | Isolated project/random ports, public ACME не вызывается |
 | make upgrade-drill | Разные images baseline 28ab4f3/candidate, backup/drain/0017+0018+0019/fault/reopen/one-time | Git history; Compose additive 16→19 с точным ledger/hash и отказом downgrade; PG suite также проверяет prefix/faults |
 | make fuzz | Пять кампаний PathKey/FXP1/Range/WebDAV XML + path/If | Default 15 s на кампанию плюс compile; Go seeds/unit сами по себе не fuzz campaign |
@@ -137,3 +137,22 @@ Conditional `GET /api/v1/branding` с `If-None-Match` проходит native HT
 ## Federated identity regression
 
 [SSO](federated-auth.md) проверяется на подписанных локальных OIDC/SAML fixtures и настоящем TLS/StartTLS LDAP BER обмене. PG/race тесты проверяют JIT USER, отсутствие email auto-link, 16 одновременных завершений одной flow, expiry, actor revoke, provider CAS/revoke, audit rollback, восстановление и ротацию configuration DEK. Browser `identity.spec.ts` проходит реальный SP→IdP form POST→ACS→browser-bound completion, регистрацию, повторную авторизацию, replay rejection и ADMIN disable. Подменяется только внешний тестовый IdP, API FileX работает настоящий. Проверки не подтверждают конфигурацию конкретной организации Keycloak, Entra ID, Google Workspace или AD.
+
+## UX USER/ADMIN
+
+`product-ux.spec.ts` использует настоящий Compose API и три сценария на каждом из пяти профилей:
+- Название/message, отмена удаления без DELETE, пресеты/клавиатура ползунка/PIN, сброс review при чужом изменении файла, реальный ZIP → terminal. Сетевая ошибка списка и отмена клиентом автоматического старта до content GET сохраняют доступ/URL продолжения; удержанный старый ответ не возвращает закрытые controls. Проверяются реальный revoke и естественное истечение короткого TTL; новый token в адресе не подменяется прежней cookie-сессией.
+- Два POST-поиска с управляемым порядком ответов, empty/reset, timezone/quiet hours через настоящий runtime image, сохранение выбора, неверный пароль reauth без logout и завершение owner session после server revoke прямо в настройках.
+- В том же сценарии настоящий editor response удерживается после server read; сессия отзывается до доставки, выполняется вход другим аккаунтом без navigation/reload, затем старый ответ отпускается. Private state старого действия не должен заполнить кабинет нового пользователя.
+- Полный цикл Settings draft/validate/explicit apply, CAS против параллельного apply, сохранность network policy и ввода, invalid expert JSON, TTL установки 90 секунд → ограниченная форма → publish с точным TTL. Исходные настройки восстанавливаются в cleanup.
+
+Axe WCAG 2/2.1/2.2 AA и reflow проверяются на draft/recipient/preferences/ADMIN, в том числе 320 px. Автоматические проверки дополняются просмотром снимков: отсутствие document overflow само по себе не доказывает, что длинная подпись помещается внутри кнопки. Baseline update служит только подготовке reviewed изображений; gate запускается отдельно без update.
+
+Branding и keyboard negative-login E2E сначала дожидаются реального HTTP результата и явно сверяют 200/409/401, затем проверяют состояние UI. Contract capture может добавлять задержку перед доставкой ответа; ожидание server mutation не смешивается с пятисекундным ожиданием отображения. Общие timeout/retries и все DOM/contract assertions сохранены. Эти функциональные tests не заменяют отдельный performance gate.
+
+
+## PR #26: подтверждённое сохранение quiet hours
+
+**Контекст/проблема:** [CI 38462541585](https://github.com/elnemir/p2p-files/actions/runs/38462541585) на head `ac084c2` / merge ref `01ad482` прошёл 59/60 browser cases. Mobile WebKit обнаружил гонку самого сценария: после click тест сразу отправлял GET, который завершился до PUT=204 и прочитал прежние значения. Trace: PUT с `quietStart/quietEnd=null` начат 20:53:04.440Z, длился 49.527 ms; GET начат 20:53:04.463Z, длился 3.912 ms. Это не доказательство потери данных приложением: PUT передал правильные значения и успешно завершился.
+
+**Решение/data flow:** для включения и отключения quiet hours тест регистрирует ожидание PUT → нажимает Save → проверяет HTTP 204 → проверяет сообщение UI → читает сохранённые значения. Нет sleeps, retries, нового timeout или ослабления assertions; runtime/API/contracts не меняются. Новый source SHA-256 `dbdaffeade8e42cf09bc23f58015b74f90ddc54258bf75a980d5353cde21b396` получает повторную квалификацию; старые PASS не переносятся автоматически. Диагностика сохранена в `.cache/product-ux/delivery/pr-functional-failed/` и `pr-failed.log`, прежние gate records — в `.cache/product-ux/delivery/local-gates/`. Синтетические session traces остаются приватным evidence.

@@ -55,6 +55,10 @@ Redis URL не является bootstrap setting приложения: теку
 
 Читать active revision → сохранить полный value → draft/validate → CAS apply с expectedRevision. Rollback применяет прежнюю validated revision, не переписывает историю. Смена origin/network policy закрывает gate, меняет generation и требует restart/reconcile/reopen. Пустой client allowlist разрешает все IP, сохраняя proxy/HTTPS guards. Полный [ingress runbook](production-ingress.md).
 
+В ADMIN → «Параметры системы» эти поля доступны в обычной форме: пресеты сроков, MIME policy, banners и отдельно раскрываемая network policy. Expert JSON остаётся доступен для полного объекта. Сохранение/проверка создают draft; применение требует отдельного действия и CAS. Инструкция — [UX USER/ADMIN](product-ux.md).
+
+`transferMaxTtlSeconds` также возвращается владельцу как `maxTtlSeconds` в `/transfers/{id}/editor`: пресеты/ползунок ограничены этим значением; server publish проверяет действующую политику повторно. Часовые пояса API, worker и CLI получают из встроенного `time/tzdata` Go, поэтому отдельная установка tzdata на runtime host не требуется. IANA данные обновляются при обновлении Go.
+
 ## Брендинг установки
 
 Имя, логотипы/favicon, палитры, defaultTheme и iconStyle хранятся отдельно от Settings v1 в `branding_revisions`. ADMIN preview/apply/reset использует CAS и audit. Полный поток и ограничения — [white labeling](white-label.md). Migration 0018 также фиксирует оформление новых PDF; логическое backup/restore переносит эти данные.

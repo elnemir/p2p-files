@@ -66,6 +66,7 @@ test('admin backup restore restart reconciliation and explicit reopening',async(
  await ops.getByText('Периодические проверки',{exact:true}).click();
  const auditForm=ops.locator('form').filter({hasText:'Проверка аудита'});await auditForm.locator('input').fill('120');await auditForm.getByRole('button').click();
  await expect(auditForm.locator('input')).toHaveValue('120');
+ await page.getByRole('navigation',{name:'Разделы администрирования'}).getByRole('button',{name:'Безопасность и аудит',exact:true}).click();
  const exports=page.getByRole('region',{name:'Экспорты пользователей',exact:true});await exports.getByRole('button',{name:'Загрузить экспорты',exact:true}).click();
  await exports.getByLabel('Причина доступа к экспорту').fill('Проверка административного доступа к экспорту пользователя');
  const exportRow=exports.locator('.list-row').filter({hasText:exportId});

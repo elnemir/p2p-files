@@ -43,7 +43,7 @@ Dev Traefik публикует loopback HTTP :8090. HTTPS/ACME profile гене�
 
 ## API и trust boundaries
 
-REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 122 операции плюс [WebDAV wire profile](../contracts/webdav.json) в `x-webdav`: нестандартные HTTP методы/XML не маскируются под JSON REST. Generator/codegen/route coverage проверяются CI. Browser и WebDAV идут через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
+REST/JSON `/api/v1`, tus, single HTTP Range и WebSocket описаны в [OpenAPI](../contracts/openapi.json), [AsyncAPI](../contracts/asyncapi.json), [schemas](../contracts/schemas/). 123 операции плюс [WebDAV wire profile](../contracts/webdav.json) в `x-webdav`: нестандартные HTTP методы/XML не маскируются под JSON REST. Generator/codegen/route coverage проверяются CI. Browser и WebDAV идут через тот же origin; DB/Redis/internal health не публичные. Header trust — только designated Traefik /32, не произвольная цепочка XFF. Исходящие webhooks имеют отдельный SSRF policy.
 
 ADMIN имеет аудируемые forensic/recovery полномочия, но обычные owner-scoped endpoints не превращаются в cross-owner routes. Host CLI доверен в границе host/container, без дополнительного password, сохраняя pre-backup/schema/key/reopen guards. [Threat model](threat-model.md), [security](security.md).
 

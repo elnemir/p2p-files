@@ -7279,6 +7279,130 @@
         }
       }
     },
+    "/api/v1/transfers/{id}/editor": {
+      "get": {
+        "operationId": "getTransfersIdEditor",
+        "summary": "Read owner transfer editor context",
+        "description": "Uses the same owner isolation and transfers:read permission as transfer detail. Includes the saved message for full metadata replacement and the current publication TTL limit. This read neither mutates nor publishes the transfer; the original detail DTO remains unchanged.",
+        "x-implementation": "implemented",
+        "tags": [
+          "transfers"
+        ],
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferEditor"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or revoked authentication",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Origin, CSRF, role, reauthentication, ownership or scope rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State, offset, revision, lease or key changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate or concurrency limit; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Fail-closed internal failure without private details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Maintenance or runtime restart required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Resource identifier or allowed action."
+          }
+        ],
+        "x-required-scope": "transfers:read"
+      }
+    },
     "/api/v1/transfers/{id}/publish": {
       "post": {
         "operationId": "postTransfersIdPublish",
@@ -18356,6 +18480,76 @@
           "manifestHash",
           "files",
           "links"
+        ]
+      },
+      "TransferEditor": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "title": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "completed",
+              "expired",
+              "revoked"
+            ]
+          },
+          "manifestHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/File"
+            }
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "maxTtlSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 31536000,
+            "description": "Current installation limit for publication. The server rechecks this policy at publish time."
+          }
+        },
+        "required": [
+          "id",
+          "revision",
+          "title",
+          "state",
+          "manifestHash",
+          "files",
+          "links",
+          "message",
+          "maxTtlSeconds"
         ]
       },
       "Published": {

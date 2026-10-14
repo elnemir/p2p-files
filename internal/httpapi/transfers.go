@@ -31,6 +31,7 @@ func (a *App) transferRoutes(mux *http.ServeMux) {
 	}))
 	mux.HandleFunc("GET /api/v1/transfers", a.protect("transfers:read", false, a.listTransfers))
 	mux.HandleFunc("GET /api/v1/transfers/{id}", a.protect("transfers:read", false, a.transferDetail))
+	mux.HandleFunc("GET /api/v1/transfers/{id}/editor", a.protect("transfers:read", false, a.transferEditor))
 	mux.HandleFunc("POST /api/v1/transfers/{id}/publish", a.protect("transfers:write", false, a.publish))
 	mux.HandleFunc("POST /api/v1/transfers/{id}/revoke", a.protect("transfers:write", false, a.revoke))
 	mux.HandleFunc("OPTIONS /api/v1/transfers/{id}/uploads", func(w http.ResponseWriter, r *http.Request) {
@@ -91,11 +92,17 @@ func (a *App) listTransfers(w http.ResponseWriter, r *http.Request, p auth.Princ
 	return reply(w, 200, map[string]any{"items": items, "nextCursor": next})
 }
 func (a *App) transferDetail(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
+	return a.readTransfer(w, r, p, c, false)
+}
+func (a *App) transferEditor(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
+	return a.readTransfer(w, r, p, c, true)
+}
+func (a *App) readTransfer(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings, editor bool) error {
 	id := r.PathValue("id")
-	var state, title string
+	var state, title, message string
 	var revision int64
 	var hash *string
-	e := a.DB.QueryRow(r.Context(), "SELECT state,title,revision,manifest_hash FROM transfers WHERE id::text=$1 AND owner_id=$2", id, p.ID).Scan(&state, &title, &revision, &hash)
+	e := a.DB.QueryRow(r.Context(), "SELECT state,title,message,revision,manifest_hash FROM transfers WHERE id::text=$1 AND owner_id=$2", id, p.ID).Scan(&state, &title, &message, &revision, &hash)
 	if e != nil {
 		return e
 	}
@@ -121,7 +128,13 @@ func (a *App) transferDetail(w http.ResponseWriter, r *http.Request, p auth.Prin
 	if e != nil {
 		return e
 	}
-	return reply(w, 200, map[string]any{"id": id, "state": state, "title": title, "revision": revision, "manifestHash": hash, "files": items, "links": links})
+	result := map[string]any{"id": id, "state": state, "title": title, "revision": revision, "manifestHash": hash, "files": items, "links": links}
+	// Keep the original strict DTO stable for existing integrations.
+	if editor {
+		result["message"] = message
+		result["maxTtlSeconds"] = c.TransferMaxTTLSeconds
+	}
+	return reply(w, 200, result)
 }
 func (a *App) createUpload(w http.ResponseWriter, r *http.Request, p auth.Principal, c config.Settings) error {
 	w.Header().Set("Tus-Resumable", "1.0.0")

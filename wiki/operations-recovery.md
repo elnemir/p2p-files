@@ -60,7 +60,7 @@ Local использует create-exclusive + file/directory fsync. S3 — TLS, 
 Internal `/metrics` содержит aggregate request counter, `filex_data_plane_open`, unresolved incident counts, failed/pending operation counts и timestamp последнего successful backup. Ни user IDs, ни пути, ни причины, ни provider topology в labels не выводятся. `/ready` не ready во время maintenance/stale generation; `/health` описывает живой процесс. Traefik не публикует эти routes.
 
 ## ADMIN exports
-Отдельная панель показывает последние 100 exports с необязательным owner UUID filter. Чтение чужого export требует fresh ADMIN re-auth и причины, создаёт отдельную одноразовую credential, привязанную к текущей web session и флагу `admin_access`. Каждый Range/stream guard повторно проверяет ADMIN role/reauth, TTL и отзыв session. Demotion или истёкшая re-auth прекращает чтение. Причина фиксируется в `administrative_actions` и HMAC audit, USER не уведомляется.
+Панель «Администрирование → Безопасность и аудит → Экспорты пользователей» показывает последние 100 exports с необязательным owner UUID filter. Чтение чужого export требует fresh ADMIN re-auth и причины, создаёт отдельную одноразовую credential, привязанную к текущей web session и флагу `admin_access`. Каждый Range/stream guard повторно проверяет ADMIN role/reauth, TTL и отзыв session. Demotion или истёкшая re-auth прекращает чтение. Причина фиксируется в `administrative_actions` и HMAC audit, USER не уведомляется.
 
 TTL можно изменить только у completed, ready, ещё не истёкшего export: 60…604800 секунд от текущего времени (инженерный bound). Expired/deleted artifact не воскресает. Обычный owner-scoped credential route не получил исключения для чужих exports.
 

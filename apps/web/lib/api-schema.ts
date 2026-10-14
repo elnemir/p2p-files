@@ -963,6 +963,26 @@ export interface paths {
     patch: operations["patchTransfersId"];
     trace?: never;
   };
+  "/api/v1/transfers/{id}/editor": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Read owner transfer editor context
+     * @description Uses the same owner isolation and transfers:read permission as transfer detail. Includes the saved message for full metadata replacement and the current publication TTL limit. This read neither mutates nor publishes the transfer; the original detail DTO remains unchanged.
+     */
+    get: operations["getTransfersIdEditor"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/transfers/{id}/publish": {
     parameters: {
       query?: never;
@@ -2275,6 +2295,20 @@ export interface components {
       manifestHash: string | null;
       files: components["schemas"]["File"][];
       links: components["schemas"]["Link"][];
+    };
+    TransferEditor: {
+      /** Format: uuid */
+      id: string;
+      revision: number;
+      title: string;
+      /** @enum {string} */
+      state: "draft" | "active" | "completed" | "expired" | "revoked";
+      manifestHash: string | null;
+      files: components["schemas"]["File"][];
+      links: components["schemas"]["Link"][];
+      message: string;
+      /** @description Current installation limit for publication. The server rechecks this policy at publish time. */
+      maxTtlSeconds: number;
     };
     Published: {
       /** Format: uuid */
@@ -7758,6 +7792,101 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+      /** @description Invalid input */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Origin, CSRF, role, reauthentication, ownership or scope rejected */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Resource unavailable */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description State, offset, revision, lease or key changed */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Rate or concurrency limit; retry later */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Fail-closed internal failure without private details */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Maintenance or runtime restart required */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getTransfersIdEditor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resource identifier or allowed action. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferEditor"];
+        };
       };
       /** @description Invalid input */
       400: {

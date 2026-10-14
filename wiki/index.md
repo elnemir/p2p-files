@@ -57,3 +57,6 @@ FileX — приватная передача файлов: владелец п�
 
 ## Корпоративный вход
 [OIDC / SAML / LDAP: подключение, регистрация и reauth](federated-auth.md), [ADR-014](adr/014-federated-auth.md).
+
+## Удобство системы
+[Ревью и сценарии USER/ADMIN](product-ux.md), [ADR-015](adr/015-product-ux.md).

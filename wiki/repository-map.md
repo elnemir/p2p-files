@@ -13,7 +13,7 @@
 | [cmd/filex-cli](../cmd/filex-cli/) | Доверенная host/container граница, provisioning/settings/операции, JSON stdin |
 | [cmd/filex-verify](../cmd/filex-verify/) | Offline проверка ZIP manifest/signature; payload SHA только с --verify-files |
 | [apps/web/app](../apps/web/app/) | Next.js страницы owner/recipient/help/status/verify; layout/styles |
-| [apps/web/components](../apps/web/components/) | FileX, WebDAVPanel, OperationsPanel и AdminExportsPanel; RU/EN, themes, пользовательские workflows |
+| [apps/web/components](../apps/web/components/) | FileX, AdminPanel, ApplicationSettings, Controls, WebDAVPanel, OperationsPanel и AdminExportsPanel; RU/EN, themes, пользовательские workflows |
 
 ## Доменные компоненты
 
@@ -45,7 +45,7 @@
 | [.github/dependency-policy.json](../.github/dependency-policy.json), [check_dependencies.mjs](../scripts/check_dependencies.mjs) | Reviewed Node/Redis timeline → engine/types/images/installed graph guard; [ADR-012](adr/012-node26-runtime.md), [negative tests](../scripts/dependencies.test.mjs) |
 | [CI](../.github/workflows/ci.yml), [security](../.github/workflows/security.yml) | Functional/supply-chain/repository-policy, CodeQL/dependency review; artifacts 14 дней |
 | [.github/repository.json](../.github/repository.json), [github_repository.py](../scripts/github_repository.py) | Desired GitHub settings → audit/apply/readback; [правила репозитория](repository-governance.md) |
-| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 45 browser scenarios, 10 Linux baselines; review перед заменой изображений |
+| [scripts/e2e](../scripts/e2e/), [playwright.config.ts](../playwright.config.ts) | 60 browser scenarios, 10 Linux baselines; review перед заменой изображений |
 
 ## Поток изменения и пример
 
@@ -62,3 +62,6 @@
 
 ## SAML/OIDC/LDAP
 [internal/identity](../internal/identity/) — config, encrypted provider/flow store, protocol adapters, bounded outbound TLS. [HTTP routes](../internal/httpapi/identity.go), [IdentityLogin](../apps/web/components/IdentityLogin.tsx), [ADMIN editor](../apps/web/components/IdentityProvidersPanel.tsx). [0019](../internal/database/migrations/0019_federated_auth.sql), [browser fixture](../scripts/identity-fixture/main.go), [browser test](../scripts/e2e/identity.spec.ts); [инструкция](federated-auth.md).
+
+## UX основных сценариев
+[ADR-015](adr/015-product-ux.md), [руководство](product-ux.md): общие controls/confirmation, sidebar, typed Settings v1, recipient terminal state. Проверки — [product-ux.spec.ts](../scripts/e2e/product-ux.spec.ts).

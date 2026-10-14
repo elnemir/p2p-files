@@ -43,3 +43,10 @@ Lock: absent → active → refreshed/released/expired/revoked. UUID token пр�
 
 ## Внешняя аутентификация
 Provider disabled↔enabled, revision CAS. Flow pending→verified→consumed; expiry/revision change/recovery запрещают завершение. Login JIT создаёт только USER; link требует fresh current session; reauth проверяет тот же subject и свежую authentication. Сессия и consume/audit атомарны. [ADR-014](adr/014-federated-auth.md), [подробный data flow](federated-auth.md).
+
+## Клиентские состояния UX
+[ADR-015](adr/015-product-ux.md): поиск pending/results/empty/error с guard запоздалых ответов; recipient locked/available/resumable/unavailable. Только terminal authorization denial очищает controls; временная сеть сохраняет resume. Эти состояния не заменяют authority PostgreSQL.
+
+Recipient navigation: новый token при загрузке документа или `hashchange` → сброс прежних файлов/download URL/error → форма новой ссылки. Cookie старой передачи используется для resume только без явного token. Session generation увеличивается при смене ссылки/terminal; завершение старого POST session не очищает новый token и не возвращает прежний список.
+
+Owner session: authenticated → периодический `/auth/me` во всех разделах → login при отклонённой сессии. При отказе очищается workspace и отменяется активная загрузка. 401 от проверки пароля не доказывает отзыв сессии: дополнительный `/auth/me` отличает неверный пароль от завершённого доступа. Смена server role обновляет навигацию, утрата ADMIN переводит к передачам; серверные guards действуют независимо от UI.

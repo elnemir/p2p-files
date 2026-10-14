@@ -15,7 +15,7 @@
 | DEV-02 | P1 / baseline qualified locally; CI в PR #19 | Инженер сопровождения | Поддерживаемые lint/Actions/toolchain/image pins с воспроизводимыми scans/tests | Совместимые peer dependencies; текущий baseline |
 | DEV-03 | P0 / ready для пакета review | Release engineer + владелец/reviewer | Состав фактической поставки, license notices/решения, текст proprietary license после решения владельца | Точные image digests/SBOM; EXT-07 закрывает решение |
 | DEV-04 | P0 / ready для design и tooling | Release engineer + оператор | Долговременное сохранение и восстановление evidence для exact candidate | Хранилище выбирает оператор; независимость от 14-дневных CI artifacts |
-| DEV-05 | P1 / ready | Frontend + QA | Явное терминальное состояние страницы получателя после завершения всей передачи | Наблюдение при скрин-туре; сохранить общий privacy-safe отказ и server completion |
+| DEV-05 | P1 / completed локально | Frontend + QA | Terminal/revoke/expiry очищают controls; временная сеть и незавершённая выдача сохраняют resume | [UX и доказательства](history/product-ux-evidence-2026-10-13.md), 60 browser / 62 PG cases PASS |
 | DEV-06 | P1 / completed локально; Windows pending | Backend + frontend + QA | Загрузка через WebDAV в черновик, отдельные credentials, общий encrypted pipeline, UI и protocol/client tests | Выбор владельца 2026-10-12; [ADR-011](adr/011-native-webdav.md), [руководство](webdav-upload.md), [session](session.md) |
 | EXT-01 | P0 / external-blocked | Оператор | VPS/IPv4/DNS/ACME/host firewall/backups acceptance | Карточка окружения; approved путь запуска DEV-01 |
 | EXT-02 | P0 / external-blocked | Инженер + оператор | Настоящие SMTP/S3: TLS, доставка, retry, object semantics | Аккаунты/разрешённые тестовые адреса, EXT-01 |
@@ -60,11 +60,11 @@
 
 ## DEV-05: завершение выдачи на странице получателя
 
-**Контекст и проблема:** при записи тура 2026-10-11 после полного ZIP передача перешла в `completed`; `GET /recipient/files` вернул 401, поскольку `recipient()` допускает только active transfer. Если нажать «Обновить список» в уже открытой странице, UI показывает общий отказ, но сохраняет прежний список `ready` и кнопки. Это устаревшее клиентское представление; сервер повторную выдачу не разрешает. При раннем refresh до терминального перехода может успеть отобразиться промежуточное состояние. Поэтому стабильный кадр тура показывает повторное открытие ссылки после подтверждённого completed.
+**Контекст и проблема:** при записи тура 2026-10-11 после полного ZIP передача переходила в `completed`; `GET /recipient/files` возвращал 401. Прежний UI показывал общий отказ, но сохранял старый список `ready` и кнопки; сервер повторную выдачу уже запрещал.
 
-**Работа:** явным образом завершать/переводить в недоступное состояние локальную recipient view при утрате доступа; не раскрывать причину отказа постороннему получателю и не обещать запись файла на его диск. Решение должно сохранить действующее окно resume для незавершённой выдачи и не менять серверные инварианты.
+**Решение:** recipient API guard переводит локальное представление в общее недоступное состояние при 401/403/404/410. Файлы/download URL очищаются, поздние ответы прежней session generation отбрасываются. Временная сеть/5xx сохраняет доступ и resume; явный новый token открывает новую ссылку независимо от прежней cookie. [Поток, примеры, ограничения](product-ux.md).
 
-**Готовность:** браузерный сценарий ZIP → completed → refresh не оставляет активные устаревшие download controls; ошибки/revoke/expiry/прерванное скачивание имеют проверенные переходы. UI/wiki/help согласованы. Компоненты: `apps/web/components/FileX.tsx`, `internal/httpapi/recipients.go` (источник семантики, не автоматическая цель изменения), E2E. Requirements: FR-001, FR-006–007.
+**Приёмка:** completed, реальный revoke, natural expiry, сетевая ошибка списка, отмена автоматического content GET с дальнейшим resume и удержанный старый ответ проверены на пяти browser profiles. Настоящие interrupted-stream/Range/atomic ZIP invariants проверены PG/race. Общая матрица 60/60 browser и 62/62 integration, все 13 локальных gates PASS на [source из evidence](history/product-ux-evidence-2026-10-13.md). Причина denial не раскрывается; UI не обещает сохранность файла на диске получателя. Requirements: FR-001, FR-006–007. Внешняя AT/device приёмка остаётся EXT-05.
 
 ## EXT и REL: условия закрытия
 
@@ -83,3 +83,6 @@
 
 ## Внешняя аутентификация — 2026-10-13
 [ADR-014](adr/014-federated-auth.md) и [руководство](federated-auth.md): migration 0019, external identity authority, API/UI, регистрация/link/reauth, protocol/PG/browser тесты и backup/key lifecycle. Статус квалификации — [session](session.md). Следующий внешний шаг: реальные Keycloak/Entra/Workspace/AD/OpenLDAP tenants, claim mappings, CA и сценарии ротации/отзыва; внешняя приёмка не подменяется fixtures.
+
+## UX USER/ADMIN: реализовано локально
+[ADR-015](adr/015-product-ux.md) и [руководство](product-ux.md) описывают навигацию, иконки, формы Settings v1, TTL controls, reauth, приватность при смене сессии и четыре новых снимка. Старые DTO сохранены, `/editor` добавляет контекст формы, API/worker/CLI содержат стандартную IANA database. Перед публикацией ветки выполняются обязательные gates; production guard и внешние release задачи остаются прежними.
