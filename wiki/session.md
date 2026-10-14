@@ -73,3 +73,9 @@
 - Push в `origin/codex/offline-licensing-setup` успешен; `git ls-remote` подтвердил совпадение remote SHA с этим commit.
 - Эта запись фиксируется отдельным docs commit. CI запускается на финальном HEAD после его push; результат CI требует отдельной проверки и не объявлен PASS. Локальные результаты относятся к source fingerprint выше.
 - Main не изменён, PR/merge и production deployment не выполнялись. Следующее: оценить CI финального HEAD перед последующим PR/merge.
+
+## Запрос слияния — 2026-10-14
+- Пользователь поручил слияние; целевая ветка main, squash через PR после зелёных gates.
+- На `37c9b66` functional CI ещё выполняется; CodeQL jobs завершились configuration error при чтении workflow run. Исправлено job-level `actions: read`.
+- Live API: private=true, Code Scanning analyses HTTP 403 (not enabled). Владелец уведомлён о необходимости включения доступности сервиса; visibility/billing/gates не менялись.
+- Следующее: проверить минимальный workflow diff, commit/push, создать PR и оценить CI. Слияние до устранения блокера не выполняется; production deployment не разрешён.

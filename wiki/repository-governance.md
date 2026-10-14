@@ -104,3 +104,9 @@ python3 scripts/github_repository.py audit
 GitHub: [Actions permissions](https://docs.github.com/en/rest/actions/permissions), [branch/rulesets API](https://docs.github.com/en/rest/repos/rules), [Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference), [CodeQL workflows](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options). Эти интерфейсы проверены 2026-10-11; при обновлении action/API проверять актуальные первичные документы.
 
 Follow-ups: DEV-02 — toolchain/pins, DEV-03 — LICENSE/third-party review, DEV-04 — долговременное evidence. Техническая настройка репозитория не закрывает эти карточки целиком. [План](implementation-plan.md), [testing](testing.md), [workflow](development-workflow.md).
+
+## Приватный репозиторий: проверка 2026-10-14
+
+Live API подтвердил `private=true`; прежнее описание публичности выше является историческим. CodeQL run 38570672180 на `37c9b66` не смог прочитать workflow run: `Resource not accessible by integration`. В job `codeql` добавлено минимальное `actions: read`, необходимое для чтения metadata запуска перед загрузкой SARIF; права остальных jobs не расширены. Поток остаётся analysis → SARIF → GitHub Code Scanning → security-checks.
+
+Отдельный запрос `/code-scanning/analyses` вернул HTTP 403: `Code scanning is not enabled for this repository`. Исправление token permissions само по себе не включает услугу. Владелец должен обеспечить доступность Code Scanning для приватного репозитория с сохранением Advanced setup; Default setup поверх workflow не включать. Visibility, тариф и обязательные gates автоматически не меняются. До успешного CI и подтверждения свежих анализов слияние заблокировано. Требование `actions: read` подтверждено [разбором CodeQL Action](https://github.com/github/codeql-action/issues/2117).
