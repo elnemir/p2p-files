@@ -79,3 +79,8 @@
 - На `37c9b66` functional CI ещё выполняется; CodeQL jobs завершились configuration error при чтении workflow run. Исправлено job-level `actions: read`.
 - Live API: private=true, Code Scanning analyses HTTP 403 (not enabled). Владелец уведомлён о необходимости включения доступности сервиса; visibility/billing/gates не менялись.
 - Следующее: проверить минимальный workflow diff, commit/push, создать PR и оценить CI. Слияние до устранения блокера не выполняется; production deployment не разрешён.
+
+### PR и восстановление GitHub checks
+- Создан [PR #28](https://github.com/elnemir/p2p-files/pull/28), base main. Исправление CodeQL `61acf3b` отправлено; repository policy, actionlint, docs и whitespace PASS.
+- После ответа владельца live API показывает visibility=public, disabled=false; Code Scanning analyses снова доступны. Видимость агент не менял. Во время перехода первый push получил временный Repository is disabled, повторный push успешен. Предыдущий 403 снят изменением внешнего состояния.
+- PR mergeable, ожидаются новые обязательные checks на последнем HEAD; старые анализы main не засчитываются за проверку PR. Дождаться PASS, проверить findings и squash merge без обхода gates.
