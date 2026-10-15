@@ -117,3 +117,6 @@
 - FileX `/setup`: временный host token, первый ADMIN и monotonic completion latch.
 - Issuer `/issuer/setup`: OIDC/MFA/subject, encrypted immutable configuration, отдельный config key; vendor seed остаётся signer-only.
 - Responsive формы, bounded contracts, race/fault/restart проверки; [runbook](wiki/first-run-setup.md). Production guard сохранён.
+
+## 2026-10-15 — issuer container delivery
+- Добавлены GHCR build/scan/push для issuer, issuer-web и PostgreSQL, digest manifest/SBOM и отдельный pull-only Compose с операторским runbook. Production deployment и customer trust не изменены.

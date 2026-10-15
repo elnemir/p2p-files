@@ -1,0 +1,66 @@
+name: issuer-images
+on:
+  push:
+    branches: [codex/issuer-container-delivery]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: issuer-images-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and scan all issuer images before publishing
+        env:
+          IMAGE_ROOT: ghcr.io/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/issuer-delivery
+          for component in postgres issuer issuer-web; do
+            image="${IMAGE_ROOT}-${component}:sha-${GITHUB_SHA}"
+            docker build --platform linux/amd64 \
+              --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+              --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+              -f "deploy/Dockerfile.${component}" -t "$image" .
+            python3 scripts/security_tools.py trivy image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 "$image"
+            python3 scripts/security_tools.py trivy image --format cyclonedx --output ".cache/issuer-delivery/${component}.cdx.json" "$image"
+          done
+      - name: Publish scanned images and record immutable references
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE_ROOT: ghcr.io/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d)
+          trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          for component in postgres issuer issuer-web; do
+            image="${IMAGE_ROOT}-${component}:sha-${GITHUB_SHA}"
+            docker push "$image"
+            reference=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
+            case "$component" in
+              postgres) variable=ISSUER_POSTGRES_IMAGE ;;
+              issuer) variable=ISSUER_IMAGE ;;
+              issuer-web) variable=ISSUER_WEB_IMAGE ;;
+            esac
+            printf '%s=%s\n' "$variable" "$reference" >> .cache/issuer-delivery/images.env
+          done
+          cp deploy/issuer-registry.compose.yaml deploy/issuer.env.example deploy/issuer-routes.example.yaml .cache/issuer-delivery/
+          printf '%s\n' "$GITHUB_SHA" > .cache/issuer-delivery/source-commit.txt
+          cat .cache/issuer-delivery/images.env >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: issuer-deployment-${{ github.sha }}
+          path: .cache/issuer-delivery/
+          include-hidden-files: true
+          retention-days: 14

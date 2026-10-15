@@ -94,3 +94,65 @@
 - Локальный upgrade дополнительно выявил устаревший текст ожидаемого отказа unknown migration: новый read-only preflight отклоняет её раньше Migrate. Assertion уточнён до `database contains unknown newer migrations`; добавлена проверка completed setup latch существующей установки, причины backup обновлены до schema-21.
 
 - Local upgrade drill PASS, exit 0: `.cache/merge-upgrade-retry.log`, source `d70d2e0253ccb18b1a7b56cf7dedeb3e8549646d8d40179792064d44602d3b60`, HEAD 4635556 + исправленный test/docs diff. 16→21, backup до/после, unknown migration/wrong KEK rejection, setup latch, payload/session/replay и explicit reopen подтверждены. Следующий шаг: публикация исправления и CI точного нового HEAD.
+
+# Слияние лицензирования — 2026-10-14
+
+## Task
+Слияние лицензирования, issuer portal и мастеров настройки через PR #28 по команде владельца.
+
+## Status
+Squash merge выполнен: `8e01f65deb97e4eb19c4999e94256fd1d6b0d5f4`, PR #28 MERGED. Локальный main синхронизирован. Перед слиянием все обязательные CI checks PASS на HEAD `74810efd48eadd9a56b9f0e719d80090245d2c05`, base `4215c0a7953eca30422b9681cd33789f9993ebe1`. PR CLEAN/MERGEABLE.
+
+## Completed steps
+- Functional CI 38584384430 и security CI 38584384424 завершились успешно.
+- Четыре анализа CodeQL merge candidate `84a0a532ee9ad34db482e35010101ba0f66ed74d`: 0 findings, пустые error/warning, 0 open alerts.
+- Parents проверенного candidate точно совпадают с base и HEAD PR.
+- Исправлены минимальные права CodeQL и upgrade fixture 16→21; документация и local upgrade PASS.
+
+## Next steps
+Проверить post-merge CI exact SHA `8e01f65`: development-checks 38593416115, security-analysis 38593416079. Production deployment не выполняется.
+
+## Decisions
+Production deployment не выполняется; gates не отключались. Merge только после PASS.
+
+## Context
+[PR #28](https://github.com/elnemir/p2p-files/pull/28), [основная сессия](session.md), [лицензирование](licensing.md), [setup](first-run-setup.md).
+
+## Risks / blockers
+Classic branch protection API возвращал 404, Code Scanning ruleset active. Внешняя release acceptance остаётся незавершённой. Итог этой операции сохраняется локально в этом файле без дополнительного изменения проверенного кандидата.
+
+## Post-merge проверка
+- Main `8e01f65`: security workflow 38593416079 SUCCESS; четыре свежих анализа на этом SHA, 0 findings/errors/warnings и 0 open alerts.
+- Functional run 38593416115: repository-policy/supply-chain PASS, checks FAILED в WebKit operations: pageError для notifications при повторной навигации после restart. Trace: goto `/` time 1674900.301, pageError 1674964.495 (64ms позже); остальные recovery assertions выполнены, 12/13 WebKit PASS. Это наблюдение timing, не доказанная окончательная причина. Артефакты `.cache/merge-main-evidence/`, лог `.cache/merge-main-failed.log`.
+- Повторяем только failed job на неизменном SHA, без изменения тестов/assertions. Итог текущей сессии пока сохранён локально в wiki/session.md.
+
+# Поставка issuer — 2026-10-15
+
+## Task
+Собрать и опубликовать Docker images в GHCR репозитория и подготовить Compose. Владелец уточнил scope: начать с сервиса лицензирования; vendor public/private keys пока отсутствуют.
+
+## Status
+Подготовлены pull-only Compose и workflow сборки/scanning/push; проверки и публикация впереди.
+
+## Completed steps
+- Прочитаны обязательные wiki/правила, licensing/setup/release runbooks; существующий локальный журнал сохранён.
+- Проверены доступ к Docker/GitHub, origin/main `8e01f65`; старый повтор main CI имеет conclusion cancelled, не PASS.
+- Customer API не включён в поставку; production guard и trust roots не изменяются.
+
+## Next steps
+Проверить Compose/базовые gates, commit/push отдельной ветки, дождаться registry build/scans, скачать manifest с digest и проверить pull.
+
+## Decisions
+Три linux/amd64 образа: postgres, issuer (API/migrate/signer), issuer-web. Signer seed создаёт оператор на целевом хосте, секреты не входят в images/Git. TLS остаётся внешним single-origin proxy по действующему issuer runbook.
+
+## Context
+[Поставка issuer](issuer-container-delivery.md), [лицензирование](licensing-operations.md), [первый запуск](first-run-setup.md).
+
+## Risks / blockers
+Нужны целевой HTTPS/IdP с MFA и host secrets для реального запуска. Публикация images не подтверждает production acceptance, deployment не выполняется.
+
+## Проверки перед публикацией
+- `acceptance.py run check` PASS, sourceUnchanged=true, source SHA-256 `55d85331651321b80d027483fe27c9c64c6212f3792519eb7ef67664d86d85bd`; `.cache/issuer-delivery-check.log`.
+- Compose config PASS: нет build, 5 services, отдельные PG роли, signer-only seed mount с create_host_path=false, только loopback ports; пять missing-input negative cases отклонены.
+- actionlint/repository policy/docs/whitespace PASS. Application contracts/crypto/state machines не изменялись. Новые image scans выполняются в workflow до push; исторические scans не засчитываются.
+- Следующий шаг — commit/push `codex/issuer-container-delivery` с запуском запрошенной GHCR публикации. Это не merge, release или deployment.

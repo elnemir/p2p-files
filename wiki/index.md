@@ -67,3 +67,5 @@ FileX — приватная передача файлов: владелец п�
 ## Веб-настройка первого запуска
 
 [Мастера запущенных контейнеров](first-run-setup.md): одноразовый ADMIN FileX и encrypted OIDC bootstrap портала; [ADR-017](adr/017-first-run-wizards.md). Docker/DB/ключи готовит host; production guard сохранён.
+
+- [Docker-поставка сервиса лицензирования](issuer-container-delivery.md): GHCR images, pull-only Compose, host key и первичная настройка.
