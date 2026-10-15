@@ -69,6 +69,7 @@ services:
 networks:
   database: {internal: true}
   identity: {}
-  presentation: {internal: true}
+  # Host HTTPS proxy needs a published loopback port; internal bridges suppress it.
+  presentation: {}
 volumes:
   issuer_pg: {}

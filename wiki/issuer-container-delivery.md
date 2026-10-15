@@ -8,7 +8,7 @@
 
 Workflow запускается при push delivery-ветки и вручную; PR не получает packages write. Token выдаётся GitHub только publish job, Docker credentials находятся во временном каталоге и удаляются trap. OCI source/revision связывают package с репозиторием. SBOM и deployment files сохраняются 14 дней как artifact; оператор должен скачать их в постоянное хранилище. Это техническая поставка, не одобрение third-party licenses и не полный release acceptance.
 
-Architecture/security review: сети database/identity/presentation и три PG роли сохранены; ключ доступен только signer, отсутствующий bind source даёт ошибку, не создаёт каталог. TLS upstream порты остаются loopback. Образы не содержат приватных ключей, фиктивных trust roots или runtime secrets. Криптография, state machines, OpenAPI/AsyncAPI/JSON Schemas не изменены; новых application states/events нет.
+Architecture/security review: разделение database/identity/presentation и три PG роли сохранены; ключ доступен только signer, отсутствующий bind source даёт ошибку, не создаёт каталог. TLS upstream порты остаются loopback. Образы не содержат приватных ключей, фиктивных trust roots или runtime secrets. Криптография, state machines, OpenAPI/AsyncAPI/JSON Schemas не изменены; новых application states/events нет.
 
 ## Подготовка оператора
 Нужны Linux amd64, Docker Compose v2, доступ к GHCR, домен с HTTPS reverse proxy и OIDC provider с принудительным MFA. Скачайте artifact `issuer-deployment-<commit>` и сохраните `images.env`, Compose и routes example. Для private package нужен registry login с `read:packages`; видимость package этой задачей не меняется.
@@ -47,3 +47,6 @@ docker compose --env-file images.env --env-file issuer.env --env-file bootstrap/
 
 ## Ограничения и последующие шаги
 Эта поставка не запускает сервер, не настраивает DNS/ACME/IdP и не создаёт реальные keys. Customer FileX images исключены по уточнению владельца; APP_ENV production guard клиента сохранён. Работающее MFA, backup/restore/escrow и внешняя security/license acceptance требуют проверки оператора. Проверенные commit/digests и точные результаты публикуются в [session](session.md); старый PASS не квалифицирует новую сборку.
+
+## Исправление доступности UI, подтверждённое Docker-проверкой
+Docker 29.6.2 принял HostConfig.PortBindings для web, но на единственной internal presentation network оставил NetworkSettings.Ports[3000/tcp] пустым; Next.js при этом Ready на 0.0.0.0:3000, API с отдельной external network доступен. Поэтому presentation bridge в обоих issuer Compose сделан обычным bridge, port по-прежнему привязан только к 127.0.0.1. Web не подключается к database и не получает secret/seed; signer остаётся только на internal database. Trade-off: web теперь имеет исходящий сетевой маршрут, как обычный frontend container. Host firewall/egress policy может дополнительно ограничивать его; исходящая изоляция signer сохранена. Ни public port, ни Docker socket не добавлены.

@@ -156,3 +156,13 @@ Classic branch protection API возвращал 404, Code Scanning ruleset acti
 - Compose config PASS: нет build, 5 services, отдельные PG роли, signer-only seed mount с create_host_path=false, только loopback ports; пять missing-input negative cases отклонены.
 - actionlint/repository policy/docs/whitespace PASS. Application contracts/crypto/state machines не изменялись. Новые image scans выполняются в workflow до push; исторические scans не засчитываются.
 - Следующий шаг — commit/push `codex/issuer-container-delivery` с запуском запрошенной GHCR публикации. Это не merge, release или deployment.
+
+## Registry и runtime проверка
+- Первый workflow 38760267539 SUCCESS, SHA fd75b999542701335bab20cb35c27780f7af0942; три image digests опубликованы, manifests доступны даже без registry auth. HIGH/CRITICAL 0, SBOM сохранены.
+- Pull завершился после сетевых повторов. PostgreSQL/migrate/setup API работают. Web Next.js Ready, но Docker 29.6.2 не публикует port у единственной internal presentation network: HostConfig содержит binding, NetworkSettings.Ports пуст.
+- Исправлена presentation bridge в исходном и registry issuer Compose; loopback bind, отдельная БД и signer-only private key сохранены. Runbook описывает дополнительный исходящий маршрут web. Требуется повтор check и runtime smoke, затем публикация исправленного комплекта.
+
+## Проверка исправления presentation bridge
+- Финальный make check PASS/sourceUnchanged=true: `6bc15f24fbebd9990e611900f9005fe5f56d4cc469652f3abb44feba58fd1161`, `.cache/issuer-delivery-check-final.log`.
+- Runtime smoke PASS: pull по трём GHCR digests, real PostgreSQL/role migrations, HTTP setup API pending, setup HTML 200, signer running; `.cache/issuer-registry-smoke-final.log`. Linux amd64 images на Docker Desktop arm64 с эмуляцией. Секреты synthetic; disposable project/volumes удалены. Реальные TLS/OIDC/MFA не проверялись.
+- Следующий шаг: отправить исправленный Compose и повторить image pipeline для согласованного комплекта exact commit.
