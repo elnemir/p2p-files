@@ -1,4 +1,4 @@
-FROM golang:1.27.2-alpine@sha256:f92b6ef800e499660581efdabdf25d9d817a9d124eaf900924f0504e7e27e12d AS build
+FROM golang:1.27.3-alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS build
 WORKDIR /src
 # Pin the complete upstream tree, including its nested dynamic/ext module.
 ADD --checksum=sha256:b36539270ffdd167a0416f4b964c4fb60723be7266dae02c17db8779dc20b3db https://codeload.github.com/traefik/traefik/tar.gz/3bd7aa32e1b6c41166575529a10fb2346d9eaa2e /tmp/source.tar.gz
